@@ -1,8 +1,8 @@
 {
-  "name": "FAIR4Health",
+  "name": "FAIR4Health Data Curation and Validation Tool",
   "version": "0.1.0",
   "private": true,
-  "author": "SRDC Corporation <teooalp@hotmail.com>",
+  "author": "SRDC Corporation <technical@srdc.com.tr>",
   "description": "FAIR4Health | Data Curation and Validation Tool",
   "license": "Apache 2.0",
   "homepage": "https://github.com/fair4health/data-curation-tool",
