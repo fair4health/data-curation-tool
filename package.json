@@ -1,0 +1,51 @@
+{
+  "name": "FAIR4Health",
+  "version": "0.1.0",
+  "private": true,
+  "author": "SRDC Corporation <teooalp@hotmail.com>",
+  "description": "FAIR4Health | Data Curation and Validation Tool",
+  "license": "Apache 2.0",
+  "homepage": "https://github.com/fair4health/data-curation-tool",
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint",
+    "electron:build": "vue-cli-service electron:build",
+    "electron:serve": "vue-cli-service electron:serve",
+    "postinstall": "electron-builder install-app-deps",
+    "postuninstall": "electron-builder install-app-deps",
+    "test": "vue-cli-service test:unit tests/**/*.spec.ts",
+    "test:unit": "vue-cli-service test:unit tests/unit/*.spec.ts",
+    "test:e2e": "vue-cli-service test:unit tests/e2e/*.spec.ts"
+  },
+  "main": "background.js",
+  "dependencies": {
+    "@quasar/extras": "^1.0.0",
+    "core-js": "^3.3.2",
+    "quasar": "^1.0.0",
+    "vue": "^2.6.10",
+    "vue-property-decorator": "^8.3.0",
+    "vue-router": "^3.1.3",
+    "vuex": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.4",
+    "@types/chai-as-promised": "^7.1.2",
+    "@types/mocha": "^5.2.7",
+    "@vue/cli-plugin-babel": "^4.0.0",
+    "@vue/cli-plugin-typescript": "^4.0.0",
+    "@vue/cli-plugin-unit-mocha": "^4.0.0",
+    "@vue/cli-service": "^4.0.0",
+    "@vue/test-utils": "^1.0.0-beta.29",
+    "babel-plugin-transform-imports": "1.5.0",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "electron": "^5.0.0",
+    "stylus": "^0.54.5",
+    "stylus-loader": "^3.0.2",
+    "typescript": "~3.5.3",
+    "vue-cli-plugin-electron-builder": "^1.4.0",
+    "vue-cli-plugin-quasar": "^1.0.0",
+    "vue-template-compiler": "^2.6.10"
+  }
+}
