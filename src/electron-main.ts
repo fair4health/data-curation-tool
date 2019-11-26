@@ -2,6 +2,7 @@
 
 import { app, protocol, BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
+import './ipcListeners.ts';
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -14,7 +15,10 @@ protocol.registerSchemesAsPrivileged([{scheme: 'fair4health', privileges: { secu
 
 function createWindow () {
   // Create the browser window.
-  win = new BrowserWindow({ width: 800, height: 600, webPreferences: { nodeIntegration: true } })
+  win = new BrowserWindow({ width: 800, height: 600, show: false, webPreferences: { nodeIntegration: true } })
+  // Make window fullscreen
+  win.maximize()
+  win.show()
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode

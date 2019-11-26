@@ -20,11 +20,51 @@ import {
   QItem,
   QItemSection,
   QItemLabel,
-  Dialog
+  Dialog,
+  QAvatar,
+  QSeparator,
+  QCard,
+  QCardSection,
+  QInput,
+  QExpansionItem,
+  QStepper,
+  QStep,
+  QStepperNavigation,
+  LoadingBar,
+  Loading,
+  QSplitter,
+  QSelect,
+  QSpinner,
+  QSpinnerTail,
+  QTable,
+  QTd,
+  QTr,
+  QBadge,
+  QPopupEdit,
+  QSpace,
+  QTooltip,
+  Notify,
+  AppFullscreen
 } from 'quasar'
 
 Vue.use(Quasar, {
-  config: {},
+  config: {
+    loadingBar: {
+      color: 'primary',
+      size: '4px'
+    },
+    loading: {
+      spinner: QSpinnerTail,
+      spinnerSize: '65px'
+    },
+    notify: {
+      textColor: 'white',
+      timeout: 1500,
+      position: 'top',
+      classes: 'notify-opacity',
+      actions: [ { icon: 'clear', color: 'white' } ]
+    }
+  },
   components: {
     QLayout,
     QHeader,
@@ -39,10 +79,34 @@ Vue.use(Quasar, {
     QItem,
     QItemSection,
     QItemLabel,
+    QAvatar,
+    QSeparator,
+    QCard,
+    QCardSection,
+    QInput,
+    QExpansionItem,
+    QStepper,
+    QStep,
+    QStepperNavigation,
+    QSplitter,
+    QSelect,
+    QSpinner,
+    QSpinnerTail,
+    QTable,
+    QTd,
+    QTr,
+    QBadge,
+    QPopupEdit,
+    QSpace,
+    QTooltip
   },
   directives: {
   },
   plugins: {
-    Dialog
+    Dialog,
+    LoadingBar,
+    Loading,
+    Notify,
+    AppFullscreen
   }
  })

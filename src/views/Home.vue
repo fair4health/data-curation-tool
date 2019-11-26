@@ -1,16 +1,93 @@
 <template>
-  <Message msg="Welcome"/>
+  <div>
+    <!--HEADER & QUICK START-->
+    <q-item class="q-pa-md">
+      <q-item-section class="q-pt-md">
+        <p class="text-h4 text-primary">Welcome to <span class="text-primary text-weight-bold">FAIR4Health Data Curation Tool</span></p>
+      </q-item-section>
+      <q-item-section side>
+        <q-btn unelevated rounded to="/curation" color="primary" size="lg" label="Quick Start" icon-right="fas fa-angle-right" />
+      </q-item-section>
+    </q-item>
+    <q-separator />
+
+    <!--OVERALL STEPS-->
+    <q-item class="q-pa-lg text-weight-bold text-grey-8">
+      <q-item-section>
+        <q-item-label class="text-h4 text-weight-bold">Overall Steps</q-item-label>
+        <q-stepper flat v-model="step" ref="stepper" alternative-labels color="primary" class="bg-grey-3">
+          <q-step :name="1" title="Analyze Data Source" icon="fas fa-database"></q-step>
+          <q-step :name="2" title="Map Metadata" icon="fas fa-list-ul"></q-step>
+          <q-step :name="3" title="Confirm and Transform" icon="fas fa-exchange-alt"></q-step>
+          <q-step :name="4" title="Validate" icon="fas fa-check-circle"></q-step>
+        </q-stepper>
+      </q-item-section>
+    </q-item>
+
+    <!--Analyze Data Source-->
+    <q-item class="q-pa-lg text-weight-bold text-grey-8">
+      <q-item-section>
+        <q-item-label class="text-h7 text-grey-8">
+          <q-icon name="fas fa-database" /> Analyze Data Source
+        </q-item-label>
+        <q-card flat class="q-ma-md">
+          <q-card-section>
+            Text
+          </q-card-section>
+        </q-card>
+      </q-item-section>
+    </q-item>
+
+    <!--Map Metadata-->
+    <q-item class="q-pa-lg text-weight-bold text-grey-8">
+      <q-item-section>
+        <q-item-label class="text-h7 text-grey-8">
+          <q-icon name="fas fa-list-ul" /> Map Metadata
+        </q-item-label>
+        <q-card flat class="q-ma-md">
+          <q-card-section>
+            Text
+          </q-card-section>
+        </q-card>
+      </q-item-section>
+    </q-item>
+
+    <!--Confirm and Transform-->
+    <q-item class="q-pa-lg text-weight-bold text-grey-8">
+      <q-item-section>
+        <q-item-label class="text-h7 text-grey-8">
+          <q-icon name="fas fa-exchange-alt" /> Confirm and Transform
+        </q-item-label>
+        <q-card flat class="q-ma-md">
+          <q-card-section>
+            Text
+          </q-card-section>
+        </q-card>
+      </q-item-section>
+    </q-item>
+
+    <!--Validate-->
+    <q-item class="q-pa-lg text-weight-bold text-grey-8">
+      <q-item-section>
+        <q-item-label class="text-h7 text-grey-8">
+          <q-icon name="fas fa-check-circle" /> Validate
+        </q-item-label>
+        <q-card flat class="q-ma-md">
+          <q-card-section>
+            Text
+          </q-card-section>
+        </q-card>
+      </q-item-section>
+    </q-item>
+  </div>
 </template>
 
 <script lang="ts">
-  import {Component, Vue} from 'vue-property-decorator'
+  import { Component, Vue } from 'vue-property-decorator'
 
-  @Component({
-    components: {
-      Message: () => import('@/components/Message.vue')
-    }
-  })
+  @Component
   export default class Home extends Vue {
+    private step: number = 0;
   }
 
 </script>

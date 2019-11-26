@@ -1,13 +1,29 @@
 import {expect} from 'chai'
-import {shallowMount} from '@vue/test-utils'
-import Message from '@/components/Message.vue'
+import {FhirService} from '@/common/utils/fhir-util'
 
-describe('Test components', () => {
-  it('Renders props.msg', () => {
-    const msg = 'new message';
-    const wrapper = shallowMount(Message, {
-      propsData: {msg},
-    });
-    expect(wrapper.text()).to.include(msg);
+describe('Test FHIR Search', () => {
+  it('Search CapabilityStatement', (done) => {
+    const fhirService = new FhirService()
+    fhirService.search('CapabilityStatement', {})
+      .then(bundle => {
+        expect(bundle.entry?.length).to.greaterThan(0)
+        done()
+      })
+      .catch(() => {
+        expect(false).to.be.true
+        done()
+      })
+  })
+  it('Search StructureDefinition by id - Appointment', (done) => {
+    const fhirService = new FhirService()
+    fhirService.search('StructureDefinition', {_id: 'Appointment'})
+      .then(bundle => {
+        expect(bundle.entry?.length).to.greaterThan(0)
+        done()
+      })
+      .catch(() => {
+        expect(false).to.be.true
+        done()
+      })
   })
 });
