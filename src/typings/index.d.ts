@@ -4484,7 +4484,7 @@ declare namespace fhir {
     slicing?: ElementDefinitionSlicing;
     short?: string;
     definition?: markdown;
-    comments?: markdown;
+    comment?: markdown;
     requirements?: markdown;
     alias?: string[];
     min?: integer;
@@ -4745,6 +4745,14 @@ declare namespace fhir {
     documentation?: string;
     type: code;
     profile?: Reference;
+  }
+  interface ElementTree {
+    label?: string
+    value?: string
+    definition?: string
+    comment?: string
+    short?: string
+    children?: ElementTree[]
   }
   type Resource = (DomainResource|Account|ActivityDefinition|AllergyIntolerance|Appointment|AppointmentResponse|
     AuditEvent|Basic|Binary|BodySite|Bundle|CarePlan|CareTeam|Claim|ClaimResponse|ClinicalImpression|CodeSystem|

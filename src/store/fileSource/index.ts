@@ -34,6 +34,9 @@ const fileSource = {
         state.currentFile.currentSheet = tmpSheet.find(s => s.value === state.currentFile?.currentSheet?.value) || null
       }
     },
+    setSheetHeaders (state, headers: any) {
+      state.currentFile.currentSheet.headers = headers
+    },
     setCurrentSheet (state, sheet: Sheet | null) {
       if (state.currentFile) {
         state.currentFile.currentSheet = sheet

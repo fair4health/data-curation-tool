@@ -1,5 +1,5 @@
 import {expect} from 'chai'
-import {FhirService} from '@/common/utils/fhir-util'
+import {FhirService} from '@/common/services/fhir.service'
 
 describe('Test FHIR Search', () => {
   it('Search CapabilityStatement', (done) => {

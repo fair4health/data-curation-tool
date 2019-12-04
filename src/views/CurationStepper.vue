@@ -1,35 +1,33 @@
 <template>
   <div>
-    <q-toolbar class="bg-grey-4 text-white">
+    <q-toolbar class="bg-grey-4">
       <q-toolbar-title class="text-grey-8">
         Curation
       </q-toolbar-title>
     </q-toolbar>
-    <q-stepper flat v-model="step" ref="stepper" :contracted="$q.screen.lt.sm" alternative-labels color="primary" class="bg-grey-3">
+    <div class="q-ma-sm">
 
       <!--The first step - Data Source Analyzing-->
-      <q-step :name="1" title="Analyze Data Source" icon="fas fa-database" :done="step > 1">
+      <template v-if="step === 1">
         <DataSourceAnalyzer />
-      </q-step>
+      </template>
 
       <!--The second step - Metadata Mapping-->
-      <q-step :name="2" title="Map Metadata" icon="fas fa-list-ul" :done="step > 2">
+      <template v-if="step === 2">
         <MetadataMapper />
-      </q-step>
+      </template>
 
       <!--The third step - Transforming-->
-      <q-step :name="3" title="Confirm and Transform" icon="fas fa-exchange-alt" :done="step > 3">
-        <q-separator />
-        Transform information
-      </q-step>
+      <template v-if="step === 3">
+        <MetadataMapper />
+      </template>
 
       <!--The last step Validation of Resources-->
-      <q-step :name="4" title="Validate" icon="fas fa-check-circle" :done="step > 4">
-        <q-separator />
-        Validation result
-      </q-step>
+      <template v-if="step === 4">
+        <MetadataMapper />
+      </template>
 
-    </q-stepper>
+    </div>
   </div>
 </template>
 
@@ -44,7 +42,6 @@
   })
   export default class Stepper extends Vue {
     get step (): number { return this.$store.getters.curationStep }
-    set step (value) { this.$store.commit('stepUp', value) }
   }
 
 </script>

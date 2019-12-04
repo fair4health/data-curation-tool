@@ -1,15 +1,16 @@
 <template>
   <div>
     <!--HEADER & QUICK START-->
-    <q-item class="q-pa-md">
-      <q-item-section class="q-pt-md">
-        <p class="text-h4 text-primary">Welcome to <span class="text-primary text-weight-bold">FAIR4Health Data Curation Tool</span></p>
-      </q-item-section>
-      <q-item-section side>
-        <q-btn unelevated rounded to="/curation" color="primary" size="lg" label="Quick Start" icon-right="fas fa-angle-right" />
-      </q-item-section>
-    </q-item>
-    <q-separator />
+    <div class="top-fix-column">
+      <q-toolbar class="bg-grey-4">
+        <q-toolbar-title class="text-grey-8">
+          Welcome to <span class="text-primary text-weight-bold">FAIR4Health Data Curation Tool</span>
+        </q-toolbar-title>
+        <q-space />
+        <q-btn unelevated rounded to="/curation" color="primary" label="Quick Start" icon-right="fas fa-angle-right" />
+      </q-toolbar>
+      <q-separator />
+    </div>
 
     <!--OVERALL STEPS-->
     <q-item class="q-pa-lg text-weight-bold text-grey-8">
@@ -91,3 +92,10 @@
   }
 
 </script>
+
+<style lang="stylus">
+  .top-fix-column
+    position sticky
+    top 0
+    z-index 1
+</style>

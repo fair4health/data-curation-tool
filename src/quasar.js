@@ -44,7 +44,9 @@ import {
   QSpace,
   QTooltip,
   Notify,
-  AppFullscreen
+  AppFullscreen,
+  QTree,
+  QScrollArea
 } from 'quasar'
 
 Vue.use(Quasar, {
@@ -98,7 +100,9 @@ Vue.use(Quasar, {
     QBadge,
     QPopupEdit,
     QSpace,
-    QTooltip
+    QTooltip,
+    QTree,
+    QScrollArea
   },
   directives: {
   },

@@ -6,7 +6,7 @@
           flat
           dense
           round
-          @click="$q.screen.lt.lg ? (leftDrawerOpen = !leftDrawerOpen) : (miniState = !miniState)"
+          @click="$q.screen.lt.lg || !leftDrawerOpen ? (leftDrawerOpen = !leftDrawerOpen) : (miniState = !miniState)"
           aria-label="Menu"
           icon="menu"
         />
@@ -30,44 +30,55 @@
       bordered
       content-class="bg-grey-2"
       :width="240"
+      :mini-width="75"
       :breakpoint="500"
       :mini="$q.screen.lt.lg || miniState"
     >
-      <q-list>
-        <q-item to="/" exact>
+      <q-list class="menu-list">
+        <q-item to="/" exact active-class="text-primary bg-blue-grey-1 text-weight-bold">
           <q-item-section avatar>
             <q-icon name="home" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Home</q-item-label>
           </q-item-section>
-          <q-tooltip v-if="miniState" anchor="center right" self="center left" content-class="bg-grey-4 text-grey-9"
-                     :offset="[5, 10]" transition-show="scale" transition-hide="scale">
+          <q-tooltip v-if="isCollapsed" anchor="center right" self="center left" :offset="[5, 10]"
+                     content-class="bg-grey-4 text-grey-9" transition-show="scale" transition-hide="scale">
             Home
           </q-tooltip>
         </q-item>
-        <q-item to="/curation" exact>
+        <q-item to="/curation" exact active-class="text-primary bg-blue-grey-1 text-weight-bold">
           <q-item-section avatar>
             <q-icon name="device_hub" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Curation</q-item-label>
           </q-item-section>
-          <q-tooltip v-if="miniState" anchor="center right" self="center left" content-class="bg-grey-4 text-grey-9"
-                     :offset="[5, 10]" transition-show="scale" transition-hide="scale">
+          <q-tooltip v-if="isCollapsed" anchor="center right" self="center left" :offset="[5, 10]"
+                     content-class="bg-grey-4 text-grey-9" transition-show="scale" transition-hide="scale">
             Curation
           </q-tooltip>
         </q-item>
+        <q-item v-if="$route.name==='curation'" animation>
+          <q-stepper flat vertical :contracted="isCollapsed" v-model="step"
+                     ref="stepper" alternative-labels color="primary" class="bg-grey-3"
+                     :style="isCollapsed ? 'padding: 0; width: 70px' : ''">
+            <q-step :name="1" title="Analyze Data Source" icon="fas fa-database" :done="step > 1" />
+            <q-step :name="2" title="Map Metadata" icon="fas fa-list-ul" :done="step > 2" />
+            <q-step :name="3" title="Confirm and Transform" icon="fas fa-exchange-alt" :done="step > 3" />
+            <q-step :name="4" title="Validate" icon="fas fa-check-circle" :done="step > 4" />
+          </q-stepper>
+        </q-item>
         <q-separator />
-        <q-item to="/about" exact>
+        <q-item to="/about" exact active-class="text-primary bg-blue-grey-1 text-weight-bold">
           <q-item-section avatar>
             <q-icon name="info" />
           </q-item-section>
           <q-item-section>
             <q-item-label>About</q-item-label>
           </q-item-section>
-          <q-tooltip v-if="miniState" anchor="center right" self="center left" content-class="bg-grey-4 text-grey-9"
-                     :offset="[5, 10]" transition-show="scale" transition-hide="scale">
+          <q-tooltip v-if="isCollapsed" anchor="center right" self="center left" :offset="[5, 10]"
+                     content-class="bg-grey-4 text-grey-9" transition-show="scale" transition-hide="scale">
             About
           </q-tooltip>
         </q-item>
@@ -88,19 +99,66 @@
     <!--Router view in page container-->
     <q-page-container class="main-page">
       <q-page>
-        <router-view />
+        <q-splitter
+          v-model="splitterModel"
+          horizontal
+          :limits="limits"
+          :style="style"
+        >
+
+          <template v-slot:before>
+            <router-view />
+          </template>
+
+          <template v-slot:after>
+            <div>
+              <q-toolbar class="bg-grey-4">
+                <q-toolbar-title class="text-grey-8 text-h6">
+                  <q-icon name="fas fa-columns" />
+                  Console
+                </q-toolbar-title>
+
+                <q-space />
+
+                <q-btn
+                  round
+                  flat
+                  dense
+                  :icon="splitterModel >= limits[1] ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
+                  @click="splitterModel >= limits[1] ? splitterModel = 70 : splitterModel = limits[1]" />
+              </q-toolbar>
+              <template v-if="splitterModel < limits[1]">
+                <div class="q-ma-sm">
+                  Log
+                </div>
+              </template>
+            </div>
+          </template>
+
+        </q-splitter>
       </q-page>
     </q-page-container>
   </q-layout>
 </template>
 
 <script lang="ts">
-  import { Component, Vue } from 'vue-property-decorator'
+  import { Component, Vue, Watch } from 'vue-property-decorator'
 
   @Component
   export default class MainLayout extends Vue {
-    private miniState: boolean = true;
-    private leftDrawerOpen: boolean = false;
+    private splitterModel: any = this.limits[1]
+    private miniState: boolean = true
+    private leftDrawerOpen: boolean = false
+
+    get step () { return this.$store.getters.curationStep }
+    get style () { return {height: this.$q.screen.height - 50 + 'px'} }
+    get limits () { return [20, Math.floor(100 - (50.0 / (this.$q.screen.height - 50) * 100))] }
+    get isCollapsed () { return (this.$q.screen.gt.xs && (this.$q.screen.lt.lg || this.miniState)) }
+
+    @Watch('$q.screen.height')
+    onChange () {
+      this.splitterModel = this.limits[1]
+    }
   }
 </script>
 
@@ -111,4 +169,6 @@
     margin-right auto
   .notify-opacity
     opacity 0.9
+  .menu-list .q-item
+    border-radius 0 32px 32px 0
 </style>

@@ -1,6 +1,7 @@
-import { FhirService } from '@/common/utils/fhir-util'
+import { FhirService } from '@/common/services/fhir.service'
 import { urls } from '@/common/api'
 import StructureDefinition = fhir.StructureDefinition
+import { FHIRUtils } from '@/common/utils/fhir-util'
 
 const fhirService = new FhirService()
 
@@ -10,12 +11,18 @@ const fhirStore = {
     resourceList: null,
     profileList: null,
     elementList: null,
+    elementListFlat: null,
+    currentResource: '',
+    currentProfile: '',
     selectedElements: []
   },
   getters: {
     resourceList: state => state.resourceList || [],
     profileList: state => state.profileList || [],
     elementList: state => state.elementList || [],
+    elementListFlat: state => state.elementListFlat || [],
+    currentResource: state => state.currentResource || '',
+    currentProfile: state => state.currentProfile || '',
     selectedElements: state => state.selectedElements || [],
   },
   mutations: {
@@ -27,9 +34,16 @@ const fhirStore = {
     },
     setElementList (state, list) {
       state.elementList = list
+      state.elementListFlat = list?.length ? FHIRUtils.flatten(list) : []
     },
     setSelectedElements (state, list) {
       state.selectedElements = list
+    },
+    setCurrentResource (state, value) {
+      state.currentResource = value
+    },
+    setCurrentProfile (state, value) {
+      state.currentProfile = value
     }
   },
   actions: {
@@ -66,11 +80,31 @@ const fhirStore = {
           .then(bundle => {
             if (bundle.entry?.length) {
               const resource = bundle.entry[0].resource as fhir.StructureDefinition
-              commit('setElementList', resource?.snapshot?.element.map(e => {
-                const arr = e.id?.split('.')
-                arr?.shift()
-                return {value: arr?.join('.') || '', type: '-'}
-              }).filter(v => v.value) || [])
+              const list: fhir.ElementTree[] = []
+              resource?.snapshot?.element.forEach((element) => {
+                const parts = element?.id?.split('.') || []
+                let part: any
+                let tmpList = list
+                part = parts.shift()
+                while (part) {
+                  let match = tmpList.findIndex(l => l.label === part)
+                  if (match === -1) {
+                    match = 0
+                    tmpList.push({
+                      value: element?.id,
+                      label: part,
+                      definition: element?.definition,
+                      comment: element?.comment,
+                      short: element?.short,
+                      children: []
+                    })
+                  }
+                  tmpList = tmpList[match].children as fhir.ElementTree[]
+                  part = parts.shift()
+                }
+              })
+
+              commit('setElementList', list)
             }
             resolve(true)
           })

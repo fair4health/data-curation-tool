@@ -30,19 +30,3 @@ export const sourceDataTableHeaders = [
     field: 'target'
   }
 ]
-export const fhirDataTableHeaders = [
-  {
-    name: 'fhir-attr',
-    required: true,
-    label: 'Attribute',
-    align: 'left',
-    field: 'value'
-  },
-  {
-    name: 'fhir-type',
-    required: true,
-    label: 'Type',
-    align: 'center',
-    field: 'type'
-  }
-]
