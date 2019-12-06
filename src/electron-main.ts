@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import { app, protocol, BrowserWindow, dialog } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import './ipcListeners.ts';
 
@@ -29,6 +29,20 @@ function createWindow () {
     // Load the index.html when not in development
     win.loadURL('fair4health://./index.html')
   }
+
+  win.webContents.on('crashed', () => {
+    const options = {
+      type: 'info',
+      title: 'Renderer Process Crashed',
+      message: 'This process has crashed.',
+      buttons: ['Reload', 'Close']
+    }
+
+    dialog.showMessageBox(options, (index) => {
+      if (index === 0) win?.reload()
+      else win?.close()
+    })
+  })
 
   win.on('closed', () => {
     win = null
