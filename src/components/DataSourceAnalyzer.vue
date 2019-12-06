@@ -12,47 +12,69 @@
     >
       <q-card>
         <q-card-section>
-          <q-item>
-            <q-item-section>
-              <q-input dense outlined label="File location" v-model="files" hint=".xls, .xlsx or .csv" disable />
-            </q-item-section>
-            <q-item-section side top>
-              <q-btn unelevated label="Browse" color="blue-1" text-color="primary" @click="browseFile" no-caps />
-            </q-item-section>
-          </q-item>
-          <q-card v-if="fileSourceList.length" flat class="bg-grey-3">
+          <template v-if="hasSavedMap">
+            <div class="row justify-end q-mb-sm">
+              <q-chip square clickable icon="save">
+                <q-badge color="red-5" floating>1</q-badge>
+                Saved mapping
+                <q-menu>
+                  <q-list style="min-width: 200px">
+                    <q-item clickable class="text-grey-8" @click="loadFromStorage" v-close-popup>
+                      <q-item-section avatar><q-icon name="fas fa-file-download" /></q-item-section>
+                      <q-item-section>Load</q-item-section>
+                    </q-item>
+                    <q-item clickable class="text-red-5" @click="clearStorage" v-close-popup>
+                      <q-item-section avatar><q-icon name="delete" /></q-item-section>
+                      <q-item-section>Delete</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-chip>
+            </div>
+          </template>
+          <q-card id="drag-file" flat bordered v-bind:class="{'flex flex-center': !fileSourceList.length, 'bg-grey-2': isHovering}"
+                  style="min-height: 30vh; border-style: dashed">
             <q-card-section>
-              <q-item>
-                <q-item-section class="text-weight-bold">
-                  {{fileSourceList.length === 1 ? '1 file' : `${fileSourceList.length} files`}} selected
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn outline label="Add" icon="add" color="primary" @click="browseFile" no-caps />
-                </q-item-section>
-              </q-item>
-              <q-separator inset />
-              <q-list bordered separator class="q-ma-md bg-white">
-                <q-item v-for="(file, index) in fileSourceList" :key="index">
-                  <q-item-section avatar>
-                    <q-avatar icon="folder_open" color="primary" text-color="white" />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label>{{ file.label }}</q-item-label>
-                    <q-item-label caption>{{ file.value }}</q-item-label>
+              <template v-if="!fileSourceList.length">
+                <div class="text-center">
+                  <q-icon name="save_alt" color="blue-2" size="72px" />
+                  <p class="text-grey-9">Drag your files here</p>
+                  <q-btn unelevated label="Browse" color="blue-1" text-color="primary" @click="browseFile" no-caps />
+                </div>
+              </template>
+              <template v-else>
+                <q-item>
+                  <q-item-section class="text-weight-bold">
+                    {{fileSourceList.length === 1 ? '1 file' : `${fileSourceList.length} files`}} selected
                   </q-item-section>
                   <q-item-section side>
-                    <q-btn flat round icon="delete" @click="fileSourceList.splice(Number(index),1)" />
+                    <q-btn outline label="Add" icon="add" color="primary" @click="browseFile" no-caps />
                   </q-item-section>
                 </q-item>
-              </q-list>
-              <div class="row justify-end">
-                <q-item-section side>
-                  <q-btn flat label="Cancel" @click="fileSourceList=[]" no-caps />
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn unelevated label="Next" @click="$store.commit('incrementStep')" icon-right="fas fa-angle-right" color="green-7" no-caps />
-                </q-item-section>
-              </div>
+                <q-separator inset />
+                <q-list bordered separator class="q-ma-md bg-white">
+                  <q-item v-for="(file, index) in fileSourceList" :key="index">
+                    <q-item-section avatar>
+                      <q-avatar icon="folder_open" color="primary" text-color="white" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label>{{ file.label }}</q-item-label>
+                      <q-item-label caption>{{ file.value }}</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-btn flat round icon="delete" @click="fileSourceList.splice(Number(index),1)" />
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+                <div class="row justify-end">
+                  <q-item-section side>
+                    <q-btn flat label="Cancel" @click="fileSourceList=[]" no-caps />
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn unelevated label="Next" @click="$store.commit('incrementStep')" icon-right="fas fa-angle-right" color="green-7" no-caps />
+                  </q-item-section>
+                </div>
+              </template>
             </q-card-section>
           </q-card>
         </q-card-section>
@@ -85,6 +107,8 @@
 
   @Component
   export default class DataSourceAnalyzer extends Vue {
+    private isHovering: boolean = false
+    private hasSavedMap: boolean = false
 
     get step (): number { return this.$store.getters.curationStep }
 
@@ -92,6 +116,44 @@
     set fileSourceList (value) { this.$store.commit('file/updateSourceList', value) }
 
     get files (): string[] { return this.fileSourceList.map(f => f.value) }
+
+    mounted () {
+      this.hasSavedMap = !!localStorage.getItem('f4h-store-fileSourceList')
+      // Drag and drop handlers
+      const holder = document.getElementById('drag-file');
+      if (holder) {
+        holder.ondragenter = () => { this.isHovering = true; return false }
+
+        holder.ondragover = () => false
+
+        holder.ondragleave = () => false
+
+        holder.ondragend = () => false
+
+        holder.ondrop = (e) => {
+          this.isHovering = false
+          e.preventDefault()
+          if (e && e.dataTransfer) {
+            [...e.dataTransfer.files].map(file => {
+              this.$store.commit('file/addFile', file.path)
+            })
+          }
+          return false
+        }
+      }
+    }
+
+    loadFromStorage () {
+      this.$q.loading.show()
+      this.$store.dispatch('file/initializeStore')
+        .then(() => this.$q.loading.hide())
+        .catch(() => this.$q.loading.hide())
+    }
+
+    clearStorage () {
+      localStorage.removeItem('f4h-store-fileSourceList')
+      this.hasSavedMap = false
+    }
 
     browseFile (): void {
       ipcRenderer.send('browse-file')

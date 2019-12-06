@@ -46,7 +46,10 @@ import {
   Notify,
   AppFullscreen,
   QTree,
-  QScrollArea
+  QScrollArea,
+  QMenu,
+  QChip,
+  ClosePopup
 } from 'quasar'
 
 Vue.use(Quasar, {
@@ -102,9 +105,12 @@ Vue.use(Quasar, {
     QSpace,
     QTooltip,
     QTree,
-    QScrollArea
+    QScrollArea,
+    QMenu,
+    QChip
   },
   directives: {
+    ClosePopup
   },
   plugins: {
     Dialog,

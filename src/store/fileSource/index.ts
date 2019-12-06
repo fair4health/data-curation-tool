@@ -1,4 +1,4 @@
-import { FileSource, Sheet } from '@/common/file-source';
+import { FileSource, Sheet } from '@/common/file-source'
 
 const fileSource = {
   namespaced: true,
@@ -9,7 +9,7 @@ const fileSource = {
   },
   getters: {
     sourceList: state => state.fileSourceList,
-    currentFile: state => state.currentFile,
+    currentFile: state => state.fileSourceList.find(f => f.path === state.currentFile?.path),
     sheets: state => state.currentFile?.sheets || [],
     currentSheet: state => state.currentFile?.currentSheet,
     selectedElements: state => state.selectedElements || [],
@@ -19,8 +19,8 @@ const fileSource = {
     updateSourceList (state, sourceList: FileSource[]) {
       state.fileSourceList = sourceList
     },
-    setCurrentFile (state, file: FileSource) {
-      state.currentFile = state.fileSourceList.find(f => f.path === file.path) || null
+    setCurrentFile (state, file: FileSource | null) {
+      state.currentFile = state.fileSourceList.find(f => f.path === file?.path) || null
     },
     setSheets (state, sheets: string[]) {
       if (state.currentFile) {
@@ -51,7 +51,18 @@ const fileSource = {
       state.selectedElements = list
     }
   },
-  actions: {}
+  actions: {
+    initializeStore (state) {
+      return new Promise((resolve, reject) => {
+        const fileSourceList = localStorage.getItem('f4h-store-fileSourceList')
+        if (fileSourceList) {
+          Object.assign(state.state, JSON.parse(fileSourceList))
+          resolve(true)
+        }
+        reject(false)
+      })
+    }
+  }
 }
 
 export default fileSource

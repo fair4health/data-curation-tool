@@ -110,7 +110,7 @@
     private pagination = { page: 1, rowsPerPage: 0 }
     private selectedStr: string = ''
     private selectedElem: any = null
-    private expanded = []
+    private expanded: string[] = []
     private filter: string = ''
     get match (): boolean { return this.$store.getters.match }
     set match (value) { this.$store.commit('setMatch', value) }
@@ -171,7 +171,7 @@
     }
     @Watch('currentFHIRProf')
     onFHIRProfileChanged (): void {
-      ([this.tickedFHIRAttr, this.selectedElem] = [[], null])
+      ([this.tickedFHIRAttr, this.selectedElem, this.expanded] = [[], null, [this.currentFHIRRes]])
       this.loadingFhir = true
       this.$store.dispatch('fhir/getElements', this.currentFHIRProf)
         .then(() => {

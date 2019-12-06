@@ -9,15 +9,18 @@
         >
           <template v-slot:top="props">
             <q-card flat class="full-width">
-              <div class="row">
-                <q-item-section>
-                  <q-item-label class="text-h5 text-grey-10">Data Source</q-item-label>
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn flat dense color="primary" icon="autorenew" @click="fetchSheets" no-caps>
-                    <q-tooltip>Reload File</q-tooltip>
-                  </q-btn>
-                </q-item-section>
+              <div class="row items-center">
+                <q-item-label class="text-h5 text-grey-10">Data Source</q-item-label>
+                <q-space />
+                <q-btn flat dense rounded color="primary" icon="get_app" @click="exportState">
+                  <q-tooltip>Export</q-tooltip>
+                </q-btn>
+                <q-btn flat dense rounded color="primary" icon="save" @click="saveState">
+                  <q-tooltip>Save</q-tooltip>
+                </q-btn>
+                <q-btn flat dense round color="primary" icon="autorenew" @click="fetchSheets">
+                  <q-tooltip>Reload File</q-tooltip>
+                </q-btn>
               </div>
             </q-card>
           </template>
@@ -149,6 +152,27 @@
       }).onOk(() => {
         this.$store.commit('decrementStep')
       })
+    }
+    saveState () {
+      localStorage.setItem('f4h-store-fileSourceList', JSON.stringify(this.$store.state.file))
+      this.$q.notify({
+        message: 'Saved',
+        icon: 'check',
+        color: 'green-6'
+      })
+    }
+    exportState () {
+      const filename = 'f4h_mapping_data.json';
+      const jsonStr = JSON.stringify(this.$store.state.file.fileSourceList);
+
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(jsonStr));
+      element.setAttribute('download', filename);
+
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
     }
 
   }
