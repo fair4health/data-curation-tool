@@ -52,14 +52,14 @@ const fileSource = {
     }
   },
   actions: {
-    initializeStore (state) {
+    initializeStore (state, data): Promise<boolean> {
       return new Promise((resolve, reject) => {
-        const fileSourceList = localStorage.getItem('f4h-store-fileSourceList')
-        if (fileSourceList) {
-          Object.assign(state.state, JSON.parse(fileSourceList))
+        if (data) {
+          Object.assign(state.state, data)
           resolve(true)
+        } else {
+          reject(false)
         }
-        reject(false)
       })
     }
   }

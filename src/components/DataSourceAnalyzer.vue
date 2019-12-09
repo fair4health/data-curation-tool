@@ -12,26 +12,24 @@
     >
       <q-card>
         <q-card-section>
-          <template v-if="hasSavedMap">
-            <div class="row justify-end q-mb-sm">
-              <q-chip square clickable icon="save">
-                <q-badge color="red-5" floating>1</q-badge>
-                Saved mapping
-                <q-menu>
-                  <q-list style="min-width: 200px">
-                    <q-item clickable class="text-grey-8" @click="loadFromStorage" v-close-popup>
-                      <q-item-section avatar><q-icon name="fas fa-file-download" /></q-item-section>
-                      <q-item-section>Load</q-item-section>
-                    </q-item>
-                    <q-item clickable class="text-red-5" @click="clearStorage" v-close-popup>
-                      <q-item-section avatar><q-icon name="delete" /></q-item-section>
-                      <q-item-section>Delete</q-item-section>
-                    </q-item>
-                  </q-list>
-                </q-menu>
-              </q-chip>
-            </div>
-          </template>
+          <div v-if="hasSavedMap" class="row q-mb-sm q-gutter-sm">
+            <q-btn icon="fas fa-save" unelevated size="13px" color="blue-1" text-color="primary" no-caps>
+              <q-tooltip>Load from storage</q-tooltip>
+              <q-badge color="red-5" floating>1</q-badge>
+              <q-menu>
+                <q-list style="min-width: 200px">
+                  <q-item clickable class="text-grey-9" @click="loadFromStorage" v-close-popup>
+                    <q-item-section avatar><q-icon name="fas fa-file-download" /></q-item-section>
+                    <q-item-section>Load</q-item-section>
+                  </q-item>
+                  <q-item clickable class="text-red-5" @click="clearStorage" v-close-popup>
+                    <q-item-section avatar><q-icon name="delete" /></q-item-section>
+                    <q-item-section>Delete</q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </q-btn>
+          </div>
           <q-card id="drag-file" flat bordered v-bind:class="{'flex flex-center': !fileSourceList.length, 'bg-grey-2': isHovering}"
                   style="min-height: 30vh; border-style: dashed">
             <q-card-section>
@@ -40,6 +38,9 @@
                   <q-icon name="save_alt" color="blue-2" size="72px" />
                   <p class="text-grey-9">Drag your files here</p>
                   <q-btn unelevated label="Browse" color="blue-1" text-color="primary" @click="browseFile" no-caps />
+                  <div class="q-my-xs text-weight-bold text-grey-9">OR</div>
+                  <q-btn unelevated label="Import saved mapping (json)" color="blue-1" text-color="primary"
+                         @click="importSavedMapping" icon="fas fa-file-import" no-caps />
                 </div>
               </template>
               <template v-else>
@@ -135,7 +136,8 @@
           e.preventDefault()
           if (e && e.dataTransfer) {
             [...e.dataTransfer.files].map(file => {
-              this.$store.commit('file/addFile', file.path)
+              if (file.path.split('.')?.pop()?.match('(xl|csv).*'))
+                this.$store.commit('file/addFile', file.path)
             })
           }
           return false
@@ -144,15 +146,33 @@
     }
 
     loadFromStorage () {
-      this.$q.loading.show()
-      this.$store.dispatch('file/initializeStore')
-        .then(() => this.$q.loading.hide())
-        .catch(() => this.$q.loading.hide())
+      const fileStore = localStorage.getItem('f4h-store-fileSourceList')
+      if (fileStore) {
+        this.$q.loading.show()
+        this.$store.dispatch('file/initializeStore', JSON.parse(fileStore))
+          .then(() => this.$q.loading.hide())
+          .catch(() => this.$q.loading.hide())
+      }
     }
 
     clearStorage () {
       localStorage.removeItem('f4h-store-fileSourceList')
       this.hasSavedMap = false
+    }
+
+    importSavedMapping (): void {
+      ipcRenderer.send('browse-mapping')
+      ipcRenderer.on('selected-mapping', (event, data) => {
+        if (data) {
+          this.$store.dispatch('file/initializeStore', data)
+            .catch(() => {
+              this.$q.notify({message: 'Data could\'t be imported', color: 'red-6'})
+            })
+        } else {
+          this.$q.notify({message: 'Data could\'t be imported', color: 'red-6'})
+        }
+        ipcRenderer.removeAllListeners('selected-mapping')
+      })
     }
 
     browseFile (): void {

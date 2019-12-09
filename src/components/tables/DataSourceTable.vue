@@ -12,10 +12,10 @@
               <div class="row items-center">
                 <q-item-label class="text-h5 text-grey-10">Data Source</q-item-label>
                 <q-space />
-                <q-btn flat dense rounded color="primary" icon="get_app" @click="exportState">
+                <q-btn flat dense round color="primary" icon="get_app" @click="exportState">
                   <q-tooltip>Export</q-tooltip>
                 </q-btn>
-                <q-btn flat dense rounded color="primary" icon="save" @click="saveState">
+                <q-btn flat dense round color="primary" icon="save" @click="saveState">
                   <q-tooltip>Save</q-tooltip>
                 </q-btn>
                 <q-btn flat dense round color="primary" icon="autorenew" @click="fetchSheets">
@@ -162,17 +162,15 @@
       })
     }
     exportState () {
-      const filename = 'f4h_mapping_data.json';
-      const jsonStr = JSON.stringify(this.$store.state.file.fileSourceList);
-
-      const element = document.createElement('a');
-      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(jsonStr));
-      element.setAttribute('download', filename);
-
-      element.style.display = 'none';
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
+      ipcRenderer.send('export-file', JSON.stringify(this.$store.state.file))
+      ipcRenderer.on('export-done', (event, result) => {
+        if (result) {
+          this.$q.notify({message: 'File is successfully exported', color: 'green-6'})
+        } else {
+          this.$q.notify({message: 'Something went wrong, try again', color: 'red-6'})
+        }
+        ipcRenderer.removeAllListeners('export-done')
+      })
     }
 
   }

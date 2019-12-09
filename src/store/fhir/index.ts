@@ -47,7 +47,7 @@ const fhirStore = {
     }
   },
   actions: {
-    getResources ({ commit }) {
+    getResources ({ commit }): Promise<boolean> {
       return new Promise((resolve, reject) => {
         fhirService.search('CapabilityStatement', {})
           .then(bundle => {
@@ -60,7 +60,7 @@ const fhirStore = {
           .catch(err => reject(err) )
       })
     },
-    getProfilesByRes ({ commit }, resource: string) {
+    getProfilesByRes ({ commit }, resource: string): Promise<boolean> {
       return new Promise((resolve, reject) => {
         fhirService.search('StructureDefinition',
           {_summary: 'data', base: `${urls.hl7}/StructureDefinition/${resource}`}, true)
@@ -74,7 +74,7 @@ const fhirStore = {
           .catch(err => reject(err) )
       })
     },
-    getElements ({ commit }, profileId: string) {
+    getElements ({ commit }, profileId: string): Promise<boolean> {
       return new Promise((resolve, reject) => {
         fhirService.search('StructureDefinition', {_id: profileId}, true)
           .then(bundle => {

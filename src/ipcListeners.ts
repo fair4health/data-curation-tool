@@ -1,6 +1,7 @@
-import { ipcMain, dialog, FileFilter } from 'electron'
+import { ipcMain, dialog } from 'electron'
 import * as Excel from 'xlsx'
 import { cellType } from './common/data-table'
+import fs from 'fs'
 
 const workbookMap: Map<string, Excel.WorkBook> = new Map<string, Excel.WorkBook>()
 
@@ -10,12 +11,7 @@ const workbookMap: Map<string, Excel.WorkBook> = new Map<string, Excel.WorkBook>
 ipcMain.on('browse-file', (event) => {
   dialog.showOpenDialog({
     properties: ['openFile', 'multiSelections'],
-    filters: [
-      new class implements FileFilter {
-        extensions: string[] = ['xl*', 'csv']
-        name: string = 'Excel or CSV'
-      } ()
-    ]
+    filters: [{ extensions: ['xl*', 'csv'], name: 'Excel or CSV' }]
   }, (files) => {
     if (files) {
       event.sender.send('selected-directory', files)
@@ -62,4 +58,40 @@ ipcMain.on('get-sheet-headers', (event, data) => {
     }
   }
   event.sender.send('ready-sheet-headers', headers)
+})
+
+/**
+ * Browses files with .json extension and return parsed content
+ */
+ipcMain.on('browse-mapping', (event) => {
+  dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ extensions: ['json'], name: 'JSON (.json)' }]
+  }, (files) => {
+    if (files && files.length) {
+      fs.readFile(files[0], (err, data) => {
+        event.sender.send('selected-mapping', JSON.parse(data.toString()))
+      })
+    }
+  })
+})
+
+/**
+ * File export - opens SAVE dialog and saves file with json extension
+ */
+ipcMain.on('export-file', (event, content) => {
+  dialog.showSaveDialog({
+    filters: [{ extensions: ['json'], name: 'JSON (.json)' }]
+  }, (filename) => {
+    if (!filename) {
+      return;
+    }
+    fs.writeFile(filename, content, (err) => {
+      if (err) {
+        event.sender.send('export-done', null)
+        return;
+      }
+      event.sender.send('export-done', true)
+    })
+  })
 })
