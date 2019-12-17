@@ -1,5 +1,5 @@
 <template>
-  <div class="splitter-slot" v-bind:class="{disabledArea: !match}">
+  <div class="splitter-slot">
     <q-card flat class="bg-white">
       <q-card-section class="splitter-slot">
         <q-item-section class="q-px-xs">
@@ -42,7 +42,7 @@
                               :size="prop.node.children.length ? 'sm' : 'xs'"
                               class="q-mr-sm"
                       />
-                      <div>{{ prop.node.label }}</div>
+                      <div>{{ prop.node.label }} <span class="text-red">{{ prop.node.min ? '*' : '' }}</span></div>
                     </div>
                   </template>
                 </q-tree>
@@ -53,14 +53,18 @@
             <template v-slot:after>
               <q-scroll-area style="height: 50vh" v-if="selectedElem">
                 <div class="q-px-md">
-                  <q-card flat class="overflow-auto q-ma-xs">
-                    <div class="text-h6 text-weight-bold text-primary">
+                  <div flat class="overflow-auto q-ma-xs no-wrap">
+                    <q-item-label class="text-h6 text-weight-bold text-primary">
                       <u>
                         {{ selectedElem.value }}
                         <q-tooltip>{{ selectedElem.value }}</q-tooltip>
                       </u>
-                    </div>
-                  </q-card>
+                      <span class="text-red">{{ selectedElem.min ? '*' : '' }}</span>
+                    </q-item-label>
+                    <q-item-label caption class="text-weight-bold">
+                      [{{ selectedElem.min }}..{{ selectedElem.max }}]
+                    </q-item-label>
+                  </div>
                   <q-card flat v-if="selectedElem.short">
                     <q-card-section>
                       <div class="text-h6">Short</div>
@@ -89,9 +93,8 @@
         </div>
         <q-separator />
         <div class="row absolute-bottom q-ma-xs">
-          <q-btn flat label="Back" color="primary" icon="fas fa-angle-left" @click="match=false" no-caps />
           <q-space />
-          <q-btn :disable="!tickedFHIRAttr.length" unelevated label="Match" color="blue-1" text-color="primary"
+          <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" unelevated label="Match" color="blue-1" text-color="primary"
                  @click="matchFields" no-caps />
         </div>
       </q-card-section>
@@ -101,7 +104,7 @@
 
 <script lang="ts">
   import { Component, Vue, Watch } from 'vue-property-decorator'
-  import { Sheet } from '@/common/file-source'
+  import {FileSource, Sheet} from '@/common/file-source'
 
   @Component
   export default class FhirResourceTable extends Vue {
@@ -112,8 +115,6 @@
     private selectedElem: any = null
     private expanded: string[] = []
     private filter: string = ''
-    get match (): boolean { return this.$store.getters.match }
-    set match (value) { this.$store.commit('setMatch', value) }
 
     get fhirProfileList (): string[] { return this.$store.getters['fhir/profileList'].map(r => r.id) }
     set fhirProfileList (value) { this.$store.commit('fhir/setProfileList', value) }
@@ -128,7 +129,7 @@
     set fhirElementList (value) { this.$store.commit('fhir/setElementList', value) }
 
     get fhirElementListFlat (): any { return this.$store.getters['fhir/elementListFlat'] }
-
+    get currentSource (): FileSource { return this.$store.getters['file/currentFile'] }
     get currentSheet (): Sheet | null { return this.$store.getters['file/currentSheet'] }
 
     get selectedAttr (): any { return this.$store.getters['file/selectedElements'] }
@@ -193,10 +194,13 @@
         for (const column of this.currentSheet?.headers || []) {
           if (column?.value === attr.value) {
             column['target'] = this.tickedFHIRAttr
+            this.$log.success('Mapping',
+              this.currentSource?.label + '.' + this.currentSheet?.label + '.' + column.value +
+              ' - (' + this.tickedFHIRAttr.map(e => e.value).join(', ') + ')')
           }
         }
       }
-      ([this.selectedAttr, this.tickedFHIRAttr, this.match] = [[], [], false])
+      ([this.selectedAttr, this.tickedFHIRAttr] = [[], []])
       this.$q.notify({ message: 'Target value entered successfully', icon: 'check', color: 'green-6'})
     }
 

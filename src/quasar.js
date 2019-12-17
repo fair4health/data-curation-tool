@@ -49,7 +49,8 @@ import {
   QScrollArea,
   QMenu,
   QChip,
-  ClosePopup
+  ClosePopup,
+  QPageSticky
 } from 'quasar'
 
 Vue.use(Quasar, {
@@ -107,7 +108,8 @@ Vue.use(Quasar, {
     QTree,
     QScrollArea,
     QMenu,
-    QChip
+    QChip,
+    QPageSticky
   },
   directives: {
     ClosePopup

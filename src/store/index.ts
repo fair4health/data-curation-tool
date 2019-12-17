@@ -13,11 +13,11 @@ export default new Vuex.Store({
   },
   state: {
     curationStep: 1,
-    match: false
+    log: ''
   },
   getters: {
     curationStep: state => state.curationStep,
-    match: state => state.match
+    log: state => state.log
   },
   mutations: {
     incrementStep (state) {
@@ -26,8 +26,8 @@ export default new Vuex.Store({
     decrementStep (state) {
       state.curationStep -= 1
     },
-    setMatch (state, value) {
-      state.match = value
+    updateLog (state, message) {
+      state.log += message + '<br/>'
     }
   },
   actions: {}

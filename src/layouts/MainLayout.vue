@@ -104,6 +104,7 @@
           horizontal
           :limits="limits"
           :style="style"
+          after-class="bg-white logger-class"
         >
 
           <template v-slot:before>
@@ -111,28 +112,44 @@
           </template>
 
           <template v-slot:after>
-            <div>
-              <q-toolbar class="bg-grey-4">
-                <q-toolbar-title class="text-grey-8 text-h6">
-                  <q-icon name="fas fa-columns" />
+            <q-page-sticky expand position="top" style="position: sticky; transform: none">
+              <q-toolbar class="bg-grey-4 shadow-1">
+                <q-toolbar-title class="text-grey-8 text-subtitle1">
+                  <q-icon name="fas fa-columns fa-sm" />
                   Console
                 </q-toolbar-title>
 
                 <q-space />
 
+                <template v-if="splitterModel < limits[1]">
+                  <div v-if="searchKey" class="text-caption">
+                    {{ matchCount }} {{ matchCount > 1 ? ' matches' : ' match' }}
+                  </div>
+                  <q-input dense
+                           standout="bg-grey-8"
+                           placeholder="Search..."
+                           v-model="searchKey"
+                           class="q-ml-md"
+                  >
+                    <template v-slot:append>
+                      <q-icon v-if="searchKey === ''" name="search" />
+                      <q-icon v-else name="clear" class="cursor-pointer" @click="searchKey = ''" />
+                    </template>
+                  </q-input>
+                </template>
                 <q-btn
                   round
                   flat
                   dense
+                  color="grey-8"
                   :icon="splitterModel >= limits[1] ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
-                  @click="splitterModel >= limits[1] ? splitterModel = 70 : splitterModel = limits[1]" />
+                  @click="splitterModel >= limits[1] ? splitterModel = 70 : splitterModel = limits[1]"
+                />
               </q-toolbar>
-              <template v-if="splitterModel < limits[1]">
-                <div class="q-ma-sm">
-                  Log
-                </div>
-              </template>
-            </div>
+            </q-page-sticky>
+            <template v-if="splitterModel < limits[1]">
+              <div class="q-mt-xs q-mx-sm q-mb-md text-caption" v-html="highlight(logger, searchKey)" />
+            </template>
           </template>
 
         </q-splitter>
@@ -149,15 +166,44 @@
     private splitterModel: any = this.limits[1]
     private miniState: boolean = true
     private leftDrawerOpen: boolean = false
+    private searchKey: string = ''
+    private matchCount: number = 0
 
     get step () { return this.$store.getters.curationStep }
     get style () { return {height: this.$q.screen.height - 50 + 'px'} }
     get limits () { return [20, Math.floor(100 - (50.0 / (this.$q.screen.height - 50) * 100))] }
     get isCollapsed () { return (this.$q.screen.gt.xs && (this.$q.screen.lt.lg || this.miniState)) }
+    get logger () { return this.$store.getters.log }
 
     @Watch('$q.screen.height')
-    onChange () {
+    onScreenChange () {
       this.splitterModel = this.limits[1]
+    }
+
+    @Watch('logger')
+    @Watch('splitterModel')
+    onLoggerChange () {
+      const logDiv = document.getElementsByClassName('logger-class')[0]
+      if (logDiv) {
+        setTimeout(() => {
+          logDiv.scrollTo(0, logDiv.scrollHeight)
+        }, 0)
+      }
+    }
+
+    highlight (text: string, search: string): string {
+      let count = 0
+      if (!search)
+        return text
+
+      search = search.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&')
+      const regex = new RegExp(`(${search})(?!([^<]+)?>)`, 'gi')
+      const filtered = text.replace(regex, match => {
+        count += 1
+        return '<span style="background:#9CC3F6">' + match + '</span>'
+      })
+      this.matchCount = count
+      return filtered
     }
   }
 </script>

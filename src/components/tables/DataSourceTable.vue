@@ -1,5 +1,5 @@
 <template>
-  <div class="splitter-slot" v-bind:class="{disabledArea: match}">
+  <div class="splitter-slot">
     <q-card flat class="bg-white">
       <q-card-section class="splitter-slot">
         <q-table flat class="sticky-header-table q-mb-lg" title="Data Source" :data="sheetHeaders" binary-state-sort
@@ -49,9 +49,6 @@
         </q-table>
         <div class="row absolute-bottom q-ma-xs">
           <q-btn flat label="Prev. Step" color="primary" icon="fas fa-angle-left" @click="previousStep" no-caps />
-          <q-space />
-          <q-btn unelevated label="Continue" color="blue-1" text-color="primary" icon-right="fas fa-angle-right"
-                 @click="match=true" v-if="selectedAttr.length" no-caps />
         </div>
       </q-card-section>
     </q-card>
@@ -73,9 +70,6 @@
     get dataSourceColumns (): object[] { return sourceDataTableHeaders }
     get fieldTypes (): string[] { return Object.values(cellType) }
 
-    get match (): boolean { return this.$store.getters.match }
-    set match (value) { this.$store.commit('setMatch', value) }
-
     get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
     set fileSourceList (value) { this.$store.commit('file/updateSourceList', value) }
 
@@ -92,7 +86,6 @@
     set selectedAttr (value) { this.$store.commit('file/setSelectedElements', value) }
 
     created () {
-      this.match = false
       if (!this.currentSource) this.currentSource = this.fileSourceList[0]
       if (this.currentSheet) this.onSheetChanged()
     }
@@ -134,6 +127,9 @@
       this.loadingAttr = true
       ipcRenderer.send('get-sheet-headers', {path: this.currentSource?.value, sheet: this.currentSheet?.value})
       ipcRenderer.on('ready-sheet-headers', (event, headers) => {
+        if (!headers.length) {
+          this.$log.warning('No Sheet Headers', 'Headers couldn\'t be detected')
+        }
         this.sheetHeaders = headers
         this.$store.commit('file/setSheetHeaders', headers)
         this.loadingAttr = false

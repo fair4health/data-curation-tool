@@ -40,8 +40,8 @@ ipcMain.on('get-sheet-headers', (event, data) => {
   if (workbookMap.has(data.path)) {
     const workbook = workbookMap.get(data.path)
     const sheet: Excel.WorkSheet | null = workbook ? workbook.Sheets[data.sheet] : null
-    if (!sheet) {
-      event.sender.send('ready-sheet-headers', null)
+    if (!(sheet && sheet['!ref'])) {
+      event.sender.send('ready-sheet-headers', [])
       return;
     }
     const range = Excel.utils.decode_range(sheet['!ref'] as string)

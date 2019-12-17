@@ -11,7 +11,7 @@ const fileSource = {
     sourceList: state => state.fileSourceList,
     currentFile: state => state.fileSourceList.find(f => f.path === state.currentFile?.path),
     sheets: state => state.currentFile?.sheets || [],
-    currentSheet: state => state.currentFile?.currentSheet,
+    currentSheet: state => state.currentFile?.sheets.find(s => s.value === state.currentFile?.currentSheet?.value),
     selectedElements: state => state.selectedElements || [],
     fileByPath : state => filePath => state.fileSourceList.find(file => file.path === filePath)
   },
@@ -35,7 +35,9 @@ const fileSource = {
       }
     },
     setSheetHeaders (state, headers: any) {
-      state.currentFile.currentSheet.headers = headers
+      if (state.currentFile) {
+        state.currentFile.currentSheet.headers = headers
+      }
     },
     setCurrentSheet (state, sheet: Sheet | null) {
       if (state.currentFile) {
@@ -52,10 +54,11 @@ const fileSource = {
     }
   },
   actions: {
-    initializeStore (state, data): Promise<boolean> {
+    initializeStore ({commit, state}, data): Promise<boolean> {
       return new Promise((resolve, reject) => {
         if (data) {
-          Object.assign(state.state, data)
+          Object.assign(state, data)
+          commit('setCurrentFile', null)
           resolve(true)
         } else {
           reject(false)

@@ -4,8 +4,11 @@ import router from './router'
 import store from './store'
 import './quasar'
 import { QVueGlobals } from 'quasar'
+import logger from './common/logger'
 
 Vue.config.productionTip = false
+
+Vue.use(logger)
 
 new Vue({
   router,
