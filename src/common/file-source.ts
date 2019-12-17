@@ -9,6 +9,7 @@ export interface File {
 export interface SourceDataElement {
   type?: string
   value?: string
+  target?: any[]
 }
 export class FileSource implements File {
   path: string

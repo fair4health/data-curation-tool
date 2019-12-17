@@ -4752,6 +4752,8 @@ declare namespace fhir {
     definition?: string
     comment?: string
     short?: string
+    min?: integer
+    max?: string
     children?: ElementTree[]
   }
   type Resource = (DomainResource|Account|ActivityDefinition|AllergyIntolerance|Appointment|AppointmentResponse|

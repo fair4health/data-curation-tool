@@ -96,6 +96,8 @@ const fhirStore = {
                       definition: element?.definition,
                       comment: element?.comment,
                       short: element?.short,
+                      min: element?.min,
+                      max: element?.max,
                       children: []
                     })
                   }
