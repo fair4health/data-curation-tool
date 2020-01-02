@@ -2,7 +2,8 @@
 
 import { app, protocol, BrowserWindow, dialog } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import './ipcListeners.ts';
+import log from 'electron-log'
+import './ipcListeners.ts'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -19,6 +20,8 @@ function createWindow () {
   // Make window fullscreen
   win.maximize()
   win.show()
+
+  log.info('Electron - Initializing Window...')
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
@@ -37,7 +40,7 @@ function createWindow () {
       message: 'This process has crashed.',
       buttons: ['Reload', 'Close']
     }
-
+    log.error('Renderer Process Crashed')
     dialog.showMessageBox(options, (index) => {
       if (index === 0) win?.reload()
       else win?.close()

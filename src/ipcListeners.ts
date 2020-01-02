@@ -1,7 +1,8 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, app } from 'electron'
 import * as Excel from 'xlsx'
 import { cellType } from './common/data-table'
 import fs from 'fs'
+import log from 'electron-log'
 
 const workbookMap: Map<string, Excel.WorkBook> = new Map<string, Excel.WorkBook>()
 
@@ -14,6 +15,7 @@ ipcMain.on('browse-file', (event) => {
     filters: [{ extensions: ['xl*', 'csv'], name: 'Excel or CSV' }]
   }, (files) => {
     if (files) {
+      log.info('Browse file - ' + files)
       event.sender.send('selected-directory', files)
     }
   })
@@ -26,8 +28,10 @@ ipcMain.on('read-file', (event, path) => {
   if (path) {
     const workbook: Excel.WorkBook = Excel.readFile(path, {type: 'binary', cellDates: true})
     workbookMap.set(path, workbook)
+    log.info('Read file ' + path)
     event.sender.send('worksheets-ready', workbook.SheetNames)
   } else {
+    log.warn('Cannot read undefined path')
     event.sender.send('worksheets-ready', undefined)
   }
 })
@@ -42,6 +46,7 @@ ipcMain.on('get-sheet-headers', (event, data) => {
     const sheet: Excel.WorkSheet | null = workbook ? workbook.Sheets[data.sheet] : null
     if (!(sheet && sheet['!ref'])) {
       event.sender.send('ready-sheet-headers', [])
+      log.warn(`No columns found in ${data.path} - ${data.sheet}`)
       return;
     }
     const range = Excel.utils.decode_range(sheet['!ref'] as string)
@@ -70,6 +75,7 @@ ipcMain.on('browse-mapping', (event) => {
   }, (files) => {
     if (files && files.length) {
       fs.readFile(files[0], (err, data) => {
+        log.info(`Mapping loaded from ${files[0]}`)
         event.sender.send('selected-mapping', JSON.parse(data.toString()))
       })
     }
@@ -88,6 +94,7 @@ ipcMain.on('export-file', (event, content) => {
     }
     fs.writeFile(filename, content, (err) => {
       if (err) {
+        log.error(`Export file: ${err}`)
         event.sender.send('export-done', null)
         return;
       }

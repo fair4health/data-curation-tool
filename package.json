@@ -23,6 +23,7 @@
     "@quasar/extras": "^1.0.0",
     "axios": "^0.19.0",
     "core-js": "^3.3.2",
+    "electron-log": "^4.0.2",
     "quasar": "^1.0.0",
     "vue": "^2.6.10",
     "vue-property-decorator": "^8.3.0",

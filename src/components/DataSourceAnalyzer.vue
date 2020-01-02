@@ -181,7 +181,7 @@
         if (data) {
           this.$store.dispatch('file/initializeStore', data)
             .then(() => {
-              this.$log.info('Data Source Import', `Found ${this.fileSourceList.length} mapped file(s)`)
+              this.$log.info('Import Mapping', `Found ${this.fileSourceList.length} mapped file(s)`)
             })
             .catch(() => {
               this.$q.notify({message: 'Data could\'t be imported', color: 'red-6'})
