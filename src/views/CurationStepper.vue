@@ -12,7 +12,9 @@
     </template>
 
     <!--The third step - Transforming-->
-    <template v-if="step === 3" />
+    <template v-if="step === 3">
+      <Transformer />
+    </template>
 
     <!--The last step Validation of Resources-->
     <template v-if="step === 4" />
@@ -26,7 +28,8 @@
   @Component({
     components: {
       DataSourceAnalyzer: () => import('@/components/DataSourceAnalyzer.vue'),
-      MetadataMapper: () => import('@/components/MetadataMapper.vue')
+      MetadataMapper: () => import('@/components/MetadataMapper.vue'),
+      Transformer: () => import('@/components/Transformer.vue')
     }
   })
   export default class Stepper extends Vue {
