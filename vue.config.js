@@ -8,7 +8,6 @@ module.exports = {
       customFileProtocol: 'fair4health://./',
       mainProcessFile: 'src/electron-main.ts',
       builderOptions: {
-        productName: 'FAIR4Health Data Curation Tool',
         mac: {
           icon: './dist_electron/bundled/icons/icon.icns'
         },

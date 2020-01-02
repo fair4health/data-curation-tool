@@ -1,5 +1,6 @@
 {
   "name": "fair4health-data-curation-tool",
+  "productName": "FAIR4Health Data Curation Tool",
   "version": "0.1.0",
   "private": true,
   "author": "SRDC Corporation <technical@srdc.com.tr>",
