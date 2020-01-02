@@ -5,20 +5,28 @@
         <q-table flat class="sticky-header-table q-mb-lg" title="Data Source" :data="sheetHeaders" binary-state-sort
                  :columns="dataSourceColumns" row-key="value" selection="multiple" :selected.sync="selectedAttr"
                  :loading="loadingAttr" :grid="$q.screen.lt.sm" :rows-per-page-options="[0]" :pagination.sync="pagination"
-                 no-data-label="Please select a sheet" color="primary" table-style="max-height: 46vh"
+                 color="primary" table-style="max-height: 46vh" :filter="filter"
         >
           <template v-slot:top="props">
             <q-card flat class="full-width">
-              <div class="row items-center">
+              <div class="row items-center q-gutter-xs">
                 <q-item-label class="text-h5 text-grey-10">Data Source</q-item-label>
                 <q-space />
-                <q-btn flat dense round color="primary" icon="get_app" @click="exportState">
+                <q-input dense rounded standout="bg-grey-3" v-model.lazy.trim="filter" class="cursor-pointer"
+                         input-class="text-grey-8" placeholder="Search..." @keydown.esc="filter = ''"
+                >
+                  <template v-slot:append>
+                    <q-icon v-if="!filter" name="search" color="grey-8" />
+                    <q-icon v-else name="clear" color="grey-8" class="cursor-pointer" @click="filter=''" />
+                  </template>
+                </q-input>
+                <q-btn flat dense round color="grey-8" icon="get_app" @click="exportState">
                   <q-tooltip>Export</q-tooltip>
                 </q-btn>
-                <q-btn flat dense round color="primary" icon="save" @click="saveState">
+                <q-btn flat dense round color="grey-8" icon="save" @click="saveState">
                   <q-tooltip>Save</q-tooltip>
                 </q-btn>
-                <q-btn flat dense round color="primary" icon="autorenew" @click="fetchSheets">
+                <q-btn flat dense round color="grey-8" icon="autorenew" @click="fetchSheets">
                   <q-tooltip>Reload File</q-tooltip>
                 </q-btn>
               </div>
@@ -44,7 +52,7 @@
             </q-td>
           </template>
           <template v-slot:no-data="{ icon, message, filter }">
-            {{message}}
+            {{message === 'Loading...' ? message : (currentSheet ? 'No data available' : 'Please select a sheet')}}
           </template>
         </q-table>
         <div class="row absolute-bottom q-ma-xs">
@@ -66,6 +74,7 @@
     private loadingAttr: boolean = false
     private sheetHeaders: SourceDataElement[] = []
     private pagination = { page: 1, rowsPerPage: 0 }
+    private filter: string = ''
 
     get dataSourceColumns (): object[] { return sourceDataTableHeaders }
     get fieldTypes (): string[] { return Object.values(cellType) }
@@ -109,16 +118,14 @@
     }
 
     fetchSheets (): void {
-      this.$q.loading.show({
-        message: `Loading sheets in ${this.currentSource.label}...`
-      })
+      this.loadingAttr = true
       this.$q.loadingBar.start()
       this.sheetHeaders = []
       ipcRenderer.send('read-file', this.currentSource.value)
       ipcRenderer.on('worksheets-ready', (event, worksheets) => {
         this.sheets = worksheets || []
         // this.currentSheet = null
-        this.$q.loading.hide()
+        this.loadingAttr = false
         this.$q.loadingBar.stop()
         ipcRenderer.removeAllListeners('worksheets-ready')
       })
@@ -146,6 +153,7 @@
         class: 'text-weight-bold text-grey-9',
         cancel: true
       }).onOk(() => {
+        this.$store.dispatch('file/destroyStore')
         this.$store.commit('decrementStep')
       })
     }

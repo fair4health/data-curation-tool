@@ -49,7 +49,7 @@ const fileSource = {
         state.fileSourceList.push(new FileSource(filePath))
       }
     },
-    setSelectedElements (state, list) {
+    setSelectedElements (state, list: any[]) {
       state.selectedElements = list
     }
   },
@@ -63,6 +63,14 @@ const fileSource = {
         } else {
           reject(false)
         }
+      })
+    },
+    destroyStore ({commit}): Promise<any> {
+      return new Promise<any>(resolve => {
+        commit('updateSourceList', [])
+        commit('setCurrentFile', null)
+        commit('setSelectedElements', [])
+        resolve()
       })
     }
   }
