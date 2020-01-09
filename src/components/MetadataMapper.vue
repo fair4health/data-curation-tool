@@ -127,13 +127,22 @@
 
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
-  import { SourceDataElement, FileSource, Sheet } from '@/common/file-source'
+  import { FileSource, Sheet } from '@/common/file-source'
+  import Loading from '@/components/Loading.vue'
 
   @Component({
     components: {
-      DataSourceTable: () => import('./tables/DataSourceTable.vue'),
-      FhirResourceTable: () => import('./tables/FhirResourceTable.vue')
-    }
+      DataSourceTable: () => ({
+        component: import('@/components/tables/DataSourceTable.vue'),
+        loading: Loading,
+        delay: 0
+      }),
+      FhirResourceTable: () => ({
+        component: import('@/components/tables/FhirResourceTable.vue'),
+        loading: Loading,
+        delay: 0
+      })
+    } as any
   })
   export default class MetadataMapper extends Vue {
     private splitPercentage: number = 50

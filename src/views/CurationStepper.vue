@@ -24,13 +24,26 @@
 
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
+  import Loading from '@/components/Loading.vue'
 
   @Component({
     components: {
-      DataSourceAnalyzer: () => import('@/components/DataSourceAnalyzer.vue'),
-      MetadataMapper: () => import('@/components/MetadataMapper.vue'),
-      Transformer: () => import('@/components/Transformer.vue')
-    }
+      DataSourceAnalyzer: () => ({
+        component: import('@/components/DataSourceAnalyzer.vue'),
+        loading: Loading,
+        delay: 0
+      }),
+      MetadataMapper: () => ({
+        component: import('@/components/MetadataMapper.vue'),
+        loading: Loading,
+        delay: 0
+      }),
+      Transformer: () => ({
+        component: import('@/components/Transformer.vue'),
+        loading: Loading,
+        delay: 0
+      })
+    } as any
   })
   export default class Stepper extends Vue {
     get step (): number { return this.$store.getters.curationStep }

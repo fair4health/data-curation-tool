@@ -155,11 +155,15 @@
 
 <script lang="ts">
   import { Component, Vue, Watch } from 'vue-property-decorator'
+  import Loading from '@/components/Loading.vue'
 
   @Component({
     components: {
-      Logger: () => import('@/components/Logger.vue')
-    }
+      Logger: () => ({
+        component: import('@/components/Logger.vue'),
+        loading: Loading
+      })
+    } as any
   })
   export default class MainLayout extends Vue {
     private splitterModel: any = this.limits[1]
