@@ -1,5 +1,5 @@
 import { FhirService } from '@/common/services/fhir.service'
-import { urls } from '@/common/api'
+import { environment } from '@/common/environment'
 import StructureDefinition = fhir.StructureDefinition
 import { FHIRUtils } from '@/common/utils/fhir-util'
 
@@ -49,8 +49,9 @@ const fhirStore = {
   actions: {
     getResources ({ commit }): Promise<boolean> {
       return new Promise((resolve, reject) => {
-        fhirService.search('CapabilityStatement', {})
-          .then(bundle => {
+        fhirService.search('CapabilityStatement', null)
+          .then(res => {
+            const bundle = res.data as fhir.Bundle
             const resource = bundle.entry?.length ? bundle.entry[0].resource as fhir.CapabilityStatement : null
             if (resource && resource.rest?.length && resource.rest[0].resource?.length) {
               commit('setResourceList', resource.rest[0].resource.map(r => r.type) || [])
@@ -63,8 +64,9 @@ const fhirStore = {
     getProfilesByRes ({ commit }, resource: string): Promise<boolean> {
       return new Promise((resolve, reject) => {
         fhirService.search('StructureDefinition',
-          {_summary: 'data', base: `${urls.hl7}/StructureDefinition/${resource}`}, true)
-          .then(bundle => {
+          {_summary: 'data', base: `${environment.hl7}/StructureDefinition/${resource}`}, true)
+          .then(res => {
+            const bundle = res.data as fhir.Bundle
             commit('setProfileList', bundle.entry?.map(e => {
               const structure = e.resource as fhir.StructureDefinition
               return {id: structure.id, title: structure.title}
@@ -77,7 +79,8 @@ const fhirStore = {
     getElements ({ commit }, profileId: string): Promise<boolean> {
       return new Promise((resolve, reject) => {
         fhirService.search('StructureDefinition', {_id: profileId}, true)
-          .then(bundle => {
+          .then(res => {
+            const bundle = res.data as fhir.Bundle
             if (bundle.entry?.length) {
               const resource = bundle.entry[0].resource as fhir.StructureDefinition
               const list: fhir.ElementTree[] = []

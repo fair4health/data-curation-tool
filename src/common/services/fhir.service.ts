@@ -1,33 +1,94 @@
-import axios from 'axios'
-import { urls } from '@/common/api'
-import { FHIRUtils } from '@/common/utils/fhir-util'
+import { environment } from '../environment'
+import { FhirClient } from 'ng-fhir/FhirClient'
 
 export class FhirService {
 
-  constructor () {}
+  config: any
+  client: FhirClient
 
-  search (resourceType: string, query: object, all?: boolean): Promise<fhir.Bundle> {
-    const path = urls.f4hfhir + '/' + resourceType
+  constructor () {
+    this.config = environment.server.config
+    this.client = new FhirClient(this.config)
+  }
+
+  /**
+   * Returns resources searched by resourceType and query as Bundle
+   * @param resourceType
+   * @param query
+   * @param all
+   * @returns {Promise<any>}
+   */
+  search (resourceType: string, query: any, all?: boolean): Promise<any> {
     if (!all) {
-      return new Promise((resolve, reject) => {
-        axios.get(path + FHIRUtils.jsonToQueryString(query))
-          .then(data => resolve(data.data as fhir.Bundle) )
-          .catch(err => reject(err) )
-      })
+      return this.client.search({type: resourceType, query})
     } else {
       const q = Object.assign({}, query)
       q['_summary'] = 'count'
       return new Promise((resolve, reject) => {
-        axios.get(path + FHIRUtils.jsonToQueryString(q))
+        this.client.search({type: resourceType, query: q})
           .then(data => {
             query['_count'] = data.data.total || '1'
-            axios.get(path + FHIRUtils.jsonToQueryString(query))
-              .then(result => resolve(result.data as fhir.Bundle) )
-              .catch(err => reject(err) )
+            this.client.search({type: resourceType, query})
+              .then(result => {
+                resolve(result)
+              })
+              .catch(err => reject(err))
           })
           .catch(err => reject(err))
       })
     }
+  }
+
+  /**
+   * Returns the resource with given reference ("ResourceType/id")
+   * @param ref
+   * @param noCache
+   * @returns {Promise<any>}
+   */
+  getResource (ref: string, noCache?: boolean): Promise<any> {
+    if (noCache) {
+      return new Promise((resolve, reject) => {
+        const [resourceType, id] = ref.split('\/')
+        this.search(resourceType, {_id: id})
+          .then(data => {
+            try {
+              data.data = data.data.entry[0].resource
+              resolve(data)
+            } catch (err) {
+              reject(err)
+            }
+          })
+          .catch(err => reject(err))
+      })
+    }
+    return this.client.read({type: ref.split('/')[0], id: ref.split('/')[1]})
+  }
+
+  /**
+   * Post resource with given reference ("Resource")
+   * @param resource
+   * @returns {Promise<any>}
+   */
+  postResource (resource: any): Promise<any> {
+    return this.client.create({resource})
+  }
+
+  /**
+   * Create resource with PUT request (with given id)
+   * @param resource
+   * @returns {Promise<any>}
+   */
+  putResource (resource: any): Promise<any> {
+    return this.client.update({resource})
+  }
+
+  /**
+   * Delete resource with given ResourceType and id (Reference)
+   * @param resource
+   * @returns {Promise<any>}
+   */
+  deleteResource (resource: fhir.Resource): Promise<any> {
+    return this.client.delete({type: resource.resourceType, id: resource.id});
   }
 
 }
