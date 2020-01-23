@@ -6,11 +6,20 @@ export interface File {
   sheets?: Sheet[]
   currentSheet?: Sheet | null
 }
+
 export interface SourceDataElement {
   type?: string
   value?: string
-  target?: any[]
+  target?: Target[],
+  group?: any
 }
+
+export interface Target {
+  resource: string
+  profile: string
+  value: string
+}
+
 export class FileSource implements File {
   path: string
   extension: string
@@ -25,6 +34,7 @@ export class FileSource implements File {
     this.extension = this.label.split('.').pop() || ''
   }
 }
+
 export class Sheet {
   value: string
   label: string

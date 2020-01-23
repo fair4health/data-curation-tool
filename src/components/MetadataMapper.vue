@@ -63,7 +63,8 @@
                     <span><q-icon name="fas fa-fire" size="xs" color="primary" class="q-mr-xs" /> FHIR Resource</span>
                   </q-item-label>
                   <q-separator spaced />
-                  <q-select outlined dense v-model="currentFHIRRes" :options="fhirResourceList" label="FHIR Resource">
+                  <q-select outlined dense v-model="currentFHIRRes" :options="fhirResourceOptions" label="FHIR Resource"
+                            @filter="filterFn" use-input input-debounce="0">
                     <template v-slot:option="scope">
                       <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                         <q-item-section avatar>
@@ -127,7 +128,7 @@
 
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
-  import { FileSource, Sheet } from '@/common/file-source'
+  import { FileSource, Sheet } from '@/common/model/file-source'
   import Loading from '@/components/Loading.vue'
 
   @Component({
@@ -146,6 +147,7 @@
   })
   export default class MetadataMapper extends Vue {
     private splitPercentage: number = 50
+    private fhirResourceOptions: string[] = []
 
     get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
     set fileSourceList (value) { this.$store.commit('file/updateSourceList', value) }
@@ -167,6 +169,15 @@
 
     get currentFHIRProf (): string { return this.$store.getters['fhir/currentProfile'] }
     set currentFHIRProf (value) { this.$store.commit('fhir/setCurrentProfile', value) }
+
+    filterFn (val, update) {
+      if (val === '') {
+        update(_ => this.fhirResourceOptions = this.fhirResourceList)
+        return
+      }
+      update(_ => this.fhirResourceOptions = this.fhirResourceList.filter(v => v.toLowerCase().indexOf(val.toLowerCase()) > -1))
+    }
+
   }
 </script>
 

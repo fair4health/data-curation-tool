@@ -119,7 +119,7 @@
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
-  import { FileSource } from '@/common/file-source'
+  import { FileSource } from '@/common/model/file-source'
 
   @Component
   export default class DataSourceAnalyzer extends Vue {

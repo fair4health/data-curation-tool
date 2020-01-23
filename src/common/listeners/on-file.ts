@@ -1,10 +1,9 @@
-import { ipcMain, dialog, app } from 'electron'
 import * as Excel from 'xlsx'
-import { cellType } from './common/data-table'
 import fs from 'fs'
 import log from 'electron-log'
-
-const workbookMap: Map<string, Excel.WorkBook> = new Map<string, Excel.WorkBook>()
+import { ipcMain, dialog } from 'electron'
+import { cellType } from '../model/data-table'
+import { workbookMap } from '../model/workbook'
 
 /**
  * Browses files with extensions [xl*, csv] and sends back their paths as a list
@@ -41,26 +40,27 @@ ipcMain.on('read-file', (event, path) => {
  */
 ipcMain.on('get-sheet-headers', (event, data) => {
   const headers: object[] = []
-  if (workbookMap.has(data.path)) {
-    const workbook = workbookMap.get(data.path)
-    const sheet: Excel.WorkSheet | null = workbook ? workbook.Sheets[data.sheet] : null
-    if (!(sheet && sheet['!ref'])) {
-      event.sender.send('ready-sheet-headers', [])
-      log.warn(`No columns found in ${data.path} - ${data.sheet}`)
-      return;
-    }
-    const range = Excel.utils.decode_range(sheet['!ref'] as string)
-    const R = range.s.r
+  if (!workbookMap.has(data.path)) {
+    workbookMap.set(data.path, Excel.readFile(data.path, {type: 'binary', cellDates: true}))
+  }
+  const workbook = workbookMap.get(data.path)
+  const sheet: Excel.WorkSheet | null = workbook ? workbook.Sheets[data.sheet] : null
+  if (!(sheet && sheet['!ref'])) {
+    event.sender.send('ready-sheet-headers', [])
+    log.warn(`No columns found in ${data.path} - ${data.sheet}`)
+    return;
+  }
+  const range = Excel.utils.decode_range(sheet['!ref'] as string)
+  const R = range.s.r
 
-    for (let C = range.s.c; C <= range.e.c; C++) {
-      // Cells in the first row
-      const cell: Excel.CellObject = sheet[Excel.utils.encode_cell({c: C, r: R})]
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    // Cells in the first row
+    const cell: Excel.CellObject = sheet[Excel.utils.encode_cell({c: C, r: R})]
 
-      let header: any = {type: 's', value: `UNKNOWN ${C}`}
-      if (cell && cell.t) header = {type: cellType[cell.t] || 'ErrorType', value: cell.v}
+    let header: any = {type: 's', value: `UNKNOWN ${C}`}
+    if (cell && cell.t) header = {type: cellType[cell.t] || 'ErrorType', value: cell.v}
 
-      headers.push(header);
-    }
+    headers.push(header);
   }
   event.sender.send('ready-sheet-headers', headers)
 })

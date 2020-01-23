@@ -91,4 +91,27 @@ export class FhirService {
     return this.client.delete({type: resource.resourceType, id: resource.id});
   }
 
+  /**
+   * Just for DEV
+   * Delete all resources
+   * @param resourceType
+   */
+  deleteAll (resourceType: string) {
+    return new Promise<any>((resolve, reject) => {
+      this.search(resourceType, {}, true)
+        .then(res => {
+          const bundle = res.data as fhir.Bundle
+          Promise.all(bundle.entry?.map((entry) => {
+            const resource: fhir.Resource = entry.resource as fhir.Resource
+            setTimeout(() => {
+              this.deleteResource(resource)
+            }, 0)
+          }) || [])
+            .then(_ => resolve(true))
+            .catch(err => reject(err))
+        })
+        .catch(err => reject(err))
+    })
+  }
+
 }

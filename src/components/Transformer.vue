@@ -18,30 +18,79 @@
               </template>
             </q-input>
           </template>
-          <template v-slot:body-cell-status="props">
-            <q-td :props="props">
-              <template v-if="props.value === 'processing'">
-                <q-spinner color="grey-9" />
-              </template>
-              <template v-else-if="props.value === 'done'">
-                <q-icon name="check" color="green" />
-              </template>
-              <template v-else-if="props.value === 'error'">
-                <q-icon name="error_outline" color="red" />
-              </template>
-              <template v-else>
-                <q-icon name="access_time" color="grey-9" />
-              </template>
-            </q-td>
+          <template v-slot:header-cell="props">
+            <q-th :props="props">
+              <q-icon v-if="props.col.icon" :name="props.col.icon" />
+              <span class="vertical-middle q-ml-xs">{{ props.col.label }}</span>
+            </q-th>
           </template>
-          <template v-slot:body-cell-target="props">
-            <q-td :props="props">
-              {{ props.row.target.map(t => t.value).join(', ') }}
-            </q-td>
+          <template v-slot:body="props">
+            <q-tr :props="props">
+              <q-td key="status" :props="props">
+                <template v-if="props.row.transform.status === 'processing'">
+                  <span>
+                    <q-spinner color="grey-9" />
+                    <q-tooltip>Transforming...</q-tooltip>
+                  </span>
+                </template>
+                <template v-else-if="props.row.transform.status === 'done'">
+                  <q-icon name="check" color="green">
+                    <q-tooltip>Completed</q-tooltip>
+                  </q-icon>
+                </template>
+                <template v-else-if="props.row.transform.status === 'warning'">
+                  <q-icon name="warning" color="orange-6">
+                    <q-tooltip>{{ props.row.transform.description }}</q-tooltip>
+                  </q-icon>
+                </template>
+                <template v-else-if="props.row.transform.status === 'error'">
+                  <q-icon name="error_outline" color="red">
+                    <q-tooltip>{{ props.row.transform.description }}</q-tooltip>
+                  </q-icon>
+                </template>
+                <template v-else>
+                  <q-icon name="access_time" color="grey-9">
+                    <q-tooltip>Waiting</q-tooltip>
+                  </q-icon>
+                </template>
+              </q-td>
+              <q-td key="file" :props="props">
+                <q-btn dense round flat size="sm" :icon="props.expand ? 'arrow_drop_up' : 'arrow_drop_down'" @click="props.expand = !props.expand" />
+                {{ props.row.file }}
+              </q-td>
+              <q-td key="sheet" :props="props">
+                {{ props.row.sheet }}
+              </q-td>
+              <q-td key="targets" :props="props" class="text-weight-bold">
+                {{ props.row.targets }}
+              </q-td>
+            </q-tr>
+            <q-tr v-show="props.expand" :props="props">
+              <q-td colspan="100%" class="bg-grey-1">
+                <div style="max-height: 200px; overflow: auto">
+                  <div>{{ props.row.info }}</div>
+                  <div class="text-left">This is expand slot for row above: {{ props.row.file }}.</div>
+                  <div v-for="(target, index) in props.row.targetList" :key="index">
+                    {{target.value}} -> {{target.target.map(_ => _.value)}} <br/>
+                  </div>
+                </div>
+              </q-td>
+            </q-tr>
           </template>
         </q-table>
-        <div class="row content-end">
+        <div class="row content-end q-gutter-sm">
           <q-btn flat label="Back" icon="fas fa-angle-left" class="q-mt-lg" @click="$store.commit('decrementStep')" no-caps />
+          <q-space />
+          <q-btn class="q-mt-lg" color="primary" label="Remove Resource" no-caps>
+            <q-menu transition-show="jump-down" transition-hide="jump-up" auto-close>
+              <q-list style="min-width: 100px">
+                <q-item clickable v-for="(resource, index) in resourceList" :key="index" @click="remove(resource)">
+                  <q-item-section>{{ resource }}</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+          <q-btn flat label="Transform" class="q-mt-lg" @click="start" no-caps />
         </div>
       </q-card-section>
     </q-card>
@@ -50,52 +99,133 @@
 
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
-  import { FileSource } from '@/common/file-source'
+  import { FileSource } from '@/common/model/file-source'
   import { ipcRenderer } from 'electron'
+  import { FhirService } from '@/common/services/fhir.service'
+  import { mappingDataTableHeaders } from '@/common/model/data-table'
 
   @Component
   export default class Transformer extends Vue {
     private mappingList: any[] = []
-    private columns: any[] = [
-      { name: 'status', align: 'left', label: 'Status', field: 'status', sortable: true },
-      { name: 'file', align: 'left', label: 'File', field: 'file', sortable: true },
-      { name: 'sheet', align: 'left', label: 'Sheet', field: 'sheet', sortable: true },
-      { name: 'header_value', align: 'left', label: 'Value', field: 'header_value', sortable: true },
-      { name: 'header_type', align: 'left', label: 'Type', field: 'header_type', sortable: true },
-      { name: 'target', align: 'left', label: 'Target', field: 'target', sortable: true }
-    ]
+    // Mapping data grouped by file and sheets
+    private mappingObj: Map<string, any> = new Map<string, any>()
     private pagination = { page: 1, rowsPerPage: 0 }
     private filter: string = ''
     private loading: boolean = false
+    private resourceList: string[] = ['Patient', 'Practitioner', 'Condition', 'Observation']
 
+    get columns (): object[] { return mappingDataTableHeaders }
     get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
 
     mounted () {
       this.loading = true
       setTimeout(() => {
         this.getMappings().then(() => {
+          let index = 0
+          this.mappingList = Object.keys(this.mappingObj).flatMap(f =>
+            Object.keys(this.mappingObj[f]).map(s =>
+              ({name: index++, file: f, sheet: s, targets: this.mappingObj[f][s].length, targetList: this.mappingObj[f][s], transform: 0})))
           this.loading = false
         })
       }, 0)
     }
 
-    getMappings (): Promise<any> {
-      return Promise.all(this.fileSourceList.map( async file => {
-        return Promise.all(file.sheets?.map(async sheet => {
-          return Promise.all(sheet.headers?.map(async header => {
-            if (header.target) {
-              this.mappingList.push({
-                file: file.path,
-                sheet: sheet.label,
-                header_value: header.value,
-                header_type: header.type,
-                target: header.target,
-                status: 0
-              })
+    start () {
+      const filePathList = Object.keys(this.groupBy(this.mappingList, 'file'))
+      for (let i = 0, p = Promise.resolve(); i < filePathList.length; i++) {
+        p = p.then(_ => new Promise(resolve => {
+          const filePath = filePathList[i]
+          this.$q.loading.show({
+            message: `Loading ${filePath.split('\\').pop()}...`
+          })
+          this.mappingList = this.mappingList.map(item => {
+            if (item.file === filePath) {
+              item.transform = {status: 'processing'}
             }
-          }) || [])
+            return item
+          })
+          const sheets = this.mappingObj[filePath]
+          ipcRenderer.send('transform', {filePath, sheets})
+
+          // In case of file reading failure
+          // Delete all other sheets listeners in that file
+          ipcRenderer.on(`transforming-${filePath}`, (event, result) => {
+            this.$q.loading.hide()
+            ipcRenderer.removeAllListeners(`transforming-${filePath}`)
+          })
+
+          Promise.all(Object.keys(this.mappingObj[filePath]).map(sheet => {
+            return new Promise(resolve1 => {
+              ipcRenderer.on(`info-${filePath}-${sheet}`, (event, result) => {
+                this.mappingList = this.mappingList.map(item => {
+                  if ((item.file === filePath) && (item.sheet === sheet)) {
+                    if (!item.info) item.info = {}
+                    Object.assign(item.info, result)
+                  }
+                  return item
+                })
+                // TODO:
+                // ipcRenderer.removeAllListeners(`info-${filePath}-${sheet}`)
+              })
+              ipcRenderer.on(`transforming-${filePath}-${sheet}`, (event, result) => {
+                ipcRenderer.removeAllListeners(`transforming-${filePath}-${sheet}`)
+
+                // Update status of mapping entries
+                this.mappingList = this.mappingList.map(v => {
+                  if (v.file === filePath && v.sheet === sheet) {
+                    v.transform = result
+                  }
+                  return v
+                })
+                if (result) {
+                  this.$log.success('Transforming', `Transform done ${sheet} in ${filePath}`)
+                  resolve1()
+                } else {
+                  this.$log.error('Transforming', `Transform error for ${sheet} in ${filePath}. For details see logs/main`)
+                  resolve1()
+                }
+              })
+            })
+          }))
+          .then(() => resolve())
+          .catch(() => resolve())
+        }))
+      }
+    }
+    getMappings (): Promise<any> {
+      return Promise.all(this.fileSourceList.map(async file => {
+        this.mappingObj[file.path] = {}
+        const currFile = this.mappingObj[file.path]
+        return Promise.all(file.sheets?.map(async sheet => {
+          // TODO:
+          // Filter headers which have any targets
+          const headersWithTarget = sheet.headers?.filter(h => h.target?.length) || []
+          if (headersWithTarget.length) {
+            currFile[sheet.label] = headersWithTarget
+          }
         }) || [])
       }))
+    }
+    groupBy (xs, key): any {
+      return xs.reduce((rv, x) => {
+        (rv[x[key]] = rv[x[key]] || []).push(x)
+        return rv
+      }, {})
+    }
+    remove (resourceType: string) {
+      this.loading = true
+      const fhirService: FhirService = new FhirService()
+      setTimeout(() => {
+        fhirService.deleteAll(resourceType)
+          .then(_ => {
+            this.loading = false
+            this.$q.notify({message: `${resourceType} Resources removed successfully`, color: 'grey-8'})
+          })
+          .catch(_ => {
+            this.loading = false
+            this.$q.notify({message: 'Something went wrong', color: 'grey-8'})
+          })
+      }, 0)
     }
   }
 </script>

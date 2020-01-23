@@ -924,8 +924,8 @@ declare namespace fhir {
   }
   interface Condition extends DomainResource {
     identifier?: Identifier[];
-    clinicalStatus?: code;
-    verificationStatus?: code;
+    clinicalStatus?: CodeableConcept;
+    verificationStatus?: CodeableConcept;
     category?: CodeableConcept[];
     severity?: CodeableConcept;
     code: CodeableConcept;

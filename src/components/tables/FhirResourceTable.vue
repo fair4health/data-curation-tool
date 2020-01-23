@@ -52,40 +52,42 @@
             <!--Elements Definition Part-->
             <template v-slot:after>
               <q-scroll-area style="height: 50vh" v-if="selectedElem">
-                <div class="q-px-md">
-                  <div flat class="overflow-auto q-ma-xs no-wrap">
-                    <q-item-label class="text-h6 text-weight-bold text-primary">
+                <div>
+                  <q-toolbar class="bg-grey-2">
+                    <q-item-label class="text-weight-bold text-grey-7">
+                      <span class="text-weight-regular text-primary">
+                        [{{ selectedElem.min }}..{{ selectedElem.max }}]
+                      </span>
                       <u>
                         {{ selectedElem.value }}
                         <q-tooltip>{{ selectedElem.value }}</q-tooltip>
                       </u>
                       <span class="text-red">{{ selectedElem.min ? '*' : '' }}</span>
                     </q-item-label>
-                    <q-item-label caption class="text-weight-bold">
-                      [{{ selectedElem.min }}..{{ selectedElem.max }}]
-                    </q-item-label>
+                  </q-toolbar>
+                  <div class="q-ma-sm q-gutter-sm">
+                    <q-card flat bordered v-if="selectedElem.short">
+                      <q-card-section>
+                        <div class="text-h6">Short</div>
+                        <q-separator spaced />
+                        <div class="text-grey-10">{{ selectedElem.short }}</div>
+                      </q-card-section>
+                    </q-card>
+                    <q-card flat bordered v-if="selectedElem.definition">
+                      <q-card-section>
+                        <div class="text-h6">Definition</div>
+                        <q-separator spaced />
+                        <div class="text-grey-10">{{ selectedElem.definition }}</div>
+                      </q-card-section>
+                    </q-card>
+                    <q-card flat bordered v-if="selectedElem.comment">
+                      <q-card-section>
+                        <div class="text-h6">Comments</div>
+                        <q-separator spaced />
+                        <div class="text-grey-10">{{ selectedElem.comment }}</div>
+                      </q-card-section>
+                    </q-card>
                   </div>
-                  <q-card flat v-if="selectedElem.short">
-                    <q-card-section>
-                      <div class="text-h6">Short</div>
-                      <q-separator spaced />
-                      <div class="text-grey-10">{{ selectedElem.short }}</div>
-                    </q-card-section>
-                  </q-card>
-                  <q-card flat v-if="selectedElem.definition">
-                    <q-card-section>
-                      <div class="text-h6">Definition</div>
-                      <q-separator spaced />
-                      <div class="text-grey-10">{{ selectedElem.definition }}</div>
-                    </q-card-section>
-                  </q-card>
-                  <q-card flat v-if="selectedElem.comment">
-                    <q-card-section>
-                      <div class="text-h6">Comments</div>
-                      <q-separator spaced />
-                      <div class="text-grey-10">{{ selectedElem.comment }}</div>
-                    </q-card-section>
-                  </q-card>
                 </div>
               </q-scroll-area>
             </template>
@@ -104,7 +106,7 @@
 
 <script lang="ts">
   import { Component, Vue, Watch } from 'vue-property-decorator'
-  import {FileSource, Sheet} from '@/common/file-source'
+  import { FileSource, Sheet } from '@/common/model/file-source'
 
   @Component
   export default class FhirResourceTable extends Vue {
@@ -171,17 +173,19 @@
         })
     }
     @Watch('currentFHIRProf')
-    onFHIRProfileChanged (): void {
-      ([this.tickedFHIRAttr, this.selectedElem, this.expanded] = [[], null, [this.currentFHIRRes]])
-      this.loadingFhir = true
-      this.$store.dispatch('fhir/getElements', this.currentFHIRProf)
-        .then(() => {
-          this.loadingFhir = false
-        })
-        .catch(err => {
-          this.loadingFhir = false
-          throw err
-        })
+    onFHIRProfileChanged (newVal: any): void {
+      if (newVal) {
+        ([this.tickedFHIRAttr, this.selectedElem, this.expanded] = [[], null, [this.currentFHIRRes]])
+        this.loadingFhir = true
+        this.$store.dispatch('fhir/getElements', this.currentFHIRProf)
+          .then(() => {
+            this.loadingFhir = false
+          })
+          .catch(err => {
+            this.loadingFhir = false
+            throw err
+          })
+      }
     }
 
     onSelected (target) {
@@ -193,7 +197,8 @@
       for (const attr of this.selectedAttr) {
         for (const column of this.currentSheet?.headers || []) {
           if (column?.value === attr.value) {
-            column['target'] = this.tickedFHIRAttr
+            if (!column['target']) column['target'] = this.tickedFHIRAttr
+            else column['target'].push(...this.tickedFHIRAttr)
             this.$log.success('Mapping',
               this.currentSource?.label + '.' + this.currentSheet?.label + '.' + column.value +
               ' - (' + this.tickedFHIRAttr.map(e => e.value).join(', ') + ')')

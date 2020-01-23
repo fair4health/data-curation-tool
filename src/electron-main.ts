@@ -3,7 +3,7 @@
 import { app, protocol, BrowserWindow, dialog } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import log from 'electron-log'
-import './ipcListeners.ts'
+import './common/listeners'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
