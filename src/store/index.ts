@@ -1,8 +1,8 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-import file from './fileSource'
-import fhir from './fhir'
+import file from './fileStore'
+import fhir from './fhirStore'
 
 Vue.use(Vuex)
 
