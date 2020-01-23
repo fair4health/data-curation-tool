@@ -26,66 +26,89 @@ describe('Test FHIR Search', () => {
     }
   })
 
-  it('Search Resource - CapabilityStatement', (done) => {
-    fhirService.search('CapabilityStatement', null)
-      .then(res => {
-        const bundle = res.data as fhir.Bundle
-        expect(res.status).to.equal(200)
-        expect(bundle.entry?.length).to.equal(1)
-        done()
-      }, err => {
-        expect(false).to.be.true
-        done()
-      })
-  })
-  it('Get Resource by reference - StructureDefinition/Appointment', (done) => {
-    fhirService.getResource('StructureDefinition/Appointment')
-      .then(res => {
-        const resource: fhir.Resource = res.data
-        expect(res.status).to.equal(200)
-        expect(resource.resourceType).to.equal('StructureDefinition')
-        expect(resource.id).to.equal('Appointment')
-        done()
-      }, err => {
-        expect(false).to.be.true
-        done()
-      })
-  })
-
-  it('Create Resource with given id', (done) => {
-    fhirService.putResource(Patient)
-      .then(res => {
-        expect(res.status).to.equal(201)
-        done()
-      }, err => {
-        expect(false).to.be.true
-        done()
-      })
+  describe('SEARCH', () => {
+    it('Search Resource - CapabilityStatement', (done) => {
+      fhirService.search('CapabilityStatement', null)
+        .then(res => {
+          const bundle = res.data as fhir.Bundle
+          expect(res.status).to.equal(200)
+          expect(bundle.entry?.length).to.equal(1)
+          done()
+        }, err => {
+          expect(false).to.be.true
+          done()
+        })
+    })
+    it('Get Resource by reference - StructureDefinition/Appointment', (done) => {
+      fhirService.getResource('StructureDefinition/Appointment')
+        .then(res => {
+          const resource: fhir.Resource = res.data
+          expect(res.status).to.equal(200)
+          expect(resource.resourceType).to.equal('StructureDefinition')
+          expect(resource.id).to.equal('Appointment')
+          done()
+        }, err => {
+          expect(false).to.be.true
+          done()
+        })
+    })
   })
 
-  it('Update Resource', (done) => {
-    Patient.birthDate = '1990'
-    fhirService.putResource(Patient)
-      .then(res => {
-        const updatedResource: fhir.Patient = res.data
-        expect(res.status).to.equal(200)
-        expect(updatedResource.birthDate).to.equal('1990')
-        done()
-      }, err => {
-        expect(false).to.be.true
-        done()
-      })
+  describe('CREATE', () => {
+    it('Create - Delete', (done) => {
+      fhirService.postResource(Patient)
+        .then(res => {
+          expect(res.status).to.equal(201)
+          fhirService.deleteResource(res.data as fhir.Patient)
+            .then(delRes => {
+              expect(delRes.status).to.equal(204)
+              done()
+            }, err => {
+              expect(false).to.be.true
+              done()
+            })
+        }, err => {
+          expect(false).to.be.true
+          done()
+        })
+    })
   })
 
-  it('Delete Resource', (done) => {
-    fhirService.deleteResource(Patient)
-      .then(res => {
-        expect(res.status).to.equal(204)
-        done()
-      }, err => {
-        expect(false).to.be.true
-        done()
-      })
+  describe('UPDATE', () => {
+    it('Create - Update - Delete', (done) => {
+      fhirService.postResource(Patient)
+        .then(createdRes => {
+          expect(createdRes.status).to.equal(201)
+          const createdResource: fhir.Patient = createdRes.data
+          createdResource.birthDate = '1982'
+
+          // Update Resource
+          fhirService.putResource(createdResource as fhir.Patient)
+            .then(res => {
+              const updatedResource: fhir.Patient = res.data
+              expect(res.status).to.equal(200)
+              expect(updatedResource.birthDate).to.equal('1982')
+
+              // Delete Resource
+              fhirService.deleteResource(res.data as fhir.Patient)
+                .then(delRes => {
+                  expect(delRes.status).to.equal(204)
+                  done()
+                }, err => {
+                  expect(false).to.be.true
+                  done()
+                })
+
+            }, err => {
+              expect(false).to.be.true
+              done()
+            })
+
+        }, err => {
+          expect(false).to.be.true
+          done()
+        })
+    })
   })
 
 })
