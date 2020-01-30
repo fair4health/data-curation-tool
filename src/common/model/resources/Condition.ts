@@ -1,4 +1,4 @@
-import { FHIRUtils } from './../../utils/fhir-util'
+import { DataTypeFactory } from './../factory/data-type-factory'
 import { environment } from './../../environment'
 import { FhirService } from './../../services/fhir.service'
 
@@ -16,48 +16,54 @@ export class Condition {
       }
       switch (field) {
         case 'clinicalStatus':
-          resource.clinicalStatus = FHIRUtils.createCodeableConcept(
-            FHIRUtils.createCoding('http://terminology.hl7.org/CodeSystem/condition-clinical', 'active'))
+          resource.clinicalStatus = DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding('http://terminology.hl7.org/CodeSystem/condition-clinical', 'active'))
           resolve(true)
           break
         case 'verificationStatus':
-          resource.verificationStatus = FHIRUtils.createCodeableConcept(
-            FHIRUtils.createCoding('http://terminology.hl7.org/CodeSystem/condition-ver-status', 'confirmed'))
+          resource.verificationStatus = DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding('http://terminology.hl7.org/CodeSystem/condition-ver-status', 'confirmed'))
           resolve(true)
           break
         case 'category':
           resolve(true)
           break
         case 'severity':
-          resource.severity = FHIRUtils.createCodeableConcept(FHIRUtils.createCoding('http://loinc.org', 'LA6751-7', 'Moderate'))
+          resource.severity = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding('http://loinc.org', 'LA6751-7', 'Moderate'))
           resolve(true)
           break
         case 'code':
           if (value)
-            resource.code = FHIRUtils.createCodeableConcept(FHIRUtils.createCoding('http://snomed.info/sct', String(value), String(value)))
+            resource.code = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding('http://snomed.info/sct', String(value), String(value)))
           resolve(true)
           break
         case 'subject':
-          fhirService.search('Patient', {identifier: String(value)})
-            .then(res => {
-              const bundle: fhir.Bundle = res.data
-              if (bundle.entry?.length) {
-                const patient: fhir.Patient = bundle.entry[0].resource as fhir.Patient
-                resource.subject = {reference: `Patient/${patient.id}`} as fhir.Reference
-              }
-              resolve(true)
-            })
-            .catch(err => {
-              reject(err)
-            })
+          resource.subject = {reference: `Patient/${String(value)}`} as fhir.Reference
+          resolve(true)
+          // fhirService.search('Patient', {identifier: String(value)})
+          //   .then(res => {
+          //     const bundle: fhir.Bundle = res.data
+          //     if (bundle.entry?.length) {
+          //       const patient: fhir.Patient = bundle.entry[0].resource as fhir.Patient
+          //       resource.subject = {reference: `Patient/${patient.id}`} as fhir.Reference
+          //     }
+          //     resolve(true)
+          //   })
+          //   .catch(err => {
+          //     reject(err)
+          //   })
           break
         case 'onset[x]:onsetDateTime':
           if (fieldType === 'Date') {
             if (!(value instanceof Date)) {
               value = new Date(String(value))
             }
-            resource.onsetDateTime = value.getFullYear() + '-' +
-              ('0' + (value.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + value.getUTCDate()).slice(-2)
+            try {
+              resource.onsetDateTime = value.getFullYear() + '-' +
+                ('0' + (value.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + value.getUTCDate()).slice(-2)
+            } catch (e) {
+              reject(e)
+            }
           }
           resolve(true)
           break
@@ -80,4 +86,5 @@ export class Condition {
       }
     })
   }
+
 }

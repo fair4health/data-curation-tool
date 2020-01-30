@@ -66,22 +66,43 @@
               </q-td>
             </q-tr>
             <q-tr v-show="props.expand" :props="props">
-              <q-td colspan="100%" class="bg-grey-1">
-                <div style="max-height: 200px; overflow: auto">
-                  <div>{{ props.row.info }}</div>
-                  <div class="text-left">This is expand slot for row above: {{ props.row.file }}.</div>
-                  <div v-for="(target, index) in props.row.targetList" :key="index">
-                    {{target.value}} -> {{target.target.map(_ => _.value)}} <br/>
-                  </div>
-                </div>
+              <q-td colspan="100%" class="bg-grey-2">
+                <q-card flat bordered>
+                  <q-item>
+                    <q-item-section avatar>
+                      <q-avatar>
+                        <q-icon name="far fa-file-alt" />
+                      </q-avatar>
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label>{{ props.row.sheet }}</q-item-label>
+                      <q-item-label caption>{{ props.row.file }}</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-item-label>Total</q-item-label>
+                      <q-item-label caption>{{ (props.row.info && props.row.info.total) || '-' }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
+
+                  <q-separator />
+
+                  <q-card-section class="q-mb-xs q-pt-xs overflow-auto" >
+                    <div class="text-grey-8" style="max-height: 15vh">
+                      <div v-for="(target, index) in props.row.targetList" :key="index">
+                        {{target.value}} -> {{target.target.map(_ => _.value)}} <br/>
+                      </div>
+                    </div>
+                  </q-card-section>
+                </q-card>
               </q-td>
             </q-tr>
           </template>
         </q-table>
         <div class="row content-end q-gutter-sm">
-          <q-btn flat label="Back" icon="fas fa-angle-left" class="q-mt-lg" @click="$store.commit('decrementStep')" no-caps />
+          <q-btn flat label="Back" icon="fas fa-angle-left" class="q-mt-lg" @click="previousStep" no-caps />
           <q-space />
           <q-btn class="q-mt-lg" color="primary" label="Remove Resource" no-caps>
+            <q-spinner class="q-ml-sm" size="xs" v-show="loading" />
             <q-menu transition-show="jump-down" transition-hide="jump-up" auto-close>
               <q-list style="min-width: 100px">
                 <q-item clickable v-for="(resource, index) in resourceList" :key="index" @click="remove(resource)">
@@ -101,7 +122,6 @@
   import { Component, Vue } from 'vue-property-decorator'
   import { FileSource } from '@/common/model/file-source'
   import { ipcRenderer } from 'electron'
-  import { FhirService } from '@/common/services/fhir.service'
   import { mappingDataTableHeaders } from '@/common/model/data-table'
 
   @Component
@@ -214,18 +234,27 @@
     }
     remove (resourceType: string) {
       this.loading = true
-      const fhirService: FhirService = new FhirService()
-      setTimeout(() => {
-        fhirService.deleteAll(resourceType)
-          .then(_ => {
-            this.loading = false
-            this.$q.notify({message: `${resourceType} Resources removed successfully`, color: 'grey-8'})
-          })
-          .catch(_ => {
-            this.loading = false
-            this.$q.notify({message: 'Something went wrong', color: 'grey-8'})
-          })
-      }, 0)
+      ipcRenderer.send('delete-resource', resourceType)
+      ipcRenderer.on('delete-resource-result', (event, result) => {
+        ipcRenderer.removeAllListeners('delete-resource-result')
+        if (result) {
+          this.loading = false
+          this.$q.notify({message: `${resourceType} Resources removed successfully`, color: 'grey-8'})
+        } else {
+          this.loading = false
+          this.$q.notify({message: 'Something went wrong', color: 'grey-8'})
+        }
+      })
+    }
+    previousStep () {
+      this.$q.dialog({
+        title: 'Previous Step',
+        message: 'If you go back and make any change, the changes you have made in this section will be lost.',
+        class: 'text-weight-bold text-grey-9',
+        cancel: true
+      }).onOk(() => {
+        this.$store.commit('decrementStep')
+      })
     }
   }
 </script>

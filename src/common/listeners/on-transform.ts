@@ -36,21 +36,24 @@ ipcMain.on('transform', async (event, data) => {
     }
   }))
   getWorkbooks.then(workbook => {
-    let timeout = 0
+    // let timeout = 0
     for (const sheet of Object.keys(data.sheets)) {
       const entries: any[] = Excel.utils.sheet_to_json(workbook.Sheets[sheet]) || []
       const sheetTargets = data.sheets[sheet]
 
       event.sender.send(`info-${filePath}-${sheet}`, {total: entries.length})
+      log.info(`Starting transform ${sheet} in ${filePath}`)
 
       // Start transform action
       // Create records row by row in entries
+      const resources: fhir.Resource[] = []
+      // const conditions: fhir.Condition[] = []
       Promise.all(entries.map(entry => {
 
         // For each row create resource instances
         const patientResource: fhir.Patient = {resourceType: 'Patient'}
         const practitionerResource: fhir.Practitioner = {resourceType: 'Practitioner'}
-        const conditions: Map<string, fhir.Condition> = new Map<string, fhir.Condition>()
+        const conditionMap: Map<string, fhir.Condition> = new Map<string, fhir.Condition>()
 
         return Promise.all(sheetTargets.map((attr: SourceDataElement) => {
           return Promise.all(attr.target?.map((target: Target) => {
@@ -59,40 +62,34 @@ ipcMain.on('transform', async (event, data) => {
                 const [resource, field, ...subfields] = target.value.split('.')
                 switch (resource) {
                   case 'Patient':
-                    timeout += 5
-                    setTimeout(() => {
-                      Patient.generate(patientResource, field, attr.type, subfields, entry[attr.value!])
-                        .then(_ => resolve(true))
-                        .catch(err => reject(err))
-                    }, timeout)
+                    Patient.generate(patientResource, field, attr.type, subfields, entry[attr.value!])
+                      .then(_ => resolve(true))
+                      .catch(err => reject(err))
                     break
                   case 'Practitioner':
-                    timeout += 5
-                    setTimeout(() => {
-                      Practitioner.generate(practitionerResource, field, attr.type, subfields, entry[attr.value!])
-                        .then(_ => resolve(true))
-                        .catch(err => reject(err))
-                    }, timeout)
+                    Practitioner.generate(practitionerResource, field, attr.type, subfields, entry[attr.value!])
+                      .then(_ => resolve(true))
+                      .catch(err => reject(err))
                     break
                   case 'Condition':
                     // TODO: Review group assignments
                     const groupIds = attr.group ? Object.keys(attr.group) : [uuid().slice(0, 8)]
                     Promise.all(groupIds.map(groupId => {
-                      timeout += 5
+                      // timeout += 5
                       return new Promise((resolve1, reject1) => {
-                        if (!conditions.has(groupId)) {
+                        if (!conditionMap.has(groupId)) {
                           const conditionResource: fhir.Condition = {resourceType: 'Condition', subject: {}} as fhir.Condition
-                          conditions.set(groupId, conditionResource)
+                          conditionMap.set(groupId, conditionResource)
                         }
-                        setTimeout(() => {
-                          Condition.generate(conditions.get(groupId)!, field, attr.type, subfields, String(entry[attr.value!]))
+                        // setTimeout(() => {
+                        Condition.generate(conditionMap.get(groupId)!, field, attr.type, subfields, String(entry[attr.value!]))
                             .then(_ => {
                               resolve1(true)
                             })
                             .catch(err => {
                               reject1(err)
                             })
-                        }, timeout)
+                        // }, timeout)
                       })
                     }))
                       .then(_ => resolve(true))
@@ -110,51 +107,14 @@ ipcMain.on('transform', async (event, data) => {
         }))
           .then((res) => {
             // End of transforming for one row
-            // Insert resources here
 
-            if (patientResource.id) {
-              fhirService.postResource(patientResource)
-                .then(patientRes => {
-                  log.info(`${patientRes.status} Resource created Patient/${patientRes.data.id} Identifier: ${patientResource.id}`)
-                  for (const conditionResource of Array.from(conditions.values())) {
-                    if (conditionResource.subject && conditionResource.subject.reference) {
-                      fhirService.postResource(conditionResource)
-                        .then(conditionRes => {
-                          log.info(`${conditionRes.status} Resource created Condition/${conditionRes.data.id}`)
-                        })
-                        .catch(err => {
-                          log.error(`ERROR ${err.status}: while creating resource Condition with Subject: ${patientResource.id}`)
-                        })
-                    } else {
-                      conditionResource.subject = {reference: `Patient/${patientRes.data.id}`} as fhir.Reference
-                      fhirService.postResource(conditionResource)
-                        .then(conditionRes => {
-                          log.info(`${conditionRes.status} Resource created Condition/${conditionRes.data.id}`)
-                        })
-                        .catch(err => {
-                          log.error(`ERROR ${err.status}: while creating resource Condition with Subject: ${patientResource.id}`)
-                        })
-                    }
-                  }
-                })
-                .catch(err => {
-                  log.error(`ERROR ${err.status}: while creating resource Patient/${patientResource.id}`)
-                })
-            } else {
-              for (const conditionResource of Array.from(conditions.values())) {
-                if (conditionResource.subject && conditionResource.subject.reference) {
-                  fhirService.postResource(conditionResource)
-                    .then(conditionRes => {
-                      log.info(`${conditionRes.status} Resource created Condition/${conditionRes.data.id}`)
-                    })
-                    .catch(err => {
-                      log.error(`ERROR ${err.status}: while creating resource Condition with Subject: ${patientResource.id}`)
-                    })
-                } else {
-                  log.error(`ERROR while creating resource Condition without Subject. Subject needed.`)
-                }
-              }
-            }
+            // Patients
+            if (patientResource.id) resources.push(patientResource)
+            // Practitioners
+            if (practitionerResource.id) resources.push(practitionerResource)
+            // Conditions
+            for (const conditionResource of Array.from(conditionMap.values())) resources.push(conditionResource)
+
           })
           .catch(err => {
             // event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'error', description: `Transform error for sheet: ${sheet}`})
@@ -163,8 +123,33 @@ ipcMain.on('transform', async (event, data) => {
       }))
         .then(() => { // End of sheet
           if (entries.length) {
-            event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'done'})
-            log.info(`Transform done ${sheet} in ${filePath}`)
+            // Batch upload resources
+            // Max capacity 5000 resources
+            const len = Math.ceil(resources.length / 5000)
+
+            const bulkPromiseList: Array<Promise<any>> = []
+
+            for (let i = 0, p = Promise.resolve(); i < len; i++) {
+              bulkPromiseList.push(p.then(_ => new Promise(resolve => {
+                fhirService.postBatch(resources.slice(i * 5000, (i + 1) * 5000))
+                  .then(() => resolve())
+                  .catch(err => {
+                    log.warn(`Batch upload error: ${err}`)
+                    resolve()
+                  })
+              })))
+            }
+
+            Promise.all(bulkPromiseList)
+              .then(res => {
+                event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'done'})
+                log.info(`Transform done ${sheet} in ${filePath}`)
+              })
+              .catch(err => {
+                event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'error', description: `Batch upload error - ${err.message}`})
+                log.error(`BATCH ERROR ${filePath}-${sheet} - ${JSON.stringify(err)}`)
+              })
+
           } else {
             event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'warning', description: 'Empty sheet'})
             log.warn(`Empty sheet: ${sheet} in ${filePath}`)
@@ -181,5 +166,10 @@ ipcMain.on('transform', async (event, data) => {
       log.error(err)
       return
     })
+})
 
+ipcMain.on('delete-resource', (event, resourceType: string) => {
+  fhirService.deleteAll(resourceType)
+    .then(_ => event.sender.send(`delete-resource-result`, true))
+    .catch(_ => event.sender.send(`delete-resource-result`, false))
 })

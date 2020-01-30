@@ -61,19 +61,14 @@
                 <q-chip dense removable @remove="removeTarget(props.row.target, index)" :color="'orange-'+(index%3*2+6)" text-color="white">
                   <span class="q-mx-xs" style="font-size: 12px">{{ target.value }}</span>
                 </q-chip>
-<!--                <q-badge :color="'orange-'+(index%3*2+6)" @click="props.row.target.splice(index, 1)"-->
-<!--                         @mouseover="targetIndex=(props.row.__index+'-'+index)" @mouseleave="targetIndex=-1">-->
-<!--                  <span class="q-px-md">{{target.value}}</span>-->
-<!--                  <q-icon name="clear" v-show="targetIndex===(props.row.__index+'-'+index)" style="position: absolute" />-->
-<!--                </q-badge>-->
               </div>
             </q-td>
           </template>
           <template v-slot:body-cell-group="props">
             <q-td :props="props">
-              <div v-for="(group, index) in Object.keys(Object.assign({}, props.row.group))" :key="index">
-                <q-chip dense removable @remove="removeGroup(props.row.group, group)" color="grey-2" text-color="grey-6">
-                  <span class="text-italic q-mx-xs" style="font-size: 12px">{{ group ? '#' + group : '' }}</span>
+              <div v-for="(value, name) in props.row.group" v-bind:key="name">
+                <q-chip dense removable @remove="removeGroup(props.row.group, name)" color="grey-2" text-color="grey-6">
+                  <span class="text-italic q-mx-xs" style="font-size: 12px">{{ name ? '#' + name : '' }}</span>
                 </q-chip>
               </div>
 
@@ -244,9 +239,6 @@
     }
     removeGroup (obj: any, key: string) {
       delete obj[key]
-      if (!Object.keys(obj).length) {
-        Object.assign(obj, {})
-      }
     }
 
   }

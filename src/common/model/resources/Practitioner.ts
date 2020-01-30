@@ -1,4 +1,4 @@
-import { FHIRUtils } from './../../utils/fhir-util'
+import { DataTypeFactory } from './../factory/data-type-factory'
 import { environment } from './../../environment'
 
 export class Practitioner {
@@ -53,7 +53,7 @@ export class Practitioner {
           break
         case 'telecom':
           resource.telecom = [] as fhir.ContactPoint[]
-          resource.telecom.push(FHIRUtils.createCodeableConcept(FHIRUtils.createCoding('system', 'code', String(value))))
+          resource.telecom.push(DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding('system', 'code', String(value))))
           resolve(true)
           break
         default:

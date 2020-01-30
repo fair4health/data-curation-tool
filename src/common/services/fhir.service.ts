@@ -1,5 +1,6 @@
 import { environment } from '../environment'
 import { FhirClient } from 'ng-fhir/FhirClient'
+import axios from 'axios'
 
 export class FhirService {
 
@@ -92,26 +93,35 @@ export class FhirService {
   }
 
   /**
+   * Batch upload
+   * @param resources
+   * @param method
+   */
+  postBatch (resources: fhir.Resource[], method?: 'POST' | 'PUT'): Promise<any> {
+    const transactionResource: fhir.Bundle = {
+      resourceType: 'Bundle',
+      type: 'batch',
+      entry: []
+    }
+    for (const resource of resources) {
+      transactionResource.entry?.push({
+        resource,
+        request: {
+          method: method || 'POST',
+          url: resource.resourceType
+        } as fhir.BundleEntryRequest
+      })
+    }
+    return axios.post(this.config.baseUrl, transactionResource, {headers: this.config.headers})
+  }
+
+  /**
    * Just for DEV
    * Delete all resources
    * @param resourceType
    */
   deleteAll (resourceType: string) {
-    return new Promise<any>((resolve, reject) => {
-      this.search(resourceType, {}, true)
-        .then(res => {
-          const bundle = res.data as fhir.Bundle
-          Promise.all(bundle.entry?.map((entry) => {
-            const resource: fhir.Resource = entry.resource as fhir.Resource
-            setTimeout(() => {
-              this.deleteResource(resource)
-            }, 0)
-          }) || [])
-            .then(_ => resolve(true))
-            .catch(err => reject(err))
-        })
-        .catch(err => reject(err))
-    })
+    return axios.delete(this.config.baseUrl + '/' + resourceType)
   }
 
 }
