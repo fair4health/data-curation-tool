@@ -11,7 +11,7 @@
           icon="menu"
         />
         <q-toolbar-title>
-          <img class="flex flex-center" src="https://www.fair4health.eu/images/logo.png" width="120px">
+          <img class="flex flex-center" src="../assets/FAIR4Health-logo.png" width="120px">
         </q-toolbar-title>
         <q-btn
           flat
