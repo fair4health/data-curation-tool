@@ -51,7 +51,8 @@ import {
   QMenu,
   QChip,
   ClosePopup,
-  QPageSticky
+  QPageSticky,
+  QRadio
 } from 'quasar'
 
 Vue.use(Quasar, {
@@ -111,7 +112,8 @@ Vue.use(Quasar, {
     QScrollArea,
     QMenu,
     QChip,
-    QPageSticky
+    QPageSticky,
+    QRadio
   },
   directives: {
     ClosePopup

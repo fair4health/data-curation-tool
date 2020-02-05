@@ -4,21 +4,11 @@
       <q-toolbar-title class="text-grey-8">
         Curation - <span class="text-subtitle1">Data Source Analyzer</span>
       </q-toolbar-title>
-      <q-space />
-      <q-btn v-if="fileSourceList.length"
-             unelevated
-             label="Mapping"
-             color="primary"
-             @click="$store.commit('incrementStep')"
-             no-caps
-      />
     </q-toolbar>
-    <div class="q-ma-sm">
+    <div class="q-ma-sm row q-gutter-sm">
       <q-expansion-item
         default-opened
-        group="dataSource"
-        class="shadow-1 overflow-hidden q-my-md"
-        style="border-radius: 30px"
+        class="overflow-hidden q-my-md col-xs-12 col-sm-12 col-md-6"
         icon="fas fa-file-medical"
         label="File (Excel or CSV)"
         header-class="bg-primary text-white"
@@ -26,24 +16,6 @@
       >
         <q-card>
           <q-card-section>
-            <div v-if="hasSavedMap" class="row q-mb-sm q-gutter-sm">
-              <q-btn icon="fas fa-save" flat round size="13px" color="primary" no-caps>
-                <q-tooltip>Load from storage</q-tooltip>
-                <q-badge color="red-5" floating>1</q-badge>
-                <q-menu>
-                  <q-list style="min-width: 200px">
-                    <q-item clickable class="text-grey-9" @click="loadFromStorage" v-close-popup>
-                      <q-item-section avatar><q-icon name="fas fa-file-download" /></q-item-section>
-                      <q-item-section>Load</q-item-section>
-                    </q-item>
-                    <q-item clickable class="text-red-5" @click="clearStorage" v-close-popup>
-                      <q-item-section avatar><q-icon name="delete" /></q-item-section>
-                      <q-item-section>Delete</q-item-section>
-                    </q-item>
-                  </q-list>
-                </q-menu>
-              </q-btn>
-            </div>
             <q-card id="drag-file" flat bordered v-bind:class="{'flex flex-center': !fileSourceList.length, 'bg-grey-2': isHovering}"
                     style="min-height: 30vh; border-style: dashed">
               <q-card-section>
@@ -85,9 +57,6 @@
                     <q-item-section side>
                       <q-btn unelevated label="Cancel" color="grey-3" text-color="grey-8" @click="fileSourceList=[]" no-caps />
                     </q-item-section>
-<!--                    <q-item-section side>-->
-<!--                      <q-btn unelevated label="Next" @click="$store.commit('incrementStep')" icon-right="fas fa-angle-right" color="green-7" no-caps />-->
-<!--                    </q-item-section>-->
                   </div>
                 </template>
               </q-card-section>
@@ -96,9 +65,7 @@
         </q-card>
       </q-expansion-item>
       <q-expansion-item
-        group="dataSource"
-        class="shadow-1 overflow-hidden q-my-md"
-        style="border-radius: 30px"
+        class="overflow-hidden q-my-md col"
         icon="fas fa-database"
         label="Database"
         header-class="bg-primary text-white"
@@ -113,6 +80,50 @@
         </q-card>
       </q-expansion-item>
     </div>
+    <q-expansion-item
+      default-opened
+      class="overflow-hidden q-ma-md col-12"
+      icon="save"
+      label="Saved Mappings"
+      header-class="bg-primary text-white"
+      expand-icon-class="text-white"
+    >
+      <q-card flat>
+        <q-card-section class="bg-white text-white text-subtitle1">
+          <div v-if="savedMappings.length" class="row q-mb-sm q-gutter-sm">
+            <q-list separator class="full-width">
+              <q-item v-for="(mapping, index) in savedMappings" :key="index" class="text-grey-9">
+                <q-item-section avatar>
+                  <q-icon name="save" color="primary" />
+                </q-item-section>
+                <q-item-section>
+                  <div class="text-caption text-weight-bold">
+                    {{getISODateString(mapping.date)}}
+                  </div>
+                  <div class="text-body2">
+                    {{mapping.name}}
+                  </div>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn flat round icon="delete" @click="deleteSavedMapping(index)" />
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn flat round icon="save_alt" color="green" @click="loadFromStorage(mapping)" />
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </div>
+          <div v-else class="text-grey-7">
+            No content
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-expansion-item>
+    <div class="row q-ma-md">
+      <q-space />
+      <q-btn v-if="fileSourceList.length" unelevated label="Next" icon-right="chevron_right"
+             color="primary" @click="$store.commit('incrementStep')" no-caps />
+    </div>
   </div>
 </template>
 
@@ -124,7 +135,7 @@
   @Component
   export default class DataSourceAnalyzer extends Vue {
     private isHovering: boolean = false
-    private hasSavedMap: boolean = false
+    private mappingStore: StoreMappingObject[] = []
 
     get step (): number { return this.$store.getters.curationStep }
 
@@ -132,9 +143,13 @@
     set fileSourceList (value) { this.$store.commit('file/updateSourceList', value) }
 
     get files (): string[] { return this.fileSourceList.map(f => f.value) }
+    get savedMappings (): StoreMappingObject[] {
+      const savedMappings = localStorage.getItem('f4h-store-fileSourceList')
+      this.mappingStore = savedMappings ? JSON.parse(savedMappings) : []
+      return this.mappingStore
+    }
 
     mounted () {
-      this.hasSavedMap = !!localStorage.getItem('f4h-store-fileSourceList')
       // Drag and drop handlers
       const holder = document.getElementById('drag-file');
       if (holder) {
@@ -160,19 +175,29 @@
       }
     }
 
-    loadFromStorage () {
-      const fileStore = localStorage.getItem('f4h-store-fileSourceList')
-      if (fileStore) {
+    loadFromStorage (mapping: StoreMappingObject) {
+      if (mapping) {
         this.$q.loading.show()
-        this.$store.dispatch('file/initializeStore', JSON.parse(fileStore))
+        this.$store.dispatch('file/initializeStore', mapping.data)
           .then(() => this.$q.loading.hide())
           .catch(() => this.$q.loading.hide())
+      } else {
+        this.$q.notify({message: 'Empty mapping sheet.'})
       }
     }
 
-    clearStorage () {
-      localStorage.removeItem('f4h-store-fileSourceList')
-      this.hasSavedMap = false
+    deleteSavedMapping (index: number) {
+      this.$q.dialog({
+        title: '<i class="fas fa-info text-primary"> Delete</i>',
+        message: `${this.mappingStore[index].name}`,
+        class: 'text-grey-9',
+        cancel: true,
+        persistent: true,
+        html: true
+      }).onOk(() => {
+        this.mappingStore.splice(index, 1)
+        localStorage.setItem('f4h-store-fileSourceList', JSON.stringify(this.mappingStore))
+      })
     }
 
     importSavedMapping (): void {
@@ -193,6 +218,10 @@
         }
         ipcRenderer.removeAllListeners('selected-mapping')
       })
+    }
+
+    getISODateString (date: string): string {
+      return (new Date(date)).toUTCString()
     }
 
     browseFile (): void {

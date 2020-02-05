@@ -101,6 +101,7 @@ const fhirStore = {
                       short: element?.short,
                       min: element?.min,
                       max: element?.max,
+                      type: element.type?.map(_ => _.code) || [],
                       children: []
                     })
                   }

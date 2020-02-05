@@ -2727,7 +2727,7 @@ declare namespace fhir {
     status: code;
     category?: CodeableConcept[];
     code: CodeableConcept;
-    subject?: Reference;
+    subject: Reference;
     context?: Reference;
     effectiveDateTime?: dateTime;
     effectivePeriod?: Period;
@@ -4754,6 +4754,8 @@ declare namespace fhir {
     short?: string
     min?: integer
     max?: string
+    type?: string[]
+    selectedType?: string
     children?: ElementTree[]
   }
   type Resource = (DomainResource|Account|ActivityDefinition|AllergyIntolerance|Appointment|AppointmentResponse|
@@ -4780,4 +4782,20 @@ interface Date {
 
 interface String {
   linkify (options?: any): string;
+}
+
+declare namespace ResourceGenerator {
+  interface Payload {
+    value: any,
+    sourceType: string | undefined, // 'Text' | 'Date' | 'Number' | 'Boolean'
+    targetField: string,
+    targetSubFields: string[],
+    fhirType?: string
+  }
+}
+
+declare interface StoreMappingObject {
+  date: Date
+  data: object
+  name: string
 }

@@ -10,7 +10,7 @@ export interface File {
 export interface SourceDataElement {
   type?: string
   value?: string
-  target?: Target[],
+  target?: Target[]
   group?: any
 }
 
@@ -18,6 +18,7 @@ export interface Target {
   resource: string
   profile: string
   value: string
+  type?: string
 }
 
 export class FileSource implements File {
