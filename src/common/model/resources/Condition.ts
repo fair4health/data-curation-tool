@@ -1,20 +1,22 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
 import { environment } from './../../environment'
-import { FhirService } from './../../services/fhir.service'
+import { Resource } from './Resource'
 
-export class Condition {
+export class Condition extends Resource {
 
   // TODO: Terminology binding
   // CodeableConcepts are static for dev
 
-  static generate (resource: fhir.Condition, field: string, fieldType: string | undefined, subfields: string[], value: any): Promise<any> {
-    const fhirService: FhirService = new FhirService()
+  static generate (resource: fhir.Condition, payload: ResourceGenerator.Payload): Promise<any> {
+
+    const {value, sourceType, targetField, targetSubFields, fhirType} = payload
+
     return new Promise<any>((resolve, reject) => {
       if (!resource.meta?.profile) {
         resource.meta = {}
         resource.meta.profile = [environment.profiles.condition_uv_ips]
       }
-      switch (field) {
+      switch (targetField) {
         case 'clinicalStatus':
           resource.clinicalStatus = DataTypeFactory.createCodeableConcept(
             DataTypeFactory.createCoding('http://terminology.hl7.org/CodeSystem/condition-clinical', 'active'))
@@ -34,33 +36,22 @@ export class Condition {
           break
         case 'code':
           if (value)
-            resource.code = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding('http://snomed.info/sct', String(value), String(value)))
+            resource.code = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding('http://snomed.info/sct', value, value))
           resolve(true)
           break
         case 'subject':
-          resource.subject = {reference: `Patient/${String(value)}`} as fhir.Reference
+          resource.subject = {reference: `Patient/${value}`} as fhir.Reference
           resolve(true)
-          // fhirService.search('Patient', {identifier: String(value)})
-          //   .then(res => {
-          //     const bundle: fhir.Bundle = res.data
-          //     if (bundle.entry?.length) {
-          //       const patient: fhir.Patient = bundle.entry[0].resource as fhir.Patient
-          //       resource.subject = {reference: `Patient/${patient.id}`} as fhir.Reference
-          //     }
-          //     resolve(true)
-          //   })
-          //   .catch(err => {
-          //     reject(err)
-          //   })
           break
         case 'onset[x]:onsetDateTime':
-          if (fieldType === 'Date') {
+          if (sourceType === 'Date') {
+            let date = value
             if (!(value instanceof Date)) {
-              value = new Date(String(value))
+              date = new Date(value)
             }
             try {
-              resource.onsetDateTime = value.getFullYear() + '-' +
-                ('0' + (value.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + value.getUTCDate()).slice(-2)
+              resource.onsetDateTime = date.getFullYear() + '-' +
+                ('0' + (date.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + date.getUTCDate()).slice(-2)
             } catch (e) {
               reject(e)
             }
@@ -68,18 +59,8 @@ export class Condition {
           resolve(true)
           break
         case 'asserter':
-          fhirService.search('Practitioner', {identifier: String(value)})
-            .then(res => {
-              const bundle: fhir.Bundle = res.data
-              if (bundle.entry?.length) {
-                const practitioner: fhir.Practitioner = bundle.entry[0].resource as fhir.Practitioner
-                resource.asserter = {reference: `Practitioner/${practitioner.id}`} as fhir.Reference
-              }
-              resolve(true)
-            })
-            .catch(err => {
-              reject(err)
-            })
+          resource.asserter = {reference: `Practitioner/${value}`} as fhir.Reference
+          resolve(true)
           break
         default:
           resolve(true)

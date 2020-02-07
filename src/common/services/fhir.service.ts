@@ -1,13 +1,15 @@
 import { environment } from '../environment'
 import { FhirClient } from 'ng-fhir/FhirClient'
 import axios from 'axios'
+import http from 'http'
 
 export class FhirService {
 
   config: any
   client: FhirClient
 
-  constructor () {
+  constructor (baseUrl?: any) {
+    if (baseUrl) environment.server.config.baseUrl = baseUrl
     this.config = environment.server.config
     this.client = new FhirClient(this.config)
   }
@@ -98,21 +100,25 @@ export class FhirService {
    * @param method
    */
   postBatch (resources: fhir.Resource[], method?: 'POST' | 'PUT'): Promise<any> {
+    const httpAgent = new http.Agent({keepAlive: true})
     const transactionResource: fhir.Bundle = {
       resourceType: 'Bundle',
       type: 'batch',
       entry: []
     }
     for (const resource of resources) {
+      if (resource.resourceType === 'Patient' || resource.resourceType === 'Practitioner')
+        method = 'PUT'
+      const request: fhir.BundleEntryRequest = {
+        method: method || 'POST',
+        url: resource.resourceType + (method === 'PUT' ? `/${resource.id}` : '')
+      }
       transactionResource.entry?.push({
         resource,
-        request: {
-          method: method || 'POST',
-          url: resource.resourceType
-        } as fhir.BundleEntryRequest
+        request
       })
     }
-    return axios.post(this.config.baseUrl, transactionResource, {headers: this.config.headers})
+    return axios.post(this.config.baseUrl, transactionResource, {headers: this.config.headers, httpAgent})
   }
 
   /**

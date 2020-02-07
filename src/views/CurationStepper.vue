@@ -1,23 +1,28 @@
 <template>
   <div>
 
-    <!--The first step - Data Source Analyzing-->
+    <!--Starts-->
     <template v-if="step === 1">
+      <OnFHIRConfig />
+    </template>
+
+    <!--The first step - Data Source Analyzing-->
+    <template v-if="step === 2">
       <DataSourceAnalyzer />
     </template>
 
     <!--The second step - Metadata Mapping-->
-    <template v-if="step === 2">
+    <template v-if="step === 3">
       <MetadataMapper />
     </template>
 
     <!--The third step - Transforming-->
-    <template v-if="step === 3">
+    <template v-if="step === 4">
       <Transformer />
     </template>
 
     <!--The last step Validation of Resources-->
-    <template v-if="step === 4" />
+    <template v-if="step === 5" />
 
   </div>
 </template>
@@ -28,6 +33,11 @@
 
   @Component({
     components: {
+      OnFHIRConfig: () => ({
+        component: import('@/components/OnFHIRConfig.vue'),
+        loading: Loading,
+        delay: 0
+      }),
       DataSourceAnalyzer: () => ({
         component: import('@/components/DataSourceAnalyzer.vue'),
         loading: Loading,
@@ -50,3 +60,10 @@
   }
 
 </script>
+
+<style lang="stylus">
+  .top-fix-column
+    position sticky
+    top 0
+    z-index 2
+</style>

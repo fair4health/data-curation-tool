@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-toolbar class="bg-grey-4">
+    <q-toolbar class="bg-grey-4 top-fix-column">
       <q-toolbar-title class="text-grey-8">
         Curation - <span class="text-subtitle1">Confirm and Transform</span>
       </q-toolbar-title>
@@ -99,7 +99,6 @@
           </template>
         </q-table>
         <div class="row content-end q-gutter-sm">
-          <q-btn flat label="Back" icon="fas fa-angle-left" class="q-mt-lg" @click="previousStep" no-caps />
           <q-space />
           <q-btn class="q-mt-lg" color="primary" label="Remove Resource" no-caps>
             <q-spinner class="q-ml-sm" size="xs" v-show="loading" />
@@ -111,10 +110,13 @@
               </q-list>
             </q-menu>
           </q-btn>
-          <q-btn flat label="Transform" class="q-mt-lg" @click="start" no-caps />
+          <q-btn flat label="Transform" class="q-mt-lg" @click="startTransform" no-caps />
         </div>
       </q-card-section>
     </q-card>
+    <div class="row q-ma-md">
+      <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
+    </div>
   </div>
 </template>
 
@@ -150,7 +152,8 @@
       }, 0)
     }
 
-    start () {
+    startTransform () {
+      const fhirBase: string = this.$store.getters['fhir/fhirBase']
       const filePathList = Object.keys(this.groupBy(this.mappingList, 'file'))
       for (let i = 0, p = Promise.resolve(); i < filePathList.length; i++) {
         p = p.then(_ => new Promise(resolve => {
@@ -165,7 +168,7 @@
             return item
           })
           const sheets = this.mappingObj[filePath]
-          ipcRenderer.send('transform', {filePath, sheets})
+          ipcRenderer.send('transform', fhirBase, {filePath, sheets})
 
           // In case of file reading failure
           // Delete all other sheets listeners in that file
@@ -197,11 +200,11 @@
                   }
                   return v
                 })
-                if (result) {
-                  this.$log.success('Transforming', `Transform done ${sheet} in ${filePath}`)
+                if (result && result.status === 'done') {
+                  this.$log.success('Transform', `Transform done ${sheet} in ${filePath}`)
                   resolve1()
                 } else {
-                  this.$log.error('Transforming', `Transform error for ${sheet} in ${filePath}. For details see logs/main`)
+                  this.$log.error('Transform', `${result.description}. Transform error for ${sheet} in ${filePath}. For more details see logs/main`)
                   resolve1()
                 }
               })
@@ -234,7 +237,8 @@
     }
     remove (resourceType: string) {
       this.loading = true
-      ipcRenderer.send('delete-resource', resourceType)
+      const fhirBase: string = this.$store.getters['fhir/fhirBase']
+      ipcRenderer.send('delete-resource', fhirBase, resourceType)
       ipcRenderer.on('delete-resource-result', (event, result) => {
         ipcRenderer.removeAllListeners('delete-resource-result')
         if (result) {
@@ -248,10 +252,11 @@
     }
     previousStep () {
       this.$q.dialog({
-        title: 'Previous Step',
+        title: '<i class="fas fa-info text-primary"> Previous Step </i>',
         message: 'If you go back and make any change, the changes you have made in this section will be lost.',
-        class: 'text-weight-bold text-grey-9',
-        cancel: true
+        class: 'text-grey-9',
+        cancel: true,
+        html: true
       }).onOk(() => {
         this.$store.commit('decrementStep')
       })

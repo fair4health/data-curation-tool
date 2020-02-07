@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-toolbar class="bg-grey-4">
+    <q-toolbar class="bg-grey-4 top-fix-column">
       <q-toolbar-title class="text-grey-8">
         Curation - <span class="text-subtitle1">Data Source Analyzer</span>
       </q-toolbar-title>
@@ -55,7 +55,7 @@
                   </q-list>
                   <div class="row justify-end">
                     <q-item-section side>
-                      <q-btn unelevated label="Cancel" color="grey-3" text-color="grey-8" @click="fileSourceList=[]" no-caps />
+                      <q-btn unelevated label="Remove" color="grey-3" text-color="grey-8" @click="fileSourceList=[]" no-caps />
                     </q-item-section>
                   </div>
                 </template>
@@ -105,10 +105,20 @@
                   </div>
                 </q-item-section>
                 <q-item-section side>
-                  <q-btn flat round icon="delete" @click="deleteSavedMapping(index)" />
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn flat round icon="save_alt" color="green" @click="loadFromStorage(mapping)" />
+                  <q-btn icon="more_vert" unelevated round color="grey-3" text-color="grey" no-caps>
+                    <q-menu>
+                      <q-list separator style="min-width: 200px">
+                        <q-item clickable class="text-grey-9" @click="loadFromStorage(mapping)" v-close-popup>
+                          <q-item-section avatar><q-icon name="fas fa-file-download" /></q-item-section>
+                          <q-item-section>Load</q-item-section>
+                        </q-item>
+                        <q-item clickable class="text-red-5" @click="deleteSavedMapping(index)" v-close-popup>
+                          <q-item-section avatar><q-icon name="delete" /></q-item-section>
+                          <q-item-section>Delete</q-item-section>
+                        </q-item>
+                      </q-list>
+                    </q-menu>
+                  </q-btn>
                 </q-item-section>
               </q-item>
             </q-list>
@@ -120,9 +130,10 @@
       </q-card>
     </q-expansion-item>
     <div class="row q-ma-md">
+      <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="$store.commit('decrementStep')" no-caps />
       <q-space />
-      <q-btn v-if="fileSourceList.length" unelevated label="Next" icon-right="chevron_right"
-             color="primary" @click="$store.commit('incrementStep')" no-caps />
+      <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!fileSourceList.length"
+             @click="$store.commit('incrementStep')" no-caps />
     </div>
   </div>
 </template>

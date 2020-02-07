@@ -63,10 +63,11 @@
           <q-stepper flat vertical :contracted="isCollapsed" v-model="step"
                      ref="stepper" alternative-labels color="primary" class="bg-grey-3"
                      :style="isCollapsed ? 'padding: 0; width: 70px' : ''">
-            <q-step :name="1" title="Analyze Data Source" icon="fas fa-database" :done="step > 1" />
-            <q-step :name="2" title="Map Metadata" icon="fas fa-list-ul" :done="step > 2" />
-            <q-step :name="3" title="Confirm and Transform" icon="fas fa-exchange-alt" :done="step > 3" />
-            <q-step :name="4" title="Validate" icon="fas fa-check-circle" :done="step > 4" />
+            <q-step :name="1" title="Verify FHIR Repo" icon="fas fa-fire" :done="step > 1" />
+            <q-step :name="2" title="Analyze Data Source" icon="fas fa-database" :done="step > 2" />
+            <q-step :name="3" title="Map Metadata" icon="fas fa-list-ul" :done="step > 3" />
+            <q-step :name="4" title="Confirm and Transform" icon="fas fa-exchange-alt" :done="step > 4" />
+            <q-step :name="5" title="Validate" icon="fas fa-check-circle" :done="step > 5" />
           </q-stepper>
         </q-item>
         <q-separator />

@@ -1,7 +1,7 @@
 // const onfhirBase = 'http://f4h.srdc.com.tr/fhir'
 const onfhirBase = 'http://localhost:8080/fhir'
 
-export const environment = {
+export let environment = {
   server: {
     config: {
       baseUrl: onfhirBase,

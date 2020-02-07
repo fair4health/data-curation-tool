@@ -1,51 +1,55 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
 import { environment } from './../../environment'
+import { Resource } from './Resource'
 
-export class Practitioner {
+export class Practitioner extends Resource {
 
-  static generate (resource: fhir.Practitioner, field: string, fieldType: string | undefined, subfields: string[], value: any): Promise<any> {
+  static generate (resource: fhir.Practitioner, payload: ResourceGenerator.Payload): Promise<any> {
+
+    const {value, sourceType, targetField, targetSubFields, fhirType} = payload
+
     return new Promise<any>((resolve, reject) => {
       if (!resource.meta?.profile) {
         resource.meta = {}
         resource.meta.profile = [environment.profiles.practitioner_uv_ips]
       }
-      switch (field) {
+      switch (targetField) {
         case 'id':
-          resource.id = String(value)
-          const identifier: fhir.Identifier = {system: environment.server.config.baseUrl, value: String(value)}
+          resource.id = value
+          const identifier: fhir.Identifier = {system: environment.server.config.baseUrl, value}
           resource.identifier = [identifier]
           resolve(true)
           break
         case 'address':
           const address: fhir.Address = {}
-          address.country = String(value)
+          address.country = value
           resource.address = [address]
           resolve(true)
           break
         case 'name':
-          if (!subfields.length) {
-            const given = String(value).split(' ')
+          if (!targetSubFields.length) {
+            const given = value.split(' ')
             const family = given.pop()
             resource.name = [] as fhir.HumanName[]
             resource.name.push({ family, given })
           } else {
             if (!resource.name?.length)
               resource.name = [{}] as fhir.HumanName[]
-            switch (subfields[0]) {
+            switch (targetSubFields[0]) {
               case 'text':
-                resource.name[0].text = String(value)
+                resource.name[0].text = value
                 break
               case 'family':
-                resource.name[0].family = String(value)
+                resource.name[0].family = value
                 break
               case 'given':
-                resource.name[0].given = String(value).split(' ')
+                resource.name[0].given = value.split(' ')
                 break
               case 'prefix':
-                resource.name[0].prefix = String(value).split(' ')
+                resource.name[0].prefix = value.split(' ')
                 break
               case 'suffix':
-                resource.name[0].suffix = String(value).split(' ')
+                resource.name[0].suffix = value.split(' ')
                 break
             }
           }
@@ -53,7 +57,7 @@ export class Practitioner {
           break
         case 'telecom':
           resource.telecom = [] as fhir.ContactPoint[]
-          resource.telecom.push(DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding('system', 'code', String(value))))
+          resource.telecom.push(DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding('system', 'code', value)))
           resolve(true)
           break
         default:

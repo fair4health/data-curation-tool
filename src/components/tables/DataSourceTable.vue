@@ -90,7 +90,7 @@
           <template v-slot:body-cell-target="props">
             <q-td :props="props">
               <div v-for="(target, index) in props.row.target" :key="index">
-                <q-chip dense removable @remove="removeTarget(props.row.target, index);selectedAttr=selectedAttr" :color="'orange-'+(index%3*2+6)" text-color="white">
+                <q-chip dense removable @remove="removeTarget(props.row.target, index)" :color="'orange-'+(index%3*2+6)" text-color="white">
                   <span class="q-mx-xs" style="font-size: 12px">{{ target.value }}</span>
                 </q-chip>
               </div>
@@ -99,7 +99,7 @@
           <template v-slot:body-cell-group="props">
             <q-td :props="props">
               <div v-for="(value, name) in props.row.group" v-bind:key="name">
-                <q-chip dense removable @remove="removeGroup(props.row.group, name);selectedAttr=selectedAttr" color="grey-2" text-color="grey-6">
+                <q-chip dense removable @remove="removeGroup(props.row.group, name)" color="grey-2" text-color="grey-6">
                   <span class="text-italic q-mx-xs" style="font-size: 12px">{{ name ? '#' + name : '' }}</span>
                 </q-chip>
               </div>
@@ -161,8 +161,9 @@
       ([this.sheetHeaders, this.selectedAttr] = [[], []])
       if (this.currentSheet) {
         // If headers have been already fetched, load from cache; else fetch headers from file
-        if (this.currentSheet.headers && this.currentSheet.headers.length)
-          this.sheetHeaders = this.currentSheet.headers
+        const tmp = {...this.currentSheet}
+        if (tmp.headers && tmp.headers.length)
+          this.sheetHeaders = tmp.headers
         else
           this.fetchHeaders()
       }
@@ -213,16 +214,16 @@
       this.$q.loading.show()
       setTimeout(() => {
         list.splice(index, 1)
-        this.currentSheet!.headers = this.sheetHeaders
-        this.fileSourceList = this.fileSourceList
+        // this.currentSheet!.headers = this.sheetHeaders
+        // this.fileSourceList = this.fileSourceList
         this.$q.loading.hide()
       }, 0)
     }
 
     removeGroup (obj: any, key: string) {
       delete obj[key]
-      this.currentSheet!.headers = this.sheetHeaders
-      this.fileSourceList = this.fileSourceList
+      // this.currentSheet!.headers = this.sheetHeaders
+      // this.fileSourceList = this.fileSourceList
     }
 
   }
