@@ -146,7 +146,7 @@
   @Component
   export default class DataSourceAnalyzer extends Vue {
     private isHovering: boolean = false
-    private mappingStore: StoreMappingObject[] = []
+    private mappingStore: store.MappingObject[] = []
 
     get step (): number { return this.$store.getters.curationStep }
 
@@ -154,7 +154,7 @@
     set fileSourceList (value) { this.$store.commit('file/updateSourceList', value) }
 
     get files (): string[] { return this.fileSourceList.map(f => f.value) }
-    get savedMappings (): StoreMappingObject[] {
+    get savedMappings (): store.MappingObject[] {
       const savedMappings = localStorage.getItem('f4h-store-fileSourceList')
       this.mappingStore = savedMappings ? JSON.parse(savedMappings) : []
       return this.mappingStore
@@ -186,7 +186,7 @@
       }
     }
 
-    loadFromStorage (mapping: StoreMappingObject) {
+    loadFromStorage (mapping: store.MappingObject) {
       if (mapping) {
         this.$q.loading.show()
         this.$store.dispatch('file/initializeStore', mapping.data)

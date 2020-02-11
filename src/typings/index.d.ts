@@ -4794,8 +4794,32 @@ declare namespace ResourceGenerator {
   }
 }
 
-declare interface StoreMappingObject {
-  date: Date
-  data: object
-  name: string
+declare namespace store {
+  interface MappingObject {
+    date: Date
+    data: object
+    name: string
+  }
+  interface SavedRecord {
+    fileName: string
+    sheets: Sheet[]
+  }
+  interface Sheet {
+    sheetName: string
+    records: Record[]
+  }
+  interface Record {
+    recordId: string
+    data: SourceTargetGroup[]
+  }
+  interface SourceTargetGroup {
+    type: string
+    value: string
+    target: Target[]
+  }
+  interface Target {
+    profile: string
+    resource: string
+    value: string
+  }
 }

@@ -202,8 +202,6 @@
     /*max-width 1400px*/
     margin-left auto
     margin-right auto
-  .notify-opacity
-    opacity 0.9
   .menu-list .q-item
     border-radius 0 32px 32px 0
 </style>

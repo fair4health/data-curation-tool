@@ -9,12 +9,8 @@ export const cellType = {
 }
 export const sourceDataTableHeaders = [
   { name: 'attr', required: true, label: 'Attribute', align: 'left', field: 'value', icon: 'fas fa-bars', sortable: true },
-  { name: 'type', required: true, label: 'Type', align: 'center', field: 'type', icon: 'fas fa-spell-check' },
-  { name: 'target', label: 'Target', align: 'center', field: 'target' },
-  { name: 'group', label: 'Group', align: 'right', field: 'group', icon: 'fas fa-hashtag',
-    description: 'Groups to indicate that the selected properties are in the same record.' +
-      ' If you don\'t group attributes for the same record, each property is considered a new record.'
-  }
+  { name: 'type', required: true, label: 'Type', align: 'left', field: 'type', icon: 'fas fa-spell-check' },
+  { name: 'target', label: 'Target', align: 'center', field: 'target' }
 ]
 export const mappingDataTableHeaders = [
   { name: 'status', align: 'center', label: 'Status', field: 'status', icon: 'fas fa-info-circle', classes: 'bg-grey-2', headerClasses: 'bg-primary text-white' },

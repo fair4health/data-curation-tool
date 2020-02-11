@@ -1,11 +1,13 @@
-import { FileSource, Sheet } from '@/common/model/file-source'
+import {BufferElement, FileSource, Sheet, SourceDataElement} from '@/common/model/file-source'
 
 const fileSource = {
   namespaced: true,
   state: {
     fileSourceList: [],
     currentFile: null,
-    selectedElements: []
+    selectedElements: [],
+    bufferSheetHeaders: [],
+    savedRecords: null
   },
   getters: {
     sourceList: state => state.fileSourceList,
@@ -13,7 +15,9 @@ const fileSource = {
     sheets: state => state.currentFile?.sheets || [],
     currentSheet: state => state.currentFile?.sheets.find(s => s.value === state.currentFile?.currentSheet?.value),
     selectedElements: state => state.selectedElements || [],
-    fileByPath : state => filePath => state.fileSourceList.find(file => file.path === filePath)
+    fileByPath : state => filePath => state.fileSourceList.find(file => file.path === filePath),
+    bufferSheetHeaders: state => state.bufferSheetHeaders || [],
+    savedRecords: state => state.savedRecords || null
   },
   mutations: {
     updateSourceList (state, sourceList: FileSource[]) {
@@ -34,7 +38,12 @@ const fileSource = {
         state.currentFile.currentSheet = tmpSheet.find(s => s.value === state.currentFile?.currentSheet?.value) || null
       }
     },
-    setSheetHeaders (state, headers: any) {
+    setSheetHeaders (state, headers: SourceDataElement[]) {
+      if (state.currentFile) {
+        state.currentFile.currentSheet.headers = headers
+      }
+    },
+    updateSheetHeaders (state, headers: any) {
       if (state.currentFile) {
         state.currentFile.currentSheet.headers = headers
       }
@@ -51,6 +60,15 @@ const fileSource = {
     },
     setSelectedElements (state, list: any[]) {
       state.selectedElements = list
+    },
+    setBufferSheetHeaders (state, list: BufferElement[]) {
+      state.bufferSheetHeaders = list
+    },
+    setupBufferSheetHeaders (state) {
+      state.bufferSheetHeaders = state.currentFile.currentSheet?.headers?.map(_ => ({type: _.type, value: _.value}))
+    },
+    setSavedRecords (state, value: store.SavedRecord[]) {
+      state.savedRecords = value
     }
   },
   actions: {
@@ -70,6 +88,7 @@ const fileSource = {
         commit('updateSourceList', [])
         commit('setCurrentFile', null)
         commit('setSelectedElements', [])
+        commit('setBufferSheetHeaders', [])
         resolve()
       })
     }

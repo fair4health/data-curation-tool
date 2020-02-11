@@ -62,7 +62,7 @@
                 {{ props.row.sheet }}
               </q-td>
               <q-td key="targets" :props="props" class="text-weight-bold">
-                {{ props.row.targets }}
+                {{ computedSavedRecord(props.row.file, props.row.sheet).length }}
               </q-td>
             </q-tr>
             <q-tr v-show="props.expand" :props="props">
@@ -85,12 +85,35 @@
                   </q-item>
 
                   <q-separator />
-
-                  <q-card-section class="q-mb-xs q-pt-xs overflow-auto" >
-                    <div class="text-grey-8" style="max-height: 15vh">
-                      <div v-for="(target, index) in props.row.targetList" :key="index">
-                        {{target.value}} -> {{target.target.map(_ => _.value)}} <br/>
+                  <q-card-section class="text-subtitle1">
+                    <q-list v-if="savedRecords.length" class="row">
+                      <div v-for="(record, index) in computedSavedRecord(props.row.file, props.row.sheet)" :key="index"
+                           class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                        <q-card class="q-ma-xs" bordered flat>
+                          <q-card-section class="text-caption bg-grey-3 text-weight-bold text-italic fa-border">
+                            <div class="row items-center">
+                              <q-chip class="text-grey-8" color="white" style="font-size: 12px">#{{record.recordId}}</q-chip>
+                            </div>
+                          </q-card-section>
+                          <q-card-section>
+                            <q-list separator>
+                              <q-item v-for="(column, index) in record.data" :key="index">
+                                <q-item-section style="font-size: 12px">{{column.value}}</q-item-section>
+                                <div class="row col">
+                                  <q-chip dense v-for="(target, targetI) in column.target" :key="targetI"
+                                          color="primary" text-color="white" class="cursor-pointer">
+                                    <span class="q-mx-xs ellipsis" style="font-size: 12px">{{target.value}}</span>
+                                    <q-tooltip>{{target.value}}</q-tooltip>
+                                  </q-chip>
+                                </div>
+                              </q-item>
+                            </q-list>
+                          </q-card-section>
+                        </q-card>
                       </div>
+                    </q-list>
+                    <div v-else class="text-grey-7">
+                      No content
                     </div>
                   </q-card-section>
                 </q-card>
@@ -122,7 +145,7 @@
 
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
-  import { FileSource } from '@/common/model/file-source'
+  import { FileSource, Record, Sheet, SourceDataElement } from '@/common/model/file-source'
   import { ipcRenderer } from 'electron'
   import { mappingDataTableHeaders } from '@/common/model/data-table'
 
@@ -138,18 +161,27 @@
 
     get columns (): object[] { return mappingDataTableHeaders }
     get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
+    get savedRecords (): store.SavedRecord[] { return this.$store.getters['file/savedRecords'] }
 
     mounted () {
       this.loading = true
-      setTimeout(() => {
-        this.getMappings().then(() => {
-          let index = 0
-          this.mappingList = Object.keys(this.mappingObj).flatMap(f =>
-            Object.keys(this.mappingObj[f]).map(s =>
-              ({name: index++, file: f, sheet: s, targets: this.mappingObj[f][s].length, targetList: this.mappingObj[f][s], transform: 0})))
-          this.loading = false
-        })
-      }, 0)
+      this.getMappings().then(() => {
+        let index = 0
+        this.mappingList = Object.keys(this.mappingObj).flatMap(f =>
+          Object.keys(this.mappingObj[f]).map(s =>
+            ({name: index++, file: f, sheet: s, transform: 0})))
+        this.loading = false
+      })
+    }
+
+    computedSavedRecord (fileName: string, sheetName: string): store.Record[] {
+      const files: store.SavedRecord[] = this.savedRecords.filter(_ => _.fileName === fileName)
+      if (files.length) {
+        const sheets: store.Sheet[] = files[0].sheets.filter(_ => _.sheetName === sheetName)
+        if (sheets.length) {
+          return sheets[0].records
+        } else return []
+      } else return []
     }
 
     startTransform () {
@@ -216,16 +248,25 @@
       }
     }
     getMappings (): Promise<any> {
-      return Promise.all(this.fileSourceList.map(async file => {
+      return Promise.all(this.fileSourceList.map((file: FileSource) => {
         this.mappingObj[file.path] = {}
         const currFile = this.mappingObj[file.path]
-        return Promise.all(file.sheets?.map(async sheet => {
-          // TODO:
-          // Filter headers which have any targets
-          const headersWithTarget = sheet.headers?.filter(h => h.target?.length) || []
-          if (headersWithTarget.length) {
-            currFile[sheet.label] = headersWithTarget
-          }
+        return Promise.all(file.sheets?.map((sheet: Sheet) => {
+
+          const columns = (sheet.headers?.filter(h => h.record?.length) || []) as SourceDataElement[]
+          currFile[sheet.label] = []
+
+          return Promise.all(columns.map((column: SourceDataElement) => {
+
+            // const groupIds = column.group ? Object.keys(column.group) : []
+            column.record!.map((record: Record) => {
+              if (record.target && record.target.length) {
+                currFile[sheet.label].push({recordId: record.recordId, value: column.value, type: column.type, target: record.target})
+              }
+            })
+          })).then(_ => {
+            if (!currFile[sheet.label].length) Vue.delete(currFile, sheet.label)
+          })
         }) || [])
       }))
     }

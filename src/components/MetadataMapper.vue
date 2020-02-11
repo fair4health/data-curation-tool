@@ -1,45 +1,117 @@
 <template>
   <div>
-    <q-toolbar class="bg-grey-4">
+    <q-toolbar class="bg-grey-4 top-fix-column">
       <q-toolbar-title class="text-grey-8">
         Curation - <span class="text-subtitle1">Metadata Mapper</span>
       </q-toolbar-title>
-      <q-space />
-      <div class="q-gutter-sm q-mx-sm">
-        <q-btn unelevated label="Export" color="grey" icon="publish" @click="exportState" no-caps />
-        <q-btn unelevated label="Save" color="green" icon="save" @click="saveState" no-caps />
-      </div>
     </q-toolbar>
     <div class="q-ma-sm">
-      <q-card flat class="bg-white">
-        <q-splitter v-model="splitPercentage" :limits="[20, 80]" separator-class="bg-grey-4"
-                    separator-style="width: 12px" :horizontal="$q.screen.lt.sm" class="row">
+      <q-expansion-item
+        default-opened
+        class="q-mt-md col-12"
+        icon="add"
+        label="New Record"
+        header-class="bg-primary text-white"
+        expand-icon-class="text-white"
+      >
+        <q-card bordered class="bg-white">
+          <q-splitter v-model="splitPercentage" :limits="[20, 80]" separator-class="bg-grey-4"
+                      separator-style="width: 12px" :horizontal="$q.screen.lt.sm" class="row">
 
-          <!--Data Source Part-->
-          <template v-slot:before>
-            <FhirResourceTable ref="fhirResourceComp" />
-          </template>
+            <!--Data Source Part-->
+            <template v-slot:before>
+              <FhirResourceTable ref="fhirResourceComp" />
+            </template>
 
-          <!--Splitter Separator-->
-          <template v-slot:separator>
-            <q-icon color="grey-7" size="xs" name="drag_indicator" />
-          </template>
+            <!--Splitter Separator-->
+            <template v-slot:separator>
+              <q-icon color="grey-7" size="xs" name="drag_indicator" />
+            </template>
 
-          <!--FHIR Resource Part-->
-          <template v-slot:after>
-            <DataSourceTable />
-          </template>
-        </q-splitter>
-        <q-separator />
-        <q-card-section class="row">
-          <q-space />
-          <div class="q-gutter-sm">
-            <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" icon="sync_alt" unelevated label="Match"
-                   color="blue-1" text-color="primary" @click="matchFields" no-caps />
-            <q-btn unelevated label="Add Record" color="green" icon="check" @click="group" no-caps />
+            <!--FHIR Resource Part-->
+            <template v-slot:after>
+              <DataSourceTable />
+            </template>
+          </q-splitter>
+          <q-separator />
+          <q-card-section class="row">
+            <q-space />
+            <div class="q-gutter-sm">
+              <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" icon="sync_alt" unelevated label="Match"
+                     color="blue-1" text-color="primary" @click="matchFields" no-caps />
+              <q-btn unelevated label="Add Record" color="green" icon="check" @click="addRecord" no-caps />
+            </div>
+          </q-card-section>
+        </q-card>
+      </q-expansion-item>
+      <q-expansion-item
+        default-opened
+        class="q-mt-md col-12"
+        icon="save"
+        label="Saved Records"
+        header-class="bg-primary text-white"
+        expand-icon-class="text-white"
+      >
+        <q-card bordered>
+          <div v-if="savedRecords.length" class="row q-pa-xs">
+            <q-space />
+            <div class="q-gutter-sm q-mx-sm">
+              <q-btn unelevated label="Export" color="grey" icon="publish" @click="exportState" no-caps />
+              <q-btn unelevated label="Save" color="green" icon="save" @click="saveState" no-caps />
+            </div>
           </div>
-        </q-card-section>
-      </q-card>
+          <q-card-section class="text-subtitle1">
+            <q-list v-if="savedRecords.length" class="row">
+              <q-expansion-item popup v-for="file in savedRecords" :key="file.fileName"
+                                default-opened
+                                group="savedRecords"
+                                class="col-12"
+                                icon="fas fa-file"
+                                :label="file.fileName"
+                                header-class="bg-secondary text-grey-1 text-subtitle2"
+                                expand-icon-class="text-white"
+              >
+                <div v-for="sheet in file.sheets" :key="sheet.sheetName" class="q-pa-md">
+                  <div class="row text-grey-6 text-weight-bold">{{sheet.sheetName}}</div>
+                  <q-separator spaced />
+                  <div class="row">
+                    <div v-for="(record, index) in sheet.records" :key="index" class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                      <q-card class="q-ma-xs" bordered flat>
+                        <q-card-section class="text-caption bg-grey-3 text-weight-bold text-italic fa-border">
+                          <div class="row items-center">
+                            <q-chip class="text-grey-8" color="white" style="font-size: 12px">#{{record.recordId}}</q-chip>
+                            <q-space />
+                            <q-btn unelevated round dense size="sm" icon="close" color="white" text-color="grey-9"
+                                   @click="removeRecord(file.fileName, sheet.sheetName, record.recordId)" />
+                          </div>
+                        </q-card-section>
+                        <q-card-section>
+                          <q-list separator>
+                            <q-item v-for="(column, index) in record.data" :key="index">
+                              <q-item-section style="font-size: 12px">{{column.value}}</q-item-section>
+                              <div class="row col">
+                                <q-chip dense removable v-for="(target, targetI) in column.target" :key="targetI"
+                                        color="orange" text-color="white" class="cursor-pointer"
+                                        @remove="removeMatching(file.fileName, sheet.sheetName, record.recordId, column.value, target.value)">
+                                  <span class="q-mx-xs ellipsis" style="font-size: 12px">{{target.value}}</span>
+                                  <q-tooltip>{{target.value}}</q-tooltip>
+                                </q-chip>
+                              </div>
+                            </q-item>
+                          </q-list>
+                        </q-card-section>
+                      </q-card>
+                    </div>
+                  </div>
+                </div>
+              </q-expansion-item>
+            </q-list>
+            <div v-else class="text-grey-7">
+              No content
+            </div>
+          </q-card-section>
+        </q-card>
+      </q-expansion-item>
     </div>
     <div class="row q-ma-md">
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
@@ -52,7 +124,7 @@
 
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
-  import { FileSource, Sheet } from '@/common/model/file-source'
+  import { BufferElement, FileSource, Record, Sheet, SourceDataElement } from '@/common/model/file-source'
   import { ipcRenderer } from 'electron'
   import { QTree } from 'quasar'
   import Loading from '@/components/Loading.vue'
@@ -74,12 +146,14 @@
   })
   export default class MetadataMapper extends Vue {
     private splitPercentage: number = 50
+    private mappingList: any[] = []
+    private mappingObj: Map<string, any> = new Map<string, any>()
+    private savedRecords: store.SavedRecord[] = []
 
     get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
     set fileSourceList (value) { this.$store.commit('file/updateSourceList', value) }
 
     get currentSource (): FileSource { return this.$store.getters['file/currentFile'] }
-    set currentSource (value) { this.$store.commit('file/setCurrentFile', value) }
 
     get sheets (): Sheet[] { return this.$store.getters['file/sheets'] }
     set sheets (value) { this.$store.commit('file/setSheets', value) }
@@ -87,13 +161,9 @@
     get currentSheet (): Sheet | null { return this.$store.getters['file/currentSheet'] }
     set currentSheet (value) { this.$store.commit('file/setCurrentSheet', value) }
 
-    get fhirProfileList (): string[] { return this.$store.getters['fhir/profileList'].map(r => r.id) }
-
     get currentFHIRRes (): string { return this.$store.getters['fhir/currentResource'] }
-    set currentFHIRRes (value) { this.$store.commit('fhir/setCurrentResource', value) }
 
     get currentFHIRProf (): string { return this.$store.getters['fhir/currentProfile'] }
-    set currentFHIRProf (value) { this.$store.commit('fhir/setCurrentProfile', value) }
 
     get selectedAttr (): any { return this.$store.getters['file/selectedElements'] }
     set selectedAttr (value) { this.$store.commit('file/setSelectedElements', value) }
@@ -101,6 +171,68 @@
     get tickedFHIRAttr (): any { return this.$store.getters['fhir/selectedElements'] }
     set tickedFHIRAttr (value) { this.$store.commit('fhir/setSelectedElements', value) }
 
+    get bufferSheetHeaders (): BufferElement[] { return this.$store.getters['file/bufferSheetHeaders'] }
+    set bufferSheetHeaders (value) { this.$store.commit('file/setBufferSheetHeaders', value) }
+
+    mounted () {
+      this.loadSavedRecords()
+    }
+
+    loadSavedRecords () {
+      this.$q.loading.show()
+      this.savedRecords = []
+      this.getMappings().then(() => {
+        return Promise.all(Object.keys(this.mappingObj).map((fileName: string) => {
+          const file = this.mappingObj[fileName]
+          const sheets: store.Sheet[] = []
+          return Promise.all(Object.keys(file).map((sheetName: string) => {
+            // Obj (key, value) (record, header)
+            const sheet = file[sheetName]
+            const records: store.Record[] = []
+            return Promise.all(Object.keys(sheet).map((recordId: string) => {
+              records.push(
+                {
+                  recordId,
+                  data: sheet[recordId]
+                }
+              )
+            })). then(_ => {
+              if (records.length) sheets.push({sheetName, records})
+            })
+          })).then(_ => {
+            if (sheets.length) this.savedRecords.push({fileName, sheets})
+          })
+        })).then(_ => {
+          this.$q.loading.hide()
+          this.$store.commit('file/setSavedRecords', this.savedRecords)
+        })
+      })
+        .catch(err => this.$q.notify({message: 'Cannot get saved records'}))
+    }
+
+    getMappings (): Promise<any> {
+      return Promise.all(this.fileSourceList.map((file: FileSource) => {
+        this.mappingObj[file.path] = {}
+        const currFile = this.mappingObj[file.path]
+        return Promise.all(file.sheets?.map((sheet: Sheet) => {
+
+          const columns = (sheet.headers?.filter(h => h.record?.length) || []) as SourceDataElement[]
+          currFile[sheet.label] = {}
+
+          return Promise.all(columns.map((column: SourceDataElement) => {
+
+            // const groupIds = column.group ? Object.keys(column.group) : []
+            column.record!.map((record: Record) => {
+              if (record.target && record.target.length)
+                currFile[sheet.label][record.recordId] = [
+                  ...(currFile[sheet.label][record.recordId] || []),
+                  {value: column.value, type: column.type, target: record.target}
+                ]
+            })
+          }))
+        }) || [])
+      }))
+    }
     exportState () {
       ipcRenderer.send('export-file', JSON.stringify(this.$store.state.file))
       ipcRenderer.on('export-done', (event, result) => {
@@ -160,9 +292,9 @@
         }
       })
       for (const attr of this.selectedAttr) {
-        for (const column of this.currentSheet?.headers || []) {
+        for (const column of this.bufferSheetHeaders || []) {
           if (column?.value === attr.value) {
-            if (!column['target']) column['target'] = this.tickedFHIRAttr
+            if (!column['target']) column['target'] = [...this.tickedFHIRAttr]
             else column['target'].push(...this.tickedFHIRAttr)
             this.$log.success('Mapping',
               this.currentSource?.label + '.' + this.currentSheet?.label + '.' + column.value +
@@ -174,22 +306,102 @@
       this.$q.notify({ message: 'Target value entered successfully', icon: 'check', color: 'green-6'})
     }
 
-    group () {
-      const isGroupedBefore = this.selectedAttr.filter(_ => Object.keys(Object.assign({}, _.group)).length)
-      if (isGroupedBefore.length) {
-        const groupId = Object.keys(isGroupedBefore[0].group)[0]
-        this.selectedAttr.map(attr => {
-          if (!attr.group) attr.group = {}
-          attr.group[groupId] = true
-        })
-        this.selectedAttr = []
+    addRecord () {
+      const bufferItems: BufferElement[] = this.bufferSheetHeaders.filter(_ => _.target && _.target.length)
+
+      if (!bufferItems.length)
+        return;
+
+      const recordId = uuid().slice(0, 8)
+
+      const file = this.fileSourceList.filter(_ => _.path === this.currentSource.path) || []
+      if (file.length === 1) {
+        const sheet = file[0].sheets?.filter(_ => _.value === this.currentSheet?.value) || []
+        if (sheet.length === 1) {
+          Promise.all(bufferItems.map(buffer => {
+            const filteredHeaders = sheet[0].headers?.filter(_ => _.value === buffer.value) || []
+            if (filteredHeaders.length) {
+              const header = filteredHeaders[0]
+              if (!header.record || !header.record.length) {
+                header.record = []
+              }
+              header.type = buffer.type
+              header.record.push(
+                {
+                  recordId,
+                  target: buffer.target?.map(_ => ({..._}))
+                } as Record
+              )
+            }
+          })).then(_ => {
+            this.$store.commit('file/setupBufferSheetHeaders')
+            this.$q.notify({message: 'Saved'})
+            this.loadSavedRecords()
+          })
+        }
       } else {
-        const groupId = uuid().slice(0, 8)
-        this.selectedAttr.map(attr => {
-          attr.group = {}
-          attr.group[groupId] = true
-        })
-        this.selectedAttr = []
+        this.$q.loading.show()
+        this.$q.notify({message: 'Something went wrong during saving record.'})
+      }
+    }
+
+    removeRecord (fileName: string, sheetName: string, recordId: string) {
+      this.$q.dialog({
+        title: '<i class="fas fa-info text-primary"> Delete Record </i>',
+        message: `Delete record with id <span class="text-weight-bolder">#${recordId}</span>.`,
+        class: 'text-grey-9',
+        cancel: true,
+        html: true
+      }).onOk(() => {
+        this.$q.loading.show()
+        const file = this.fileSourceList.filter(_ => _.path === fileName) || []
+        if (file.length === 1) {
+          const sheet = file[0].sheets?.filter(_ => _.value === sheetName) || []
+          if (sheet.length === 1) {
+            Promise.all(sheet[0].headers?.map((column: SourceDataElement) => {
+              if (column.record && column.record.length) {
+                for (let i = 0; i < column.record.length; i++) {
+                  if (column.record[i].recordId === recordId) column.record.splice(i, 1)
+                }
+              }
+            }) || []).then(() => {
+              this.$q.loading.hide()
+              this.loadSavedRecords()
+            })
+          }
+        } else {
+          this.$q.loading.show()
+          this.$q.notify({message: 'Something went wrong during deletion.'})
+        }
+      })
+    }
+
+    removeMatching (fileName: string, sheetName: string, recordId: string, sourceValue: string, targetValue: string) {
+      this.$q.loading.show()
+      const file = this.fileSourceList.filter(_ => _.path === fileName) || []
+      if (file.length === 1) {
+        const sheet = file[0].sheets?.filter(_ => _.value === sheetName) || []
+        if (sheet.length === 1) {
+          const columns = sheet[0].headers?.filter(_ => _.value === sourceValue) || []
+          Promise.all(columns.map((column: SourceDataElement) => {
+            if (column.record && column.record.length) {
+              column.record.map((record: Record) => {
+                if (record.recordId === recordId) {
+                  for (let i = 0; i < (record.target?.length || 0); i++) {
+                    if (record.target![i].value === targetValue)
+                      record.target?.splice(i, 1)
+                  }
+                }
+              })
+            }
+          }) || []).then(() => {
+            this.$q.loading.hide()
+            this.loadSavedRecords()
+          })
+        }
+      } else {
+        this.$q.loading.show()
+        this.$q.notify({message: 'Something went wrong during deletion.'})
       }
     }
 

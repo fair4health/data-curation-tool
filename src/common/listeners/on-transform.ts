@@ -4,10 +4,9 @@ import log from 'electron-log'
 import 'isomorphic-fetch'
 import { ipcMain } from 'electron'
 import { workbookMap } from '../model/workbook'
-import { SourceDataElement, Target } from './../model/file-source'
+import { TargetResource } from './../model/file-source'
 import { FhirService } from './../services/fhir.service'
 import { Patient, Practitioner, Condition, Observation } from './../model/resources'
-import { v4 as uuid } from 'uuid'
 
 /**
  * Start point of Transforming data to FHIR
@@ -44,7 +43,7 @@ ipcMain.on('transform', (event, fhirBase: string, data: any) => {
 
       // Start transform action
       // Create records row by row in entries
-      const resources: fhir.Resource[] = []
+      const resources: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
 
       Promise.all(entries.map(entry => {
 
@@ -54,8 +53,8 @@ ipcMain.on('transform', (event, fhirBase: string, data: any) => {
         const conditionMap: Map<string, fhir.Condition> = new Map<string, fhir.Condition>()
         const observationMap: Map<string, fhir.Observation> = new Map<string, fhir.Observation>()
 
-        return Promise.all(sheetTargets.map((attr: SourceDataElement) => {
-          return Promise.all(attr.target?.map((target: Target) => {
+        return Promise.all(sheetTargets.map(attr => {
+          return Promise.all(attr.target?.map((target: TargetResource) => {
             return new Promise((resolve, reject) => {
               if (entry[attr.value!] !== null && entry[attr.value!] !== undefined && entry[attr.value!] !== '') {
                 const [resource, field, ...subfields] = target.value.split('.')
@@ -78,19 +77,11 @@ ipcMain.on('transform', (event, fhirBase: string, data: any) => {
                       .catch(err => reject(err))
                     break
                   case 'Condition':
-                    // TODO: Review group assignments
-                    const conditionGroupIds = attr.group ? Object.keys(attr.group) : [uuid().slice(0, 8)]
-                    Promise.all(conditionGroupIds.map(groupId => {
-                      return new Promise((resolve1, reject1) => {
-                        if (!conditionMap.has(groupId)) {
-                          const conditionResource: fhir.Condition = {resourceType: 'Condition', subject: {}} as fhir.Condition
-                          conditionMap.set(groupId, conditionResource)
-                        }
-                        Condition.generate(conditionMap.get(groupId)!, payload)
-                            .then(_ => resolve1(true))
-                            .catch(err => reject1(err))
-                      })
-                    }))
+                    if (!conditionMap.has(attr.recordId)) {
+                      const conditionResource: fhir.Condition = {resourceType: 'Condition', subject: {}} as fhir.Condition
+                      conditionMap.set(attr.recordId, conditionResource)
+                    }
+                    Condition.generate(conditionMap.get(attr.recordId)!, payload)
                       .then(_ => resolve(true))
                       .catch(err => reject(err))
                     break
@@ -125,11 +116,12 @@ ipcMain.on('transform', (event, fhirBase: string, data: any) => {
             // End of transforming for one row
 
             // Patients
-            if (patientResource.id) resources.push(patientResource)
+            if (patientResource.id) resources.set('Patient', [...(resources.get('Patient') || []), patientResource])
             // Practitioners
-            if (practitionerResource.id) resources.push(practitionerResource)
+            if (practitionerResource.id) resources.set('Practitioner', [...(resources.get('Practitioner') || []), practitionerResource])
             // Conditions
-            for (const conditionResource of Array.from(conditionMap.values())) resources.push(conditionResource)
+            for (const conditionResource of Array.from(conditionMap.values()))
+              resources.set('Condition', [...(resources.get('Condition') || []), conditionResource])
 
           })
           .catch(err => {
@@ -139,24 +131,37 @@ ipcMain.on('transform', (event, fhirBase: string, data: any) => {
       }))
         .then(() => { // End of sheet
           if (entries.length) {
-            // Batch upload resources
-            // Max capacity 5000 resources
-            const len = Math.ceil(resources.length / 5000)
 
-            const bulkPromiseList: Array<Promise<any>> = []
+            Promise.all(Array.from(resources.keys()).map(resourceType => {
+              const resourceList = resources.get(resourceType)
+              return new Promise(((resolve, reject) => {
+                // Batch upload resources
+                // Max capacity 5000 resources
+                const len = Math.ceil(resourceList!.length / 5000)
 
-            for (let i = 0, p = Promise.resolve(); i < len; i++) {
-              bulkPromiseList.push(p.then(_ => new Promise((resolve, reject) => {
-                fhirService.postBatch(resources.slice(i * 5000, (i + 1) * 5000))
-                  .then(() => resolve())
+                const bulkPromiseList: Array<Promise<any>> = []
+
+                for (let i = 0, p = Promise.resolve(); i < len; i++) {
+                  bulkPromiseList.push(p.then(_ => new Promise((resolveBulk, rejectBulk) => {
+                    fhirService.postBatch(resourceList!.slice(i * 5000, (i + 1) * 5000))
+                      .then(() => resolveBulk())
+                      .catch(err => {
+                        log.warn(`Batch upload error: ${err}`)
+                        rejectBulk(err)
+                      })
+                  })))
+                }
+
+                Promise.all(bulkPromiseList)
+                  .then(res => {
+                    log.info(`Batch upload completed for Resource: ${resourceType}`)
+                    resolve()
+                  })
                   .catch(err => {
-                    log.warn(`Batch upload error: ${err}`)
                     reject(err)
                   })
-              })))
-            }
-
-            Promise.all(bulkPromiseList)
+              }))
+            }))
               .then(res => {
                 event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'done'})
                 log.info(`Transform done ${sheet} in ${filePath}`)
