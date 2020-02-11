@@ -69,7 +69,7 @@ Vue.use(Quasar, {
       textColor: 'white',
       timeout: 1500,
       position: 'top',
-      classes: 'notify-opacity',
+      color: 'grey-8',
       actions: [ { icon: 'clear', color: 'white' } ]
     }
   },
