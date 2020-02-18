@@ -1,4 +1,11 @@
-export class FHIRUtils {
+import HmacSHA256 from 'crypto-js/hmac-md5'
+
+export class FHIRUtil {
+
+  static hash (data: string): string {
+    if (!data) return ''
+    return HmacSHA256(data, this.secretKey).toString()
+  }
 
   static jsonToQueryString (json: object): string {
     return '?' + Object.keys(json).map(key => encodeURIComponent(key) + '=' + encodeURIComponent(json[key])).join('&')
@@ -29,5 +36,7 @@ export class FHIRUtils {
     }
     return obj
   }
+
+  private static readonly secretKey: string = 'E~w*c`r8e?aetZeid]b$y+aIl&p4eNr*a'
 
 }

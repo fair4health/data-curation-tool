@@ -12,19 +12,23 @@ export class ResourceFactory {
     let value: string = ''
 
     switch (resource.resourceType) {
+      case 'Patient':
+        value += resource.id
+        break
+      case 'Practitioner':
+        value += resource.id
+        break
       case 'Condition':
         const condition: fhir.Condition = resource as fhir.Condition
         if (condition.subject?.reference) value += condition.subject.reference
         if (condition.code?.coding && condition.code.coding.length) value += condition.code.coding[0].code
         if (condition.onsetDateTime) value += condition.onsetDateTime
         break
-      case 'Observation':
-        break
       default:
         break
     }
 
-    return FHIRUtil.hash(value)
+    return FHIRUtil.hash(value || '')
 
   }
 
