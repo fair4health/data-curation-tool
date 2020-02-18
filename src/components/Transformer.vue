@@ -26,7 +26,7 @@
           </template>
           <template v-slot:body="props">
             <q-tr :props="props">
-              <q-td key="status" :props="props">
+              <q-td key="status" class="no-padding" :props="props">
                 <template v-if="props.row.transform.status === 'processing'">
                   <span>
                     <q-spinner color="grey-9" />
@@ -34,17 +34,25 @@
                   </span>
                 </template>
                 <template v-else-if="props.row.transform.status === 'done'">
-                  <q-icon name="check" color="green">
-                    <q-tooltip>Completed</q-tooltip>
-                  </q-icon>
+                  <div class="row items-center">
+                    <div class="col-6">
+                      <q-icon name="check" color="green">
+                        <q-tooltip>Completed</q-tooltip>
+                      </q-icon>
+                    </div>
+                    <div class="col-6 bg-grey-3">
+                      <q-btn flat dense icon="feedback" color="grey-8" label="Details" size="sm"
+                             @click="openErrorReport(props.row.transform.transformDetails)" no-caps />
+                    </div>
+                  </div>
                 </template>
                 <template v-else-if="props.row.transform.status === 'warning'">
-                  <q-icon name="warning" color="orange-6">
+                  <q-icon name="warning" color="orange-6" @click="openErrorReport(props.row.transform.transformDetails)">
                     <q-tooltip>{{ props.row.transform.description }}</q-tooltip>
                   </q-icon>
                 </template>
                 <template v-else-if="props.row.transform.status === 'error'">
-                  <q-icon name="error_outline" color="red">
+                  <q-icon name="error_outline" color="red" class="cursor-pointer" @click="openErrorReport(props.row.transform.transformDetails)">
                     <q-tooltip>{{ props.row.transform.description }}</q-tooltip>
                   </q-icon>
                 </template>
@@ -148,6 +156,7 @@
   import { FileSource, Record, Sheet, SourceDataElement } from '@/common/model/file-source'
   import { ipcRenderer } from 'electron'
   import { mappingDataTableHeaders } from '@/common/model/data-table'
+  import TransformDetailCard from '@/components/TransformDetailCard.vue'
 
   @Component
   export default class Transformer extends Vue {
@@ -188,7 +197,7 @@
       const fhirBase: string = this.$store.getters['fhir/fhirBase']
       const filePathList = Object.keys(this.groupBy(this.mappingList, 'file'))
       for (let i = 0, p = Promise.resolve(); i < filePathList.length; i++) {
-        p = p.then(_ => new Promise(resolve => {
+        p = p.then(_ => new Promise(resolveFile => {
           const filePath = filePathList[i]
           this.$q.loading.show({
             message: `Loading ${filePath.split('\\').pop()}...`
@@ -202,15 +211,31 @@
           const sheets = this.mappingObj[filePath]
           ipcRenderer.send('transform', fhirBase, {filePath, sheets})
 
+          ipcRenderer.on(`transforming-read-file-${filePath}`, (event, result) => {
+            this.$q.loading.hide()
+            ipcRenderer.removeAllListeners(`transforming-read-file-${filePath}`)
+          })
+
           // In case of file reading failure
           // Delete all other sheets listeners in that file
-          ipcRenderer.on(`transforming-${filePath}`, (event, result) => {
+          ipcRenderer.on(`transforming-error-${filePath}`, (event, result) => {
             this.$q.loading.hide()
-            ipcRenderer.removeAllListeners(`transforming-${filePath}`)
+            ipcRenderer.removeAllListeners(`transforming-error-${filePath}`)
+            // Remove all listeners for sheets in the file
+            Object.keys(this.mappingObj[filePath]).map(sheet => {
+              this.mappingList = this.mappingList.map(v => {
+                if (v.file === filePath && v.sheet === sheet) {
+                  v.transform = result
+                }
+                return v
+              })
+              ipcRenderer.removeAllListeners(`transforming-${filePath}-${sheet}`)
+              resolveFile()
+            })
           })
 
           Promise.all(Object.keys(this.mappingObj[filePath]).map(sheet => {
-            return new Promise(resolve1 => {
+            return new Promise(resolveSheet => {
               ipcRenderer.on(`info-${filePath}-${sheet}`, (event, result) => {
                 this.mappingList = this.mappingList.map(item => {
                   if ((item.file === filePath) && (item.sheet === sheet)) {
@@ -220,7 +245,7 @@
                   return item
                 })
                 // TODO:
-                // ipcRenderer.removeAllListeners(`info-${filePath}-${sheet}`)
+                ipcRenderer.removeAllListeners(`info-${filePath}-${sheet}`)
               })
               ipcRenderer.on(`transforming-${filePath}-${sheet}`, (event, result) => {
                 ipcRenderer.removeAllListeners(`transforming-${filePath}-${sheet}`)
@@ -234,16 +259,16 @@
                 })
                 if (result && result.status === 'done') {
                   this.$log.success('Transform', `Transform done ${sheet} in ${filePath}`)
-                  resolve1()
+                  resolveSheet()
                 } else {
                   this.$log.error('Transform', `${result.description}. Transform error for ${sheet} in ${filePath}. For more details see logs/main`)
-                  resolve1()
+                  resolveSheet()
                 }
               })
             })
           }))
-          .then(() => resolve())
-          .catch(() => resolve())
+          .then(() => resolveFile())
+          .catch(() => resolveFile())
         }))
       }
     }
@@ -300,6 +325,13 @@
         html: true
       }).onOk(() => {
         this.$store.commit('decrementStep')
+      })
+    }
+    openErrorReport (errorMessage: any) {
+      this.$store.commit('fhir/setTransformDetails', errorMessage)
+      this.$q.dialog({
+        component: TransformDetailCard,
+        parent: this
       })
     }
   }

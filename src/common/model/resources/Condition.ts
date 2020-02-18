@@ -1,6 +1,7 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
 import { environment } from './../../environment'
 import { Resource } from './Resource'
+import { FHIRUtil } from './../../utils/fhir-util'
 
 export class Condition extends Resource {
 
@@ -40,7 +41,7 @@ export class Condition extends Resource {
           resolve(true)
           break
         case 'subject':
-          resource.subject = {reference: `Patient/${value}`} as fhir.Reference
+          resource.subject = {reference: `Patient/${FHIRUtil.hash(value)}`} as fhir.Reference
           resolve(true)
           break
         case 'onset[x]:onsetDateTime':
@@ -59,7 +60,7 @@ export class Condition extends Resource {
           resolve(true)
           break
         case 'asserter':
-          resource.asserter = {reference: `Practitioner/${value}`} as fhir.Reference
+          resource.asserter = {reference: `Practitioner/${FHIRUtil.hash(value)}`} as fhir.Reference
           resolve(true)
           break
         default:

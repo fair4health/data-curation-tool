@@ -7,6 +7,7 @@ import { workbookMap } from '../model/workbook'
 import { TargetResource } from './../model/file-source'
 import { FhirService } from './../services/fhir.service'
 import { Patient, Practitioner, Condition, Observation } from './../model/resources'
+import { ResourceFactory } from './../model/factory/resource-factory'
 
 /**
  * Start point of Transforming data to FHIR
@@ -17,7 +18,7 @@ ipcMain.on('transform', (event, fhirBase: string, data: any) => {
 
   const getWorkbooks = new Promise<Excel.WorkBook>(((resolve, reject) => {
     if (workbookMap.has(filePath)) {
-      event.sender.send(`transforming-${filePath}`, [])
+      event.sender.send(`transforming-read-file-${filePath}`, [])
       resolve(workbookMap.get(filePath))
     } else {
       fs.readFile(filePath, (err, buffer) => {
@@ -28,7 +29,7 @@ ipcMain.on('transform', (event, fhirBase: string, data: any) => {
         const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', cellDates: true})
         // Save buffer workbook to map
         workbookMap.set(filePath, workbook)
-        event.sender.send(`transforming-${filePath}`, [])
+        event.sender.send(`transforming-read-file-${filePath}`, [])
         resolve(workbook)
       })
     }
@@ -48,127 +49,164 @@ ipcMain.on('transform', (event, fhirBase: string, data: any) => {
       Promise.all(entries.map(entry => {
 
         // For each row create resource instances
-        const patientResource: fhir.Patient = {resourceType: 'Patient'}
-        const practitionerResource: fhir.Practitioner = {resourceType: 'Practitioner'}
-        const conditionMap: Map<string, fhir.Condition> = new Map<string, fhir.Condition>()
-        const observationMap: Map<string, fhir.Observation> = new Map<string, fhir.Observation>()
+        const resourceMap: Map<string, Map<string, fhir.Resource>> = new Map<string, Map<string, fhir.Resource>>()
 
-        return Promise.all(sheetTargets.map(attr => {
-          return Promise.all(attr.target?.map((target: TargetResource) => {
-            return new Promise((resolve, reject) => {
-              if (entry[attr.value!] !== null && entry[attr.value!] !== undefined && entry[attr.value!] !== '') {
-                const [resource, field, ...subfields] = target.value.split('.')
-                const payload: ResourceGenerator.Payload = {
-                  value: String(entry[attr.value!]),
-                  sourceType: attr.type,
-                  targetField: field,
-                  targetSubFields: subfields,
-                  fhirType: target.type
+        return new Promise((resolveOneRow, rejectOneRow) => {
+          Promise.all(sheetTargets.map(attr => {
+            return Promise.all(attr.target?.map((target: TargetResource) => {
+              return new Promise((resolve, reject) => {
+                if (entry[attr.value!] !== null && entry[attr.value!] !== undefined && entry[attr.value!] !== '') {
+                  const [resourceType, field, ...subfields] = target.value.split('.')
+                  const payload: ResourceGenerator.Payload = {
+                    value: String(entry[attr.value!]),
+                    sourceType: attr.type,
+                    targetField: field,
+                    targetSubFields: subfields,
+                    fhirType: target.type
+                  }
+                  if (!resourceMap.get(resourceType)) {
+                    resourceMap.set(resourceType, new Map<string, fhir.Resource>())
+                  }
+                  const curResourceGroup: Map<string, fhir.Resource> = resourceMap.get(resourceType)!
+                  switch (resourceType) {
+                    case 'Patient':
+                      if (!curResourceGroup.has(attr.recordId)) {
+                        const patientResource: fhir.Patient = {resourceType: 'Patient'}
+                        curResourceGroup.set(attr.recordId, patientResource)
+                      }
+                      Patient.generate(curResourceGroup.get(attr.recordId)! as fhir.Patient, payload)
+                        .then(_ => resolve(true))
+                        .catch(err => reject(err))
+                      break
+                    case 'Practitioner':
+                      if (!curResourceGroup.has(attr.recordId)) {
+                        const practitionerResource: fhir.Practitioner = {resourceType: 'Practitioner'}
+                        curResourceGroup.set(attr.recordId, practitionerResource)
+                      }
+                      Practitioner.generate(curResourceGroup.get(attr.recordId)! as fhir.Practitioner, payload)
+                        .then(_ => resolve(true))
+                        .catch(err => reject(err))
+                      break
+                    case 'Condition':
+                      if (!curResourceGroup.has(attr.recordId)) {
+                        const conditionResource: fhir.Condition = {resourceType: 'Condition', subject: {}} as fhir.Condition
+                        curResourceGroup.set(attr.recordId, conditionResource)
+                      }
+                      Condition.generate(curResourceGroup.get(attr.recordId)! as fhir.Condition, payload)
+                        .then(_ => resolve(true))
+                        .catch(err => reject(err))
+                      break
+                    case 'Observation':
+                      // TODO
+                      break
+                    default:
+                      resolve(true)
+                  }
+                } else {
+                  // log.warn(`${entry[attr.value!]} Empty field`)
+                  resolve(true)
                 }
-                switch (resource) {
-                  case 'Patient':
-                    Patient.generate(patientResource, payload)
-                      .then(_ => resolve(true))
-                      .catch(err => reject(err))
-                    break
-                  case 'Practitioner':
-                    Practitioner.generate(practitionerResource, payload)
-                      .then(_ => resolve(true))
-                      .catch(err => reject(err))
-                    break
-                  case 'Condition':
-                    if (!conditionMap.has(attr.recordId)) {
-                      const conditionResource: fhir.Condition = {resourceType: 'Condition', subject: {}} as fhir.Condition
-                      conditionMap.set(attr.recordId, conditionResource)
-                    }
-                    Condition.generate(conditionMap.get(attr.recordId)!, payload)
-                      .then(_ => resolve(true))
-                      .catch(err => reject(err))
-                    break
-                  case 'Observation':
-                    // TODO
-                    // const observationGroupIds = attr.group ? Object.keys(attr.group) : [uuid().slice(0, 8)]
-                    // Promise.all(observationGroupIds.map(groupId => {
-                    //   return new Promise((resolve1, reject1) => {
-                    //     if (!observationMap.has(groupId)) {
-                    //       const observationResource: fhir.Observation = {resourceType: 'Observation', status: 'final', subject: {}} as fhir.Observation
-                    //       observationMap.set(groupId, observationResource)
-                    //     }
-                    //     Observation.generate(observationMap.get(groupId)!, payload)
-                    //       .then(_ => resolve1(true))
-                    //       .catch(err => reject1(err))
-                    //   })
-                    // }))
-                    //   .then(_ => resolve(true))
-                    //   .catch(err => reject(err))
-                    break
-                  default:
-                    resolve(true)
-                }
-              } else {
-                // log.warn(`${entry[attr.value!]} Empty field`)
-                resolve(true)
-              }
+              })
+            }) || [])
+          }))
+            .then((res) => {
+              // End of transforming for one row
+
+              // Assign id to each resource and list them
+              Promise.all(Array.from(resourceMap.keys()).map(resourceType => {
+                if (!resources.get(resourceType)) resources.set(resourceType, [])
+                const tmpList: fhir.Resource[] = []
+                Promise.all(Array.from(Array.from(resourceMap.get(resourceType)!.values()).map((resource: fhir.Resource) => {
+                  tmpList.push()
+                  const id: string = ResourceFactory.generateID(resource)
+                  if (id) {
+                    resource.id = id
+                    tmpList.push(resource)
+                  }
+                })))
+                  .then(() => resources.set(resourceType, resources.get(resourceType)!.concat(tmpList)))
+                  .catch(err => rejectOneRow(err))
+
+              }))
+                .then(() => resolveOneRow(true))
+                .catch(err => rejectOneRow(err))
+
             })
-          }) || [])
-        }))
-          .then((res) => {
-            // End of transforming for one row
-
-            // Patients
-            if (patientResource.id) resources.set('Patient', [...(resources.get('Patient') || []), patientResource])
-            // Practitioners
-            if (practitionerResource.id) resources.set('Practitioner', [...(resources.get('Practitioner') || []), practitionerResource])
-            // Conditions
-            for (const conditionResource of Array.from(conditionMap.values()))
-              resources.set('Condition', [...(resources.get('Condition') || []), conditionResource])
-
-          })
-          .catch(err => {
-            // event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'error', description: `Transform error for sheet: ${sheet}`})
-            log.error(`Transform error in one row for sheet: ${sheet} in ${filePath}: ${err.message}`)
-          })
+            .catch(err => {
+              // event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'error', description: `Transform error for sheet: ${sheet}`})
+              log.error(`Transform error in one row for sheet: ${sheet} in ${filePath}: ${err.message}`)
+              rejectOneRow(err)
+            })
+        })
       }))
         .then(() => { // End of sheet
           if (entries.length) {
 
             Promise.all(Array.from(resources.keys()).map(resourceType => {
               const resourceList = resources.get(resourceType)
-              return new Promise(((resolve, reject) => {
+              return new Promise((resolve, reject) => {
                 // Batch upload resources
                 // Max capacity 5000 resources
                 const len = Math.ceil(resourceList!.length / 5000)
 
-                const bulkPromiseList: Array<Promise<any>> = []
+                const batchPromiseList: Array<Promise<any>> = []
 
                 for (let i = 0, p = Promise.resolve(); i < len; i++) {
-                  bulkPromiseList.push(p.then(_ => new Promise((resolveBulk, rejectBulk) => {
-                    fhirService.postBatch(resourceList!.slice(i * 5000, (i + 1) * 5000))
-                      .then(() => resolveBulk())
+                  batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
+                    fhirService.postBatch(resourceList!.slice(i * 5000, (i + 1) * 5000), 'PUT')
+                      .then(res => {
+                        const bundle: fhir.Bundle = res.data as fhir.Bundle
+                        const transformDetails: TransformDetail[] = []
+                        let hasError: boolean = false
+
+                        // Check batch bundle response for errors
+                        Promise.all(bundle.entry?.map(_ => {
+                          if (!_.resource) {
+                            const operationOutcome: fhir.OperationOutcome = _.response!.outcome as fhir.OperationOutcome
+                            operationOutcome.issue.map(issue => {
+                              if (issue.severity === 'error') {
+                                hasError = true
+                                transformDetails.push({status: 'error', message: `${issue.location} : ${issue.diagnostics}`} as TransformDetail)
+                              } else if (issue.severity === 'information') {
+                                transformDetails.push({status: 'done', message: `${issue.diagnostics}`} as TransformDetail)
+                              }
+                            })
+                          } else {
+                            transformDetails.push({status: 'done', message: `${resourceType} resource created with id ${_.resource.id}`} as TransformDetail)
+                          }
+                        }) || []).then(() => {
+                          if (hasError) rejectBatch(transformDetails)
+                          else resolveBatch(transformDetails)
+                        })
+                          .catch(err => rejectBatch(err))
+                      })
                       .catch(err => {
                         log.warn(`Batch upload error: ${err}`)
-                        rejectBulk(err)
+                        rejectBatch(err)
                       })
-                  })))
+                  }).catch(_ => _)))
                 }
 
-                Promise.all(bulkPromiseList)
+                Promise.all(batchPromiseList)
                   .then(res => {
                     log.info(`Batch upload completed for Resource: ${resourceType}`)
-                    resolve()
+                    resolve([].concat.apply([], res))
                   })
                   .catch(err => {
+                    log.info(`Batch upload error for Resource: ${resourceType}`)
                     reject(err)
                   })
-              }))
+
+              }).catch(_ => _)
+
             }))
-              .then(res => {
-                event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'done'})
+              .then((res: any[]) => {
+                event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'done', transformDetails: [].concat.apply([], res)})
                 log.info(`Transform done ${sheet} in ${filePath}`)
               })
               .catch(err => {
-                event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'error', description: `Batch upload error - ${err.message}`})
-                // log.error(`BATCH ERROR ${filePath}-${sheet} - ${JSON.stringify(err)}`)
+                event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'error', description: 'Batch upload error', transformDetails: err})
+                log.error(`BATCH ERROR ${filePath}-${sheet}`)
               })
 
           } else {
@@ -183,8 +221,8 @@ ipcMain.on('transform', (event, fhirBase: string, data: any) => {
     }
   })
     .catch(err => {
-      event.sender.send(`transforming-${filePath}`, [])
-      log.error(err)
+      event.sender.send(`transforming-error-${filePath}`, {status: 'error', description: `File not found`})
+      log.error(`File not found: ${err}`)
       return
     })
 })

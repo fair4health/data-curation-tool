@@ -96,7 +96,7 @@
                           </q-item>
                           <q-separator />
                           <q-item>
-                            <q-btn flat label="Save" color="primary" @click="fhirElementList=fhirElementList" :disabled="prop.node.selectedType===''" />
+                            <q-btn flat label="Save" color="primary" @click="$store.commit('fhir/setElementList', fhirElementList)" :disabled="prop.node.selectedType===''" />
                             <q-space />
                             <q-btn flat label="Clear" color="red-6" @click="prop.node.selectedType=''" :disabled="prop.node.selectedType===''" />
                           </q-item>

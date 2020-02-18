@@ -1,5 +1,6 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
 import { Resource } from './Resource'
+import { FHIRUtil } from './../../utils/fhir-util'
 
 export class Observation extends Resource {
 
@@ -39,12 +40,12 @@ export class Observation extends Resource {
           resolve(true)
           break
         case 'subject':
-          resource.subject = {reference: `Patient/${value}`} as fhir.Reference
+          resource.subject = {reference: `Patient/${FHIRUtil.hash(value)}`} as fhir.Reference
           resolve(true)
           break
         case 'performer':
           if (resource.performer?.length) resource.performer = []
-          resource.performer?.push({reference: `Practitioner/${value}`})
+          resource.performer?.push({reference: `Practitioner/${FHIRUtil.hash(value)}`})
           resolve(true)
           break
         default:

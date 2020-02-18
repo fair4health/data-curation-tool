@@ -1,7 +1,7 @@
 import { FhirService } from '@/common/services/fhir.service'
 import { environment } from '@/common/environment'
 import StructureDefinition = fhir.StructureDefinition
-import { FHIRUtils } from '@/common/utils/fhir-util'
+import { FHIRUtil } from '@/common/utils/fhir-util'
 
 const fhirStore = {
   namespaced: true,
@@ -14,7 +14,8 @@ const fhirStore = {
     currentProfile: '',
     selectedElements: [],
     fhirBase: '',
-    fhirService: new FhirService()
+    fhirService: new FhirService(),
+    transformDetails: []
   },
   getters: {
     resourceList: state => state.resourceList || [],
@@ -25,7 +26,8 @@ const fhirStore = {
     currentProfile: state => state.currentProfile || '',
     selectedElements: state => state.selectedElements || [],
     fhirBase: state => state.fhirBase,
-    fhirService: state => state.fhirService
+    fhirService: state => state.fhirService,
+    transformDetails: state => state.transformDetails || []
   },
   mutations: {
     setResourceList (state, list) {
@@ -36,7 +38,7 @@ const fhirStore = {
     },
     setElementList (state, list) {
       state.elementList = list
-      state.elementListFlat = list?.length ? FHIRUtils.flatten(list) : []
+      state.elementListFlat = list?.length ? FHIRUtil.flatten(list) : []
     },
     setSelectedElements (state, list) {
       state.selectedElements = list
@@ -50,6 +52,9 @@ const fhirStore = {
     updateFhirBase (state, baseUrl: string) {
       state.fhirBase = baseUrl
       state.fhirService = new FhirService(baseUrl)
+    },
+    setTransformDetails (state, transformDetails: TransformDetail[]) {
+      state.transformDetails = transformDetails
     }
   },
   actions: {

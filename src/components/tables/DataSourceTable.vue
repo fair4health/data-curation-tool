@@ -58,9 +58,6 @@
                     <q-icon v-else name="clear" color="grey-8" class="cursor-pointer" @click="filter=''" />
                   </template>
                 </q-input>
-                <q-btn flat dense round color="grey-8" icon="autorenew" @click="fetchSheets">
-                  <q-tooltip>Reload File</q-tooltip>
-                </q-btn>
               </div>
             </q-card>
           </template>

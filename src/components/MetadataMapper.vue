@@ -39,7 +39,9 @@
             <div class="q-gutter-sm">
               <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" icon="sync_alt" unelevated label="Match"
                      color="blue-1" text-color="primary" @click="matchFields" no-caps />
-              <q-btn unelevated label="Add Record" color="green" icon="check" @click="addRecord" no-caps />
+              <q-btn unelevated v-show="!editRecordId" color="green" label="Add Record" icon="check" @click="addRecord" no-caps />
+              <q-btn unelevated v-show="editRecordId" color="primary" label="Update" icon="edit" @click="addRecord" no-caps />
+              <q-btn unelevated v-show="editRecordId" color="red" label="Exit Edit Mode" @click="exitEditMode" no-caps />
             </div>
           </q-card-section>
         </q-card>
@@ -81,8 +83,12 @@
                           <div class="row items-center">
                             <q-chip class="text-grey-8" color="white" style="font-size: 12px">#{{record.recordId}}</q-chip>
                             <q-space />
-                            <q-btn unelevated round dense size="sm" icon="close" color="white" text-color="grey-9"
-                                   @click="removeRecord(file.fileName, sheet.sheetName, record.recordId)" />
+                            <div class="q-gutter-xs">
+                              <q-btn flat round dense size="sm" icon="edit" color="grey-9"
+                                     @click="editRecord(file.fileName, sheet.sheetName, record.recordId)" />
+                              <q-btn unelevated round dense size="sm" icon="close" color="white" text-color="grey-9"
+                                     @click="removeRecordPopup(file.fileName, sheet.sheetName, record.recordId)" />
+                            </div>
                           </div>
                         </q-card-section>
                         <q-card-section>
@@ -123,12 +129,14 @@
 </template>
 
 <script lang="ts">
-  import { Component, Vue } from 'vue-property-decorator'
+  import {Component, Vue, Watch} from 'vue-property-decorator'
   import { BufferElement, FileSource, Record, Sheet, SourceDataElement } from '@/common/model/file-source'
   import { ipcRenderer } from 'electron'
-  import { QTree } from 'quasar'
+  import {QSplitter, QTree} from 'quasar'
   import Loading from '@/components/Loading.vue'
   import { v4 as uuid } from 'uuid'
+  import SourceTargetGroup = store.SourceTargetGroup
+  import he from 'quasar/lang/he'
 
   @Component({
     components: {
@@ -149,11 +157,13 @@
     private mappingList: any[] = []
     private mappingObj: Map<string, any> = new Map<string, any>()
     private savedRecords: store.SavedRecord[] = []
+    private editRecordId: string = ''
 
     get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
     set fileSourceList (value) { this.$store.commit('file/updateSourceList', value) }
 
     get currentSource (): FileSource { return this.$store.getters['file/currentFile'] }
+    set currentSource (value) { this.$store.commit('file/setCurrentFile', value) }
 
     get sheets (): Sheet[] { return this.$store.getters['file/sheets'] }
     set sheets (value) { this.$store.commit('file/setSheets', value) }
@@ -174,7 +184,14 @@
     get bufferSheetHeaders (): BufferElement[] { return this.$store.getters['file/bufferSheetHeaders'] }
     set bufferSheetHeaders (value) { this.$store.commit('file/setBufferSheetHeaders', value) }
 
+    @Watch('currentSource')
+    @Watch('currentSheet')
+    onSourceChanged () {
+      this.editRecordId = ''
+    }
+
     mounted () {
+      this.editRecordId = ''
       this.loadSavedRecords()
     }
 
@@ -233,6 +250,7 @@
         }) || [])
       }))
     }
+
     exportState () {
       ipcRenderer.send('export-file', JSON.stringify(this.$store.state.file))
       ipcRenderer.on('export-done', (event, result) => {
@@ -312,7 +330,8 @@
       if (!bufferItems.length)
         return;
 
-      const recordId = uuid().slice(0, 8)
+      if (this.editRecordId) this.removeRecord(this.currentSource.path, this.currentSheet?.value!, this.editRecordId)
+      const recordId = this.editRecordId || uuid().slice(0, 8)
 
       const file = this.fileSourceList.filter(_ => _.path === this.currentSource.path) || []
       if (file.length === 1) {
@@ -334,18 +353,54 @@
               )
             }
           })).then(_ => {
+            this.editRecordId = ''
             this.$store.commit('file/setupBufferSheetHeaders')
             this.$q.notify({message: 'Saved'})
             this.loadSavedRecords()
           })
         }
       } else {
-        this.$q.loading.show()
         this.$q.notify({message: 'Something went wrong during saving record.'})
       }
     }
 
-    removeRecord (fileName: string, sheetName: string, recordId: string) {
+    editRecord (fileName: string, sheetName: string, recordId: string) {
+      new Promise(resolve => {
+        if (this.currentSource.path !== fileName) {
+          this.currentSource = this.fileSourceList.filter(_ => _.path === fileName)[0]
+        }
+        if (this.currentSheet?.value !== sheetName) {
+          this.currentSource.currentSheet = this.currentSource.sheets!.filter(_ => _.value === sheetName)[0]
+        }
+        resolve()
+      }).then(() => {
+        this.editRecordId = recordId
+        this.$q.loading.show()
+        this.$store.commit('file/setupBufferSheetHeaders')
+        const file = this.savedRecords.filter(_ => _.fileName === fileName) || []
+        if (file.length === 1) {
+          const sheet = file[0].sheets?.filter(_ => _.sheetName === sheetName) || []
+          if (sheet.length === 1) {
+            const record = sheet[0].records?.filter(_ => _.recordId === recordId)
+            const sourceAttrs: SourceTargetGroup[] = record[0].data || []
+            sourceAttrs.map(_ => {
+              const tmp = this.bufferSheetHeaders.filter(field => field.value === _.value) || []
+              if (tmp.length) {
+                tmp[0].type = _.type
+                tmp[0].target = [..._.target]
+              }
+            })
+            this.bufferSheetHeaders = [...this.bufferSheetHeaders]
+          }
+        } else {
+          this.$q.loading.hide()
+          this.$q.notify({message: 'Something went wrong.'})
+        }
+        this.$q.loading.hide()
+      })
+    }
+
+    removeRecordPopup (fileName: string, sheetName: string, recordId: string) {
       this.$q.dialog({
         title: '<i class="fas fa-info text-primary"> Delete Record </i>',
         message: `Delete record with id <span class="text-weight-bolder">#${recordId}</span>.`,
@@ -353,27 +408,32 @@
         cancel: true,
         html: true
       }).onOk(() => {
-        this.$q.loading.show()
-        const file = this.fileSourceList.filter(_ => _.path === fileName) || []
-        if (file.length === 1) {
-          const sheet = file[0].sheets?.filter(_ => _.value === sheetName) || []
-          if (sheet.length === 1) {
-            Promise.all(sheet[0].headers?.map((column: SourceDataElement) => {
-              if (column.record && column.record.length) {
-                for (let i = 0; i < column.record.length; i++) {
-                  if (column.record[i].recordId === recordId) column.record.splice(i, 1)
-                }
-              }
-            }) || []).then(() => {
-              this.$q.loading.hide()
-              this.loadSavedRecords()
-            })
-          }
-        } else {
-          this.$q.loading.show()
-          this.$q.notify({message: 'Something went wrong during deletion.'})
-        }
+        this.removeRecord(fileName, sheetName, recordId)
+        this.loadSavedRecords()
       })
+    }
+
+    removeRecord (fileName: string, sheetName: string, recordId: string) {
+      this.$q.loading.show()
+      const file = this.fileSourceList.filter(_ => _.path === fileName) || []
+      if (file.length === 1) {
+        const sheet = file[0].sheets?.filter(_ => _.value === sheetName) || []
+        if (sheet.length === 1) {
+          Promise.all(sheet[0].headers?.map((column: SourceDataElement) => {
+            if (column.record && column.record.length) {
+              for (let i = 0; i < column.record.length; i++) {
+                if (column.record[i].recordId === recordId) column.record.splice(i, 1)
+              }
+            }
+          }) || []).then(() => {
+            this.$q.loading.hide()
+            // this.loadSavedRecords()
+          })
+        }
+      } else {
+        this.$q.loading.hide()
+        this.$q.notify({message: 'Something went wrong.'})
+      }
     }
 
     removeMatching (fileName: string, sheetName: string, recordId: string, sourceValue: string, targetValue: string) {
@@ -400,9 +460,14 @@
           })
         }
       } else {
-        this.$q.loading.show()
+        this.$q.loading.hide()
         this.$q.notify({message: 'Something went wrong during deletion.'})
       }
+    }
+
+    exitEditMode () {
+      this.editRecordId = ''
+      this.$store.commit('file/setupBufferSheetHeaders')
     }
 
   }

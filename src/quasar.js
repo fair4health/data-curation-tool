@@ -25,6 +25,7 @@ import {
   QSeparator,
   QCard,
   QCardSection,
+  QCardActions,
   QInput,
   QExpansionItem,
   QStepper,
@@ -52,7 +53,9 @@ import {
   QChip,
   ClosePopup,
   QPageSticky,
-  QRadio
+  QRadio,
+  QDialog,
+  QToggle
 } from 'quasar'
 
 Vue.use(Quasar, {
@@ -91,6 +94,7 @@ Vue.use(Quasar, {
     QSeparator,
     QCard,
     QCardSection,
+    QCardActions,
     QInput,
     QExpansionItem,
     QStepper,
@@ -113,7 +117,9 @@ Vue.use(Quasar, {
     QMenu,
     QChip,
     QPageSticky,
-    QRadio
+    QRadio,
+    QDialog,
+    QToggle
   },
   directives: {
     ClosePopup

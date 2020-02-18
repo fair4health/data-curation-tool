@@ -37,7 +37,7 @@ export class Patient extends Resource {
           resolve(true)
           break
         case 'gender':
-          resource.gender = value.toLowerCase()
+          resource.gender = 'male'
           resolve(true)
           break
         case 'birthDate':
@@ -64,23 +64,11 @@ export class Patient extends Resource {
           } else {
             if (!resource.name?.length)
               resource.name = [{}] as fhir.HumanName[]
-            switch (targetSubFields[0]) {
-              case 'text':
-                resource.name[0].text = value
-                break
-              case 'family':
-                resource.name[0].family = value
-                break
-              case 'given':
-                resource.name[0].given = value.split(' ')
-                break
-              case 'prefix':
-                resource.name[0].prefix = value.split(' ')
-                break
-              case 'suffix':
-                resource.name[0].suffix = value.split(' ')
-                break
-            }
+            if (targetSubFields[0] === 'text' || targetSubFields[0] === 'family')
+              resource.name[0][targetSubFields[0]] = value
+            else
+              resource.name[0][targetSubFields[0]] = value.split(' ')
+
           }
           resolve(true)
           break
@@ -91,6 +79,24 @@ export class Patient extends Resource {
           break
         case 'contact':
           // TODO
+          resolve(true)
+          break
+        case 'deceased[x]':
+          if (fhirType === 'dateTime') {
+            let date = value
+            if (!(date instanceof Date)) {
+              date = new Date(value)
+            }
+            try {
+              resource.deceasedDateTime = date.getFullYear() + '-' +
+                ('0' + (date.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + date.getUTCDate()).slice(-2)
+            } catch (e) {
+              reject(e)
+            }
+          } else if (fhirType === 'boolean') {
+            // TODO
+            resource.deceasedBoolean = !!value
+          }
           resolve(true)
           break
         default:

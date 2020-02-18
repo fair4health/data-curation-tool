@@ -4823,3 +4823,8 @@ declare namespace store {
     value: string
   }
 }
+
+declare interface TransformDetail {
+  status: 'done' | 'error'
+  message: string
+}
