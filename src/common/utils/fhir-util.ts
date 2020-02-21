@@ -37,6 +37,13 @@ export class FHIRUtil {
     return obj
   }
 
+  static groupBy (list: any[], key: string): any {
+    return list.reduce((acc, curr) => {
+      (acc[curr[key]] = acc[curr[key]] || []).push(curr)
+      return acc
+    }, {})
+  }
+
   private static readonly secretKey: string = 'E~w*c`r8e?aetZeid]b$y+aIl&p4eNr*a'
 
 }

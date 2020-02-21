@@ -123,20 +123,19 @@
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
       <q-space />
       <q-btn v-if="fileSourceList.length" unelevated label="Next" icon-right="chevron_right"
-             color="primary" @click="$store.commit('incrementStep')" no-caps />
+             color="primary" @click="nextStep" no-caps />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-  import {Component, Vue, Watch} from 'vue-property-decorator'
+  import { Component, Vue, Watch } from 'vue-property-decorator'
   import { BufferElement, FileSource, Record, Sheet, SourceDataElement } from '@/common/model/file-source'
   import { ipcRenderer } from 'electron'
-  import {QSplitter, QTree} from 'quasar'
+  import { QTree } from 'quasar'
   import Loading from '@/components/Loading.vue'
   import { v4 as uuid } from 'uuid'
   import SourceTargetGroup = store.SourceTargetGroup
-  import he from 'quasar/lang/he'
 
   @Component({
     components: {
@@ -154,7 +153,6 @@
   })
   export default class MetadataMapper extends Vue {
     private splitPercentage: number = 50
-    private mappingList: any[] = []
     private mappingObj: Map<string, any> = new Map<string, any>()
     private savedRecords: store.SavedRecord[] = []
     private editRecordId: string = ''
@@ -183,6 +181,9 @@
 
     get bufferSheetHeaders (): BufferElement[] { return this.$store.getters['file/bufferSheetHeaders'] }
     set bufferSheetHeaders (value) { this.$store.commit('file/setBufferSheetHeaders', value) }
+
+    get mappingList (): any[] { return this.$store.getters['mappingList'] }
+    set mappingList (value) { this.$store.commit('setMappingList', value) }
 
     @Watch('currentSource')
     @Watch('currentSheet')
@@ -246,7 +247,9 @@
                   {value: column.value, type: column.type, target: record.target}
                 ]
             })
-          }))
+          })).then(_ => {
+            if (!Object.keys(currFile[sheet.label]).length) Vue.delete(currFile, sheet.label)
+          })
         }) || [])
       }))
     }
@@ -425,11 +428,13 @@
                 if (column.record[i].recordId === recordId) column.record.splice(i, 1)
               }
             }
-          }) || []).then(() => {
-            this.$q.loading.hide()
-            // this.loadSavedRecords()
-          })
-        }
+          }) || [])
+            .then(() => this.$q.loading.hide())
+            .catch(() => {
+              this.$q.loading.hide()
+              this.$q.notify({message: 'Something went wrong.'})
+            })
+        } else this.$q.loading.hide()
       } else {
         this.$q.loading.hide()
         this.$q.notify({message: 'Something went wrong.'})
@@ -468,6 +473,19 @@
     exitEditMode () {
       this.editRecordId = ''
       this.$store.commit('file/setupBufferSheetHeaders')
+    }
+
+    nextStep () {
+      this.getMappings().then(() => {
+        let index = 0
+        this.mappingList = Object.keys(this.mappingObj).flatMap(f =>
+          Object.keys(this.mappingObj[f]).map(s =>
+            ({name: index++, file: f, sheet: s, validation: 0})))
+
+        this.$store.commit('setValidationStatus', '')
+        // Next step - Validation
+        this.$store.commit('incrementStep')
+      })
     }
 
   }

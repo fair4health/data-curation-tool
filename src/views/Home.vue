@@ -17,10 +17,10 @@
       <q-item-section>
         <q-item-label class="text-h4 text-weight-bold">Overall Steps</q-item-label>
         <q-stepper flat v-model="step" ref="stepper" alternative-labels color="primary" class="bg-grey-3">
-          <q-step :name="1" title="Analyze Data Source" icon="fas fa-database"></q-step>
-          <q-step :name="2" title="Map Metadata" icon="fas fa-list-ul"></q-step>
-          <q-step :name="3" title="Confirm and Transform" icon="fas fa-exchange-alt"></q-step>
-          <q-step :name="4" title="Validate" icon="fas fa-check-circle"></q-step>
+          <q-step :name="1" title="Analyze Data Source" icon="fas fa-database" />
+          <q-step :name="2" title="Map Metadata" icon="fas fa-list-ul" />
+          <q-step :name="3" title="Validate" icon="fas fa-check-circle" />
+          <q-step :name="4" title="Transform" icon="fas fa-exchange-alt" />
         </q-stepper>
       </q-item-section>
     </q-item>
@@ -53,20 +53,6 @@
       </q-item-section>
     </q-item>
 
-    <!--Confirm and Transform-->
-    <q-item class="q-pa-lg text-weight-bold text-grey-8">
-      <q-item-section>
-        <q-item-label class="text-h7 text-grey-8">
-          <q-icon name="fas fa-exchange-alt" /> Confirm and Transform
-        </q-item-label>
-        <q-card flat class="q-ma-md">
-          <q-card-section>
-            Text
-          </q-card-section>
-        </q-card>
-      </q-item-section>
-    </q-item>
-
     <!--Validate-->
     <q-item class="q-pa-lg text-weight-bold text-grey-8">
       <q-item-section>
@@ -80,6 +66,21 @@
         </q-card>
       </q-item-section>
     </q-item>
+
+    <!--Transform-->
+    <q-item class="q-pa-lg text-weight-bold text-grey-8">
+      <q-item-section>
+        <q-item-label class="text-h7 text-grey-8">
+          <q-icon name="fas fa-exchange-alt" /> Transform
+        </q-item-label>
+        <q-card flat class="q-ma-md">
+          <q-card-section>
+            Text
+          </q-card-section>
+        </q-card>
+      </q-item-section>
+    </q-item>
+
   </div>
 </template>
 

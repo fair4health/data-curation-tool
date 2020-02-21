@@ -1,3 +1,5 @@
+import desktopCapturer = Electron.desktopCapturer
+
 declare namespace fhir {
   type id = string;
   type uri = string;
@@ -4824,7 +4826,10 @@ declare namespace store {
   }
 }
 
-declare interface TransformDetail {
-  status: 'done' | 'error'
+declare type status = 'success' | 'error' | 'pending' | 'not-started'
+
+declare interface OutcomeDetail {
+  status: status
+  resourceType: string
   message: string
 }

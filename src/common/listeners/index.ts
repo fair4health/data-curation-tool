@@ -1,2 +1,2 @@
 import './on-file'
-import './on-transform'
+import './on-validate'

@@ -2,12 +2,12 @@
   <div>
     <q-toolbar class="bg-grey-4 top-fix-column">
       <q-toolbar-title class="text-grey-8">
-        Curation - <span class="text-subtitle1">Confirm and Transform</span>
+        Curation - <span class="text-subtitle1">Validator</span>
       </q-toolbar-title>
     </q-toolbar>
     <q-card flat bordered class="q-ma-sm">
       <q-card-section>
-        <q-table flat binary-state-sort title="Mappings" :data="mappingList" :columns="columns" row-key="name"
+        <q-table flat binary-state-sort title="Validate" :data="mappingList" :columns="columns" row-key="name"
                  :rows-per-page-options="[0]" :pagination.sync="pagination" :filter="filter" class="sticky-header-table"
                  table-style="max-height: 60vh" :loading="loading" color="primary"
         >
@@ -27,13 +27,13 @@
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td key="status" class="no-padding" :props="props">
-                <template v-if="props.row.transform.status === 'processing'">
+                <template v-if="props.row.validation.status === 'processing'">
                   <span>
                     <q-spinner color="grey-9" />
-                    <q-tooltip>Transforming...</q-tooltip>
+                    <q-tooltip>Validating...</q-tooltip>
                   </span>
                 </template>
-                <template v-else-if="props.row.transform.status === 'done'">
+                <template v-else-if="props.row.validation.status === 'done'">
                   <div class="row items-center">
                     <div class="col-6">
                       <q-icon name="check" color="green">
@@ -42,18 +42,19 @@
                     </div>
                     <div class="col-6 bg-grey-3">
                       <q-btn flat dense icon="feedback" color="grey-8" label="Details" size="sm"
-                             @click="openErrorReport(props.row.transform.transformDetails)" no-caps />
+                             @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)" no-caps />
                     </div>
                   </div>
                 </template>
-                <template v-else-if="props.row.transform.status === 'warning'">
-                  <q-icon name="warning" color="orange-6" @click="openErrorReport(props.row.transform.transformDetails)">
-                    <q-tooltip>{{ props.row.transform.description }}</q-tooltip>
+                <template v-else-if="props.row.validation.status === 'warning'">
+                  <q-icon name="warning" color="orange-6" @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)">
+                    <q-tooltip>{{ props.row.validation.description }}</q-tooltip>
                   </q-icon>
                 </template>
-                <template v-else-if="props.row.transform.status === 'error'">
-                  <q-icon name="error_outline" color="red" class="cursor-pointer" @click="openErrorReport(props.row.transform.transformDetails)">
-                    <q-tooltip>{{ props.row.transform.description }}</q-tooltip>
+                <template v-else-if="props.row.validation.status === 'error'">
+                  <q-icon name="error_outline" color="red" class="cursor-pointer"
+                          @click="openOutcomeDetailCard([{status: 'error', message: props.row.validation.description, resourceType: 'OperationOutcome'}])">
+                    <q-tooltip content-class="error-tooltip" class="ellipsis-3-lines">{{ props.row.validation.description }}</q-tooltip>
                   </q-icon>
                 </template>
                 <template v-else>
@@ -131,17 +132,24 @@
         </q-table>
         <div class="row content-end q-gutter-sm">
           <q-space />
-          <q-btn class="q-mt-lg" color="primary" label="Remove Resource" no-caps>
+          <q-btn unelevated class="q-mt-lg" color="primary" label="Remove Resource" no-caps>
             <q-spinner class="q-ml-sm" size="xs" v-show="loading" />
             <q-menu transition-show="jump-down" transition-hide="jump-up" auto-close>
               <q-list style="min-width: 100px">
-                <q-item clickable v-for="(resource, index) in resourceList" :key="index" @click="remove(resource)">
+                <q-item clickable v-for="(resource, index) in resourceList" :key="index" @click="removeResource(resource)">
                   <q-item-section>{{ resource }}</q-item-section>
                 </q-item>
               </q-list>
             </q-menu>
           </q-btn>
-          <q-btn flat label="Transform" class="q-mt-lg" @click="startTransform" no-caps />
+          <q-btn unelevated label="Validate" icon="verified_user" color="blue-1" text-color="primary"
+                 :disable="validationStatus === 'pending'" @click="validate" class="q-mt-lg" no-caps>
+              <span class="q-ml-sm">
+                <q-spinner class="q-ml-sm" size="xs" v-show="validationStatus==='pending'" />
+                <q-icon name="check" size="xs" color="green" v-show="validationStatus==='success'" />
+                <q-icon name="error_outline" size="xs" color="red" v-show="validationStatus==='error'" />
+              </span>
+          </q-btn>
         </div>
       </q-card-section>
     </q-card>
@@ -156,11 +164,12 @@
   import { FileSource, Record, Sheet, SourceDataElement } from '@/common/model/file-source'
   import { ipcRenderer } from 'electron'
   import { mappingDataTableHeaders } from '@/common/model/data-table'
-  import TransformDetailCard from '@/components/TransformDetailCard.vue'
+  import { FHIRUtil } from '@/common/utils/fhir-util'
+  import OutcomeCard from '@/components/OutcomeCard.vue'
+  import electronStore from '@/common/electron-store'
 
   @Component
-  export default class Transformer extends Vue {
-    private mappingList: any[] = []
+  export default class Validator extends Vue {
     // Mapping data grouped by file and sheets
     private mappingObj: Map<string, any> = new Map<string, any>()
     private pagination = { page: 1, rowsPerPage: 0 }
@@ -171,16 +180,19 @@
     get columns (): object[] { return mappingDataTableHeaders }
     get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
     get savedRecords (): store.SavedRecord[] { return this.$store.getters['file/savedRecords'] }
+    get fhirBase (): string { return this.$store.getters['fhir/fhirBase'] }
+
+    get mappingList (): any[] { return this.$store.getters['mappingList'] }
+    set mappingList (value) { this.$store.commit('setMappingList', value) }
+
+    get validationStatus (): status { return this.$store.getters['validationStatus'] }
+    set validationStatus (value) { this.$store.commit('setValidationStatus', value) }
 
     mounted () {
       this.loading = true
-      this.getMappings().then(() => {
-        let index = 0
-        this.mappingList = Object.keys(this.mappingObj).flatMap(f =>
-          Object.keys(this.mappingObj[f]).map(s =>
-            ({name: index++, file: f, sheet: s, transform: 0})))
-        this.loading = false
-      })
+      this.getMappings()
+        .then(_ => this.loading = false)
+        .catch(_ => this.loading = false)
     }
 
     computedSavedRecord (fileName: string, sheetName: string): store.Record[] {
@@ -193,49 +205,53 @@
       } else return []
     }
 
-    startTransform () {
-      const fhirBase: string = this.$store.getters['fhir/fhirBase']
-      const filePathList = Object.keys(this.groupBy(this.mappingList, 'file'))
-      for (let i = 0, p = Promise.resolve(); i < filePathList.length; i++) {
-        p = p.then(_ => new Promise(resolveFile => {
-          const filePath = filePathList[i]
+    validate () {
+      // Init status
+      this.validationStatus = 'pending'
+      // If there are resources created, clear them
+      electronStore.set('resources', null)
+      const filePathList = Object.keys(FHIRUtil.groupBy(this.mappingList, 'file'))
+
+      // Submit each file to create resources and validate them
+      filePathList.reduce((promise, filePath) =>
+        promise.finally(() => new Promise((resolveFile, rejectFile) => {
           this.$q.loading.show({
             message: `Loading ${filePath.split('\\').pop()}...`
           })
-          this.mappingList = this.mappingList.map(item => {
-            if (item.file === filePath) {
-              item.transform = {status: 'processing'}
+          this.mappingList = this.mappingList.map(_ => {
+            if (_.file === filePath) {
+              _.validation = {status: 'processing'}
             }
-            return item
+            return _
           })
           const sheets = this.mappingObj[filePath]
-          ipcRenderer.send('transform', fhirBase, {filePath, sheets})
+          ipcRenderer.send('validate', this.fhirBase, {filePath, sheets})
 
-          ipcRenderer.on(`transforming-read-file-${filePath}`, (event, result) => {
+          ipcRenderer.on(`validate-read-file-${filePath}`, (event, result) => {
             this.$q.loading.hide()
-            ipcRenderer.removeAllListeners(`transforming-read-file-${filePath}`)
+            ipcRenderer.removeAllListeners(`validate-read-file-${filePath}`)
           })
 
           // In case of file reading failure
           // Delete all other sheets listeners in that file
-          ipcRenderer.on(`transforming-error-${filePath}`, (event, result) => {
+          ipcRenderer.on(`validate-error-${filePath}`, (event, result) => {
             this.$q.loading.hide()
-            ipcRenderer.removeAllListeners(`transforming-error-${filePath}`)
+            ipcRenderer.removeAllListeners(`validate-error-${filePath}`)
             // Remove all listeners for sheets in the file
             Object.keys(this.mappingObj[filePath]).map(sheet => {
-              this.mappingList = this.mappingList.map(v => {
-                if (v.file === filePath && v.sheet === sheet) {
-                  v.transform = result
+              this.mappingList = this.mappingList.map(_ => {
+                if (_.file === filePath && _.sheet === sheet) {
+                  _.validation = result
                 }
-                return v
+                return _
               })
-              ipcRenderer.removeAllListeners(`transforming-${filePath}-${sheet}`)
-              resolveFile()
+              ipcRenderer.removeAllListeners(`validate-${filePath}-${sheet}`)
             })
+            rejectFile()
           })
 
           Promise.all(Object.keys(this.mappingObj[filePath]).map(sheet => {
-            return new Promise(resolveSheet => {
+            return new Promise((resolveSheet, rejectSheet) => {
               ipcRenderer.on(`info-${filePath}-${sheet}`, (event, result) => {
                 this.mappingList = this.mappingList.map(item => {
                   if ((item.file === filePath) && (item.sheet === sheet)) {
@@ -247,31 +263,34 @@
                 // TODO:
                 ipcRenderer.removeAllListeners(`info-${filePath}-${sheet}`)
               })
-              ipcRenderer.on(`transforming-${filePath}-${sheet}`, (event, result) => {
-                ipcRenderer.removeAllListeners(`transforming-${filePath}-${sheet}`)
+              ipcRenderer.on(`validate-${filePath}-${sheet}`, (event, result) => {
+                ipcRenderer.removeAllListeners(`validate-${filePath}-${sheet}`)
 
                 // Update status of mapping entries
-                this.mappingList = this.mappingList.map(v => {
-                  if (v.file === filePath && v.sheet === sheet) {
-                    v.transform = result
+                this.mappingList = this.mappingList.map(_ => {
+                  if (_.file === filePath && _.sheet === sheet) {
+                    _.validation = result
                   }
-                  return v
+                  return _
                 })
                 if (result && result.status === 'done') {
-                  this.$log.success('Transform', `Transform done ${sheet} in ${filePath}`)
+                  this.$log.success('Validation', `Validation is completed ${sheet} in ${filePath}`)
                   resolveSheet()
                 } else {
-                  this.$log.error('Transform', `${result.description}. Transform error for ${sheet} in ${filePath}. For more details see logs/main`)
-                  resolveSheet()
+                  this.$log.error('Validation', `${result.description}. Validation error for ${sheet} in ${filePath}. For more details see logs`)
+                  rejectSheet()
                 }
               })
             })
           }))
-          .then(() => resolveFile())
-          .catch(() => resolveFile())
+            .then(() => resolveFile())
+            .catch(() => rejectFile())
         }))
-      }
+        , Promise.resolve())
+        .then(_ => this.validationStatus = 'success')
+        .catch(_ => this.validationStatus = 'error')
     }
+
     getMappings (): Promise<any> {
       return Promise.all(this.fileSourceList.map((file: FileSource) => {
         this.mappingObj[file.path] = {}
@@ -295,13 +314,8 @@
         }) || [])
       }))
     }
-    groupBy (xs, key): any {
-      return xs.reduce((rv, x) => {
-        (rv[x[key]] = rv[x[key]] || []).push(x)
-        return rv
-      }, {})
-    }
-    remove (resourceType: string) {
+
+    removeResource (resourceType: string) {
       this.loading = true
       const fhirBase: string = this.$store.getters['fhir/fhirBase']
       ipcRenderer.send('delete-resource', fhirBase, resourceType)
@@ -316,6 +330,7 @@
         }
       })
     }
+
     previousStep () {
       this.$q.dialog({
         title: '<i class="fas fa-info text-primary"> Previous Step </i>',
@@ -327,12 +342,19 @@
         this.$store.commit('decrementStep')
       })
     }
-    openErrorReport (errorMessage: any) {
-      this.$store.commit('fhir/setTransformDetails', errorMessage)
+
+    openOutcomeDetailCard (outcomeDetails: OutcomeDetail[]) {
+      this.$store.commit('fhir/setOutcomeDetails', outcomeDetails)
       this.$q.dialog({
-        component: TransformDetailCard,
+        component: OutcomeCard,
         parent: this
       })
     }
+
   }
 </script>
+
+<style lang="stylus">
+  .error-tooltip
+    width 250px
+</style>

@@ -2,24 +2,14 @@
   <q-layout view="hHh Lpr lFf" class="bg-grey-3">
     <q-header elevated class="bg-grey-9">
       <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          @click="$q.screen.lt.lg || !leftDrawerOpen ? (leftDrawerOpen = !leftDrawerOpen) : (miniState = !miniState)"
-          aria-label="Menu"
-          icon="menu"
+        <q-btn flat dense round aria-label="Menu" icon="menu"
+               @click="$q.screen.lt.lg || !leftDrawerOpen ? (leftDrawerOpen = !leftDrawerOpen) : (miniState = !miniState)"
         />
         <q-toolbar-title>
           <img class="flex flex-center" src="../assets/FAIR4Health-logo.png" width="120px">
         </q-toolbar-title>
-        <q-btn
-          flat
-          dense
-          round
-          @click="$q.fullscreen.isActive ? $q.fullscreen.exit() : $q.fullscreen.request()"
-          aria-label="Fullscreen"
-          :icon="$q.fullscreen.isActive ? 'fullscreen_exit' : 'fullscreen'"
+        <q-btn flat dense round aria-label="Fullscreen" :icon="$q.fullscreen.isActive ? 'fullscreen_exit' : 'fullscreen'"
+               @click="$q.fullscreen.isActive ? $q.fullscreen.exit() : $q.fullscreen.request()"
         />
       </q-toolbar>
     </q-header>
@@ -66,8 +56,8 @@
             <q-step :name="1" title="Verify FHIR Repo" icon="fas fa-fire" :done="step > 1" />
             <q-step :name="2" title="Analyze Data Source" icon="fas fa-database" :done="step > 2" />
             <q-step :name="3" title="Map Metadata" icon="fas fa-list-ul" :done="step > 3" />
-            <q-step :name="4" title="Confirm and Transform" icon="fas fa-exchange-alt" :done="step > 4" />
-            <q-step :name="5" title="Validate" icon="fas fa-check-circle" :done="step > 5" />
+            <q-step :name="4" title="Validate" icon="fas fa-check-circle" :done="step > 4" />
+            <q-step :name="5" title="Confirm and Transform" icon="fas fa-exchange-alt" :done="step > 5" />
           </q-stepper>
         </q-item>
         <q-separator />

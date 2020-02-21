@@ -15,7 +15,7 @@ const fhirStore = {
     selectedElements: [],
     fhirBase: '',
     fhirService: new FhirService(),
-    transformDetails: []
+    outcomeDetails: []
   },
   getters: {
     resourceList: state => state.resourceList || [],
@@ -27,7 +27,7 @@ const fhirStore = {
     selectedElements: state => state.selectedElements || [],
     fhirBase: state => state.fhirBase,
     fhirService: state => state.fhirService,
-    transformDetails: state => state.transformDetails || []
+    outcomeDetails: state => state.outcomeDetails || []
   },
   mutations: {
     setResourceList (state, list) {
@@ -53,8 +53,8 @@ const fhirStore = {
       state.fhirBase = baseUrl
       state.fhirService = new FhirService(baseUrl)
     },
-    setTransformDetails (state, transformDetails: TransformDetail[]) {
-      state.transformDetails = transformDetails
+    setOutcomeDetails (state, outcomeDetails: OutcomeDetail[]) {
+      state.outcomeDetails = outcomeDetails
     }
   },
   actions: {
@@ -97,9 +97,8 @@ const fhirStore = {
               const list: fhir.ElementTree[] = []
               resource?.snapshot?.element.forEach((element) => {
                 const parts = element?.id?.split('.') || []
-                let part: any
                 let tmpList = list
-                part = parts.shift()
+                let part = parts.shift()
                 while (part) {
                   let match = tmpList.findIndex(l => l.label === part)
                   if (match === -1) {

@@ -16,12 +16,12 @@
       <MetadataMapper />
     </template>
 
-    <!--The third step - Transforming-->
+    <!--The third step - Validation-->
     <template v-if="step === 4">
-      <Transformer />
+      <Validator />
     </template>
 
-    <!--The last step Validation of Resources-->
+    <!--The last step - Transform-->
     <template v-if="step === 5" />
 
   </div>
@@ -48,8 +48,8 @@
         loading: Loading,
         delay: 0
       }),
-      Transformer: () => ({
-        component: import('@/components/Transformer.vue'),
+      Validator: () => ({
+        component: import('@/components/Validator.vue'),
         loading: Loading,
         delay: 0
       })
