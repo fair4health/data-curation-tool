@@ -13,7 +13,7 @@ export class Patient extends Resource {
     return new Promise<any>((resolve, reject) => {
       if (!resource.meta?.profile) {
         resource.meta = {}
-        resource.meta.profile = [environment.profiles.patient_uv_ips]
+        resource.meta.profile = [environment.profiles.Patient_uv_ips]
       }
       switch (targetField) {
         case 'id':

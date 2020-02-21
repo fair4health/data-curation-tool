@@ -11,7 +11,7 @@ export class Practitioner extends Resource {
     return new Promise<any>((resolve, reject) => {
       if (!resource.meta?.profile) {
         resource.meta = {}
-        resource.meta.profile = [environment.profiles.practitioner_uv_ips]
+        resource.meta.profile = [environment.profiles.Practitioner_uv_ips]
       }
       switch (targetField) {
         case 'id':

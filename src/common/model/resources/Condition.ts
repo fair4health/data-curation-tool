@@ -15,7 +15,7 @@ export class Condition extends Resource {
     return new Promise<any>((resolve, reject) => {
       if (!resource.meta?.profile) {
         resource.meta = {}
-        resource.meta.profile = [environment.profiles.condition_uv_ips]
+        resource.meta.profile = [environment.profiles.Condition_uv_ips]
       }
       switch (targetField) {
         case 'clinicalStatus':
@@ -44,7 +44,7 @@ export class Condition extends Resource {
           resource.subject = {reference: `Patient/${FHIRUtil.hash(value)}`} as fhir.Reference
           resolve(true)
           break
-        case 'onset[x]:onsetDateTime':
+        case 'onset[x]':
           if (sourceType === 'Date') {
             let date = value
             if (!(value instanceof Date)) {
