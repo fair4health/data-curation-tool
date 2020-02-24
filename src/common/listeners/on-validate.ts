@@ -1,7 +1,6 @@
 import * as Excel from 'xlsx'
 import fs from 'fs'
 import log from 'electron-log'
-import 'isomorphic-fetch'
 import { ipcMain } from 'electron'
 import { workbookMap } from '../model/workbook'
 import { TargetResource } from './../model/file-source'
@@ -155,14 +154,14 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
               const resourceList = resources.get(resourceType)
               return new Promise((resolve, reject) => {
                 // Batch upload resources
-                // Max capacity 5000 resources
-                const len = Math.ceil(resourceList!.length / 5000)
+                // Max capacity 1000 resources
+                const len = Math.ceil(resourceList!.length / 1000)
 
                 const batchPromiseList: Array<Promise<any>> = []
 
                 for (let i = 0, p = Promise.resolve(); i < len; i++) {
                   batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
-                    fhirService.validate(resourceList!.slice(i * 5000, (i + 1) * 5000))
+                    fhirService.validate(resourceList!.slice(i * 1000, (i + 1) * 1000))
                       .then(res => {
                         const bundle: fhir.Bundle = res.data as fhir.Bundle
                         const outcomeDetails: OutcomeDetail[] = []
@@ -183,14 +182,15 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
                           } else {
                             outcomeDetails.push({status: 'success', resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
                           }
-                        }) || []).then(() => {
-                          if (hasError) rejectBatch(outcomeDetails)
-                          else resolveBatch(outcomeDetails)
-                        })
+                        }) || [])
+                          .then(() => {
+                            if (hasError) rejectBatch(outcomeDetails)
+                            else resolveBatch(outcomeDetails)
+                          })
                           .catch(err => rejectBatch(err))
                       })
                       .catch(err => {
-                        log.warn(`Batch upload error: ${err}`)
+                        log.error(`Batch process error. ${err}`)
                         rejectBatch(err)
                       })
                   }).catch(_ => _)))
@@ -198,11 +198,11 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
 
                 Promise.all(batchPromiseList)
                   .then(res => {
-                    log.info(`Batch upload completed for Resource: ${resourceType}`)
+                    log.info(`Batch process completed for Resource: ${resourceType}`)
                     resolve([].concat.apply([], res))
                   })
                   .catch(err => {
-                    log.info(`Batch upload error for Resource: ${resourceType}`)
+                    log.error(`Batch process error for Resource: ${resourceType}`)
                     reject(err)
                   })
 
@@ -214,8 +214,8 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
                 log.info(`Validation completed ${sheet} in ${filePath}`)
               })
               .catch(err => {
-                event.sender.send(`validate-${filePath}-${sheet}`, {status: 'error', description: 'Batch upload error', outcomeDetails: err})
-                log.error(`BATCH ERROR ${filePath}-${sheet}`)
+                event.sender.send(`validate-${filePath}-${sheet}`, {status: 'error', description: 'Batch process error', outcomeDetails: err})
+                log.error(`Batch process error ${filePath}-${sheet}`)
               })
 
           } else {
@@ -231,7 +231,7 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
   })
     .catch(err => {
       event.sender.send(`validate-error-${filePath}`, {status: 'error', description: `File not found : ${filePath}`})
-      log.error(`File not found: ${err}`)
+      log.error(`File not found. ${err}`)
       return
     })
 })

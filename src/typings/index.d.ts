@@ -1,5 +1,3 @@
-import desktopCapturer = Electron.desktopCapturer
-
 declare namespace fhir {
   type id = string;
   type uri = string;
@@ -4826,10 +4824,18 @@ declare namespace store {
   }
 }
 
-declare type status = 'success' | 'error' | 'pending' | 'not-started'
+declare type status = 'success' | 'warning' | 'error' | 'in-progress' | 'pending'
 
 declare interface OutcomeDetail {
   status: status
   resourceType: string
   message: string
+  outcomeDetails?: OutcomeDetail[]
+}
+
+declare interface TransformListItem {
+  status: status
+  resourceType: string
+  count: number
+  createdCount?: number
 }

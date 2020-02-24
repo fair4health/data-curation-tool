@@ -33,7 +33,7 @@
             <q-item-label>Home</q-item-label>
           </q-item-section>
           <q-tooltip v-if="isCollapsed" anchor="center right" self="center left" :offset="[5, 10]"
-                     content-class="bg-grey-4 text-grey-9" transition-show="scale" transition-hide="scale">
+                     content-class="bg-white text-primary" transition-show="scale" transition-hide="scale">
             Home
           </q-tooltip>
         </q-item>
@@ -45,7 +45,7 @@
             <q-item-label>Curation</q-item-label>
           </q-item-section>
           <q-tooltip v-if="isCollapsed" anchor="center right" self="center left" :offset="[5, 10]"
-                     content-class="bg-grey-4 text-grey-9" transition-show="scale" transition-hide="scale">
+                     content-class="bg-white text-primary" transition-show="scale" transition-hide="scale">
             Curation
           </q-tooltip>
         </q-item>
@@ -69,7 +69,7 @@
             <q-item-label>About</q-item-label>
           </q-item-section>
           <q-tooltip v-if="isCollapsed" anchor="center right" self="center left" :offset="[5, 10]"
-                     content-class="bg-grey-4 text-grey-9" transition-show="scale" transition-hide="scale">
+                     content-class="bg-white text-primary" transition-show="scale" transition-hide="scale">
             About
           </q-tooltip>
         </q-item>

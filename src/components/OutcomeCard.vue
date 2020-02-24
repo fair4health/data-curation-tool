@@ -39,8 +39,8 @@
           <div class="bg-grey-2 q-mb-sm col">
             <div class="text-subtitle1 text-weight-bold text-grey-7 q-pa-sm">Status</div>
             <q-separator />
-            <q-toggle v-model="successDetails" checked-icon="check" color="green" label="Transformed" unchecked-icon="clear"/>
-            <q-toggle v-model="errorDetails" checked-icon="warning" color="orange-6" label="Errors" unchecked-icon="clear"/>
+            <q-toggle v-model="successDetails" checked-icon="check" color="green" label="Success" unchecked-icon="clear"/>
+            <q-toggle v-model="errorDetails" checked-icon="warning" color="orange-6" label="Error" unchecked-icon="clear"/>
           </div>
           <div class="bg-grey-2 q-mb-sm col">
             <div class="text-subtitle1 text-weight-bold text-grey-7 q-pa-sm">Resources</div>

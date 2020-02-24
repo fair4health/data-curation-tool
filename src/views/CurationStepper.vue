@@ -22,7 +22,9 @@
     </template>
 
     <!--The last step - Transform-->
-    <template v-if="step === 5" />
+    <template v-if="step === 5">
+      <Transformer />
+    </template>
 
   </div>
 </template>
@@ -50,6 +52,11 @@
       }),
       Validator: () => ({
         component: import('@/components/Validator.vue'),
+        loading: Loading,
+        delay: 0
+      }),
+      Transformer: () => ({
+        component: import('@/components/Transformer.vue'),
         loading: Loading,
         delay: 0
       })

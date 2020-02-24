@@ -19,7 +19,7 @@
             </q-input>
           </template>
           <template v-slot:header-cell="props">
-            <q-th :props="props">
+            <q-th :props="props" class="bg-primary text-white" style="font-size: 13px">
               <q-icon v-if="props.col.icon" :name="props.col.icon" />
               <span class="vertical-middle q-ml-xs">{{ props.col.label }}</span>
             </q-th>
@@ -27,17 +27,17 @@
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td key="status" class="no-padding" :props="props">
-                <template v-if="props.row.validation.status === 'processing'">
+                <template v-if="props.row.validation.status === 'in-progress'">
                   <span>
                     <q-spinner color="grey-9" />
-                    <q-tooltip>Validating...</q-tooltip>
+                    <q-tooltip content-class="bg-white text-grey-8">Validating...</q-tooltip>
                   </span>
                 </template>
                 <template v-else-if="props.row.validation.status === 'done'">
                   <div class="row items-center">
                     <div class="col-6">
                       <q-icon name="check" color="green">
-                        <q-tooltip>Completed</q-tooltip>
+                        <q-tooltip content-class="bg-white text-green">Completed</q-tooltip>
                       </q-icon>
                     </div>
                     <div class="col-6 bg-grey-3">
@@ -48,18 +48,18 @@
                 </template>
                 <template v-else-if="props.row.validation.status === 'warning'">
                   <q-icon name="warning" color="orange-6" @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)">
-                    <q-tooltip>{{ props.row.validation.description }}</q-tooltip>
+                    <q-tooltip content-class="bg-white text-orange-6">{{ props.row.validation.description }}</q-tooltip>
                   </q-icon>
                 </template>
                 <template v-else-if="props.row.validation.status === 'error'">
                   <q-icon name="error_outline" color="red" class="cursor-pointer"
                           @click="openOutcomeDetailCard([{status: 'error', message: props.row.validation.description, resourceType: 'OperationOutcome'}])">
-                    <q-tooltip content-class="error-tooltip" class="ellipsis-3-lines">{{ props.row.validation.description }}</q-tooltip>
+                    <q-tooltip content-class="error-tooltip bg-white text-red-7" class="ellipsis-3-lines">{{ props.row.validation.description }}</q-tooltip>
                   </q-icon>
                 </template>
                 <template v-else>
                   <q-icon name="access_time" color="grey-9">
-                    <q-tooltip>Waiting</q-tooltip>
+                    <q-tooltip content-class="bg-white text-grey-8">Pending</q-tooltip>
                   </q-icon>
                 </template>
               </q-td>
@@ -132,20 +132,10 @@
         </q-table>
         <div class="row content-end q-gutter-sm">
           <q-space />
-          <q-btn unelevated class="q-mt-lg" color="primary" label="Remove Resource" no-caps>
-            <q-spinner class="q-ml-sm" size="xs" v-show="loading" />
-            <q-menu transition-show="jump-down" transition-hide="jump-up" auto-close>
-              <q-list style="min-width: 100px">
-                <q-item clickable v-for="(resource, index) in resourceList" :key="index" @click="removeResource(resource)">
-                  <q-item-section>{{ resource }}</q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </q-btn>
-          <q-btn unelevated label="Validate" icon="verified_user" color="blue-1" text-color="primary"
-                 :disable="validationStatus === 'pending'" @click="validate" class="q-mt-lg" no-caps>
+          <q-btn outline label="Validate" icon="verified_user" color="green-7"
+                 :disable="validationStatus === 'in-progress'" @click="validate" class="q-mt-lg" no-caps>
               <span class="q-ml-sm">
-                <q-spinner class="q-ml-sm" size="xs" v-show="validationStatus==='pending'" />
+                <q-spinner class="q-ml-sm" size="xs" v-show="validationStatus==='in-progress'" />
                 <q-icon name="check" size="xs" color="green" v-show="validationStatus==='success'" />
                 <q-icon name="error_outline" size="xs" color="red" v-show="validationStatus==='error'" />
               </span>
@@ -155,6 +145,9 @@
     </q-card>
     <div class="row q-ma-md">
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
+      <q-space />
+      <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="validationStatus !== 'success'"
+             @click="$store.commit('incrementStep')" no-caps />
     </div>
   </div>
 </template>
@@ -175,7 +168,6 @@
     private pagination = { page: 1, rowsPerPage: 0 }
     private filter: string = ''
     private loading: boolean = false
-    private resourceList: string[] = ['Patient', 'Practitioner', 'Condition', 'Observation']
 
     get columns (): object[] { return mappingDataTableHeaders }
     get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
@@ -207,20 +199,26 @@
 
     validate () {
       // Init status
-      this.validationStatus = 'pending'
+      this.validationStatus = 'in-progress'
       // If there are resources created, clear them
       electronStore.set('resources', null)
       const filePathList = Object.keys(FHIRUtil.groupBy(this.mappingList, 'file'))
 
+      if (!filePathList.length) {
+        this.$q.notify({message: 'No mapping available', color: 'red-8'})
+        this.validationStatus = 'pending'
+        return
+      }
+
       // Submit each file to create resources and validate them
-      filePathList.reduce((promise, filePath) =>
+      filePathList.reduce((promise: Promise<any>, filePath: string) =>
         promise.finally(() => new Promise((resolveFile, rejectFile) => {
           this.$q.loading.show({
             message: `Loading ${filePath.split('\\').pop()}...`
           })
           this.mappingList = this.mappingList.map(_ => {
             if (_.file === filePath) {
-              _.validation = {status: 'processing'}
+              _.validation = {status: 'in-progress'}
             }
             return _
           })
@@ -313,22 +311,6 @@
           })
         }) || [])
       }))
-    }
-
-    removeResource (resourceType: string) {
-      this.loading = true
-      const fhirBase: string = this.$store.getters['fhir/fhirBase']
-      ipcRenderer.send('delete-resource', fhirBase, resourceType)
-      ipcRenderer.on('delete-resource-result', (event, result) => {
-        ipcRenderer.removeAllListeners('delete-resource-result')
-        if (result) {
-          this.loading = false
-          this.$q.notify({message: `${resourceType} Resources removed successfully`, color: 'grey-8'})
-        } else {
-          this.loading = false
-          this.$q.notify({message: 'Something went wrong', color: 'grey-8'})
-        }
-      })
     }
 
     previousStep () {
