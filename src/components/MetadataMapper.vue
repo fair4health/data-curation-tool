@@ -55,10 +55,10 @@
         expand-icon-class="text-white"
       >
         <q-card bordered>
-          <div v-if="savedRecords.length" class="row q-pa-xs">
+          <div v-if="savedRecords.length" class="row q-pa-xs bg-grey-3">
             <q-space />
             <div class="q-gutter-sm q-mx-sm">
-              <q-btn unelevated label="Export" color="grey" icon="publish" @click="exportState" no-caps />
+              <q-btn outline label="Export" color="green" icon="publish" @click="exportState" no-caps />
               <q-btn unelevated label="Save" color="green" icon="save" @click="saveState" no-caps />
             </div>
           </div>
@@ -79,7 +79,7 @@
                   <div class="row">
                     <div v-for="(record, index) in sheet.records" :key="index" class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
                       <q-card class="q-ma-xs" bordered flat>
-                        <q-card-section class="text-caption bg-grey-3 text-weight-bold text-italic fa-border">
+                        <q-card-section class="text-caption bg-grey-3 text-weight-bold text-italic q-pa-xs">
                           <div class="row items-center">
                             <q-chip class="text-grey-8" color="white" style="font-size: 12px">#{{record.recordId}}</q-chip>
                             <q-space />

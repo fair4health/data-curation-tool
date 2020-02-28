@@ -2433,11 +2433,12 @@ declare namespace fhir {
     content: Attachment;
   }
   interface Medication extends DomainResource {
+    identifier?: Identifier;
     code?: CodeableConcept;
-    isBrand?: boolean;
     manufacturer?: Reference;
-    product?: MedicationProduct;
-    package?: MedicationPackage;
+    ingredient?: MedicationProductIngredient[];
+    batch?: MedicationProductBatch[];
+    form?: CodeableConcept;
   }
   interface MedicationProduct extends Element {
     form?: CodeableConcept;
@@ -2447,7 +2448,8 @@ declare namespace fhir {
   interface MedicationProductIngredient extends Element {
     itemCodeableConcept?: CodeableConcept;
     itemReference?: Reference;
-    amount?: Ratio;
+    strength?: Ratio;
+    isActive?: boolean
   }
   interface MedicationProductBatch extends Element {
     lotNumber?: string;
@@ -4754,7 +4756,7 @@ declare namespace fhir {
     short?: string
     min?: integer
     max?: string
-    type?: string[]
+    type?: ElementTree[]
     selectedType?: string
     children?: ElementTree[]
   }

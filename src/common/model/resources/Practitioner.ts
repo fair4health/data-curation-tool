@@ -1,6 +1,6 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { Resource } from './Resource'
+import electronStore from './../../electron-store'
 
 export class Practitioner extends Resource {
 
@@ -9,14 +9,10 @@ export class Practitioner extends Resource {
     const {value, sourceType, targetField, targetSubFields, fhirType} = payload
 
     return new Promise<any>((resolve, reject) => {
-      if (!resource.meta?.profile) {
-        resource.meta = {}
-        resource.meta.profile = [environment.profiles.Practitioner_uv_ips]
-      }
       switch (targetField) {
         case 'id':
           resource.id = value
-          const identifier: fhir.Identifier = {system: environment.server.config.baseUrl, value}
+          const identifier: fhir.Identifier = {system: electronStore.get('fhirBase'), value}
           resource.identifier = [identifier]
           resolve(true)
           break

@@ -1,5 +1,4 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { Resource } from './Resource'
 import { FHIRUtil } from './../../utils/fhir-util'
 
@@ -13,14 +12,10 @@ export class Condition extends Resource {
     const {value, sourceType, targetField, targetSubFields, fhirType} = payload
 
     return new Promise<any>((resolve, reject) => {
-      if (!resource.meta?.profile) {
-        resource.meta = {}
-        resource.meta.profile = [environment.profiles.Condition_uv_ips]
-      }
       switch (targetField) {
         case 'clinicalStatus':
           resource.clinicalStatus = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding('http://terminology.hl7.org/CodeSystem/condition-clinical', 'active'))
+            DataTypeFactory.createCoding('http://terminology.hl7.org/CodeSystem/condition-clinical', 'resolved'))
           resolve(true)
           break
         case 'verificationStatus':
@@ -41,7 +36,7 @@ export class Condition extends Resource {
           resolve(true)
           break
         case 'subject':
-          resource.subject = {reference: `Patient/${FHIRUtil.hash(value)}`} as fhir.Reference
+          resource.subject = DataTypeFactory.createReference({reference: `Patient/${FHIRUtil.hash(value)}`})
           resolve(true)
           break
         case 'onset[x]':
@@ -51,16 +46,45 @@ export class Condition extends Resource {
               date = new Date(value)
             }
             try {
-              resource.onsetDateTime = date.getFullYear() + '-' +
-                ('0' + (date.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + date.getUTCDate()).slice(-2)
+              resource.onsetDateTime = DataTypeFactory.createDateString(date)
             } catch (e) {
               reject(e)
             }
           }
           resolve(true)
           break
+        case 'abatement[x]':
+          try {
+            if (sourceType === 'Date') {
+              let date = value
+              if (!(value instanceof Date)) {
+                date = new Date(value)
+              }
+              if (fhirType === 'dateTime') {
+                resource.abatementDateTime = DataTypeFactory.createDateString(date)
+              } else if (fhirType?.startsWith('Period')) {
+                const type = fhirType!.split('.')[1]
+                if (!resource.abatementPeriod) {
+                  resource.abatementPeriod = {}
+                }
+                resource.abatementPeriod[type] = DataTypeFactory.createDateString(date)
+              }
+            } else if (sourceType === 'Number') {
+              if (fhirType?.startsWith('Age')) {
+                resource.abatementAge = { value }
+              }
+            } else if (sourceType === 'Text') {
+              // TODO: after binding terminology server
+              if (fhirType?.startsWith('Age')) {
+                resource.abatementAge = { code: value }
+              }
+            }
+          } catch (e) { reject(e) }
+
+          resolve(true)
+          break
         case 'asserter':
-          resource.asserter = {reference: `Practitioner/${FHIRUtil.hash(value)}`} as fhir.Reference
+          resource.asserter = DataTypeFactory.createReference({reference: `Practitioner/${FHIRUtil.hash(value)}`})
           resolve(true)
           break
         default:

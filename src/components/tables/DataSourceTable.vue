@@ -7,7 +7,7 @@
             <span><q-icon name="fas fa-file" size="xs" color="primary" class="q-mr-xs" /> Source File</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense v-model="currentSource" :options="fileSourceList" label="Source File">
+          <q-select outlined dense v-model="currentSource" class="ellipsis" :options="fileSourceList" label="Source File">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -25,7 +25,7 @@
             <span><q-icon name="far fa-file-alt" size="xs" color="primary" class="q-mr-xs" /> Sheets</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense v-model="currentSheet" :options="sheets" label="Sheets" :disable="!sheets.length">
+          <q-select outlined dense v-model="currentSheet" class="ellipsis" :options="sheets" label="Sheets" :disable="!sheets.length">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -43,7 +43,7 @@
         <q-table flat class="sticky-header-table q-mb-lg" title="Data Source" :data="bufferSheetHeaders" binary-state-sort
                  :columns="dataSourceColumns" row-key="value" selection="multiple" :selected.sync="selectedAttr"
                  :loading="loadingAttr" :grid="$q.screen.lt.sm" :rows-per-page-options="[10, 20, 0]" :pagination.sync="pagination"
-                 color="primary" table-style="max-height: 46vh" :filter="filter" :filter-method="filterTable"
+                 color="primary" table-style="max-height: 46vh" :filter="filter" :filter-method="filterTable" style="margin-top: -10px"
         >
           <template v-slot:top="props">
             <q-card flat class="full-width">
