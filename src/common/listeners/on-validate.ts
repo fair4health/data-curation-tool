@@ -53,87 +53,86 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
             // For each row create resource instances
             const resourceMap: Map<string, Map<string, fhir.Resource>> = new Map<string, Map<string, fhir.Resource>>()
 
-            // return new Promise((resolveOneRow, rejectOneRow) => {
-              Promise.all(sheetTargets.map(attr => {
-                return Promise.all(attr.target?.map((target: TargetResource) => {
-                  return new Promise((resolve, reject) => {
-                    if (entry[attr.value!] !== null && entry[attr.value!] !== undefined && entry[attr.value!] !== '') {
-                      const [resourceType, field, ...subfields] = target.value.split('.')
-                      const profile: string = target.profile
-                      const payload: ResourceGenerator.Payload = {
-                        value: String(entry[attr.value!]),
-                        sourceType: attr.type,
-                        targetField: field,
-                        targetSubFields: subfields,
-                        fhirType: target.type
-                      }
-                      if (!resourceMap.get(resourceType)) {
-                        resourceMap.set(resourceType, new Map<string, fhir.Resource>())
-                      }
-                      const curResourceGroup: Map<string, fhir.Resource> = resourceMap.get(resourceType)!
-                      switch (resourceType) {
-                        case 'Patient':
-                          if (!curResourceGroup.has(attr.recordId)) {
-                            const patientResource: fhir.Patient = {resourceType: 'Patient', meta: {}}
-                            patientResource.meta!.profile = [environment.profiles[profile]]
-                            curResourceGroup.set(attr.recordId, patientResource)
-                          }
-                          Patient.generate(curResourceGroup.get(attr.recordId)! as fhir.Patient, payload)
-                            .then(_ => resolve(true))
-                            .catch(err => reject(err))
-                          break
-                        case 'Practitioner':
-                          if (!curResourceGroup.has(attr.recordId)) {
-                            const practitionerResource: fhir.Practitioner = {resourceType: 'Practitioner', meta: {}}
-                            practitionerResource.meta!.profile = [environment.profiles[profile]]
-                            curResourceGroup.set(attr.recordId, practitionerResource)
-                          }
-                          Practitioner.generate(curResourceGroup.get(attr.recordId)! as fhir.Practitioner, payload)
-                            .then(_ => resolve(true))
-                            .catch(err => reject(err))
-                          break
-                        case 'Condition':
-                          if (!curResourceGroup.has(attr.recordId)) {
-                            const conditionResource: fhir.Condition = {resourceType: 'Condition', subject: {}, meta: {}} as fhir.Condition
-                            conditionResource.meta!.profile = [environment.profiles[profile]]
-                            curResourceGroup.set(attr.recordId, conditionResource)
-                          }
-                          Condition.generate(curResourceGroup.get(attr.recordId)! as fhir.Condition, payload)
-                            .then(_ => resolve(true))
-                            .catch(err => reject(err))
-                          break
-                        case 'Observation':
-                          // TODO
-                          break
-                        case 'Medication':
-                          if (!curResourceGroup.has(attr.recordId)) {
-                            const medicationResource: fhir.Medication = {resourceType: 'Medication', meta: {}} as fhir.Medication
-                            medicationResource.meta!.profile = [environment.profiles[profile]]
-                            curResourceGroup.set(attr.recordId, medicationResource)
-                          }
-                          Medication.generate(curResourceGroup.get(attr.recordId)! as fhir.Medication, payload)
-                            .then(_ => resolve(true))
-                            .catch(err => reject(err))
-                          break
-                        case 'MedicationStatement':
-                          if (!curResourceGroup.has(attr.recordId)) {
-                            const medicationStatement: fhir.MedicationStatement = {resourceType: 'MedicationStatement', meta: {}} as fhir.MedicationStatement
-                            medicationStatement.meta!.profile = [environment.profiles[profile]]
-                            curResourceGroup.set(attr.recordId, medicationStatement)
-                          }
-                          MedicationStatement.generate(curResourceGroup.get(attr.recordId)! as fhir.MedicationStatement, payload)
-                            .then(_ => resolve(true))
-                            .catch(err => reject(err))
-                          break
-                        default:
-                          resolve(true)
-                      }
-                    } else {
-                      // log.warn(`${entry[attr.value!]} Empty field`)
-                      resolve(true)
+            Promise.all(sheetTargets.map(attr => {
+              return Promise.all(attr.target?.map((target: TargetResource) => {
+                return new Promise((resolve, reject) => {
+                  if (entry[attr.value!] !== null && entry[attr.value!] !== undefined && entry[attr.value!] !== '') {
+                    const [resourceType, field, ...subfields] = target.value.split('.')
+                    const profile: string = target.profile
+                    const payload: ResourceGenerator.Payload = {
+                      value: String(entry[attr.value!]),
+                      sourceType: attr.type,
+                      targetField: field,
+                      targetSubFields: subfields,
+                      fhirType: target.type
                     }
-                  })
-                }) || [])
+                    if (!resourceMap.get(resourceType)) {
+                      resourceMap.set(resourceType, new Map<string, fhir.Resource>())
+                    }
+                    const curResourceGroup: Map<string, fhir.Resource> = resourceMap.get(resourceType)!
+                    switch (resourceType) {
+                      case 'Patient':
+                        if (!curResourceGroup.has(attr.recordId)) {
+                          const patientResource: fhir.Patient = {resourceType: 'Patient', meta: {}}
+                          patientResource.meta!.profile = [environment.profiles[profile]]
+                          curResourceGroup.set(attr.recordId, patientResource)
+                        }
+                        Patient.generate(curResourceGroup.get(attr.recordId)! as fhir.Patient, payload)
+                          .then(_ => resolve(true))
+                          .catch(err => reject(err))
+                        break
+                      case 'Practitioner':
+                        if (!curResourceGroup.has(attr.recordId)) {
+                          const practitionerResource: fhir.Practitioner = {resourceType: 'Practitioner', meta: {}}
+                          practitionerResource.meta!.profile = [environment.profiles[profile]]
+                          curResourceGroup.set(attr.recordId, practitionerResource)
+                        }
+                        Practitioner.generate(curResourceGroup.get(attr.recordId)! as fhir.Practitioner, payload)
+                          .then(_ => resolve(true))
+                          .catch(err => reject(err))
+                        break
+                      case 'Condition':
+                        if (!curResourceGroup.has(attr.recordId)) {
+                          const conditionResource: fhir.Condition = {resourceType: 'Condition', subject: {}, meta: {}} as fhir.Condition
+                          conditionResource.meta!.profile = [environment.profiles[profile]]
+                          curResourceGroup.set(attr.recordId, conditionResource)
+                        }
+                        Condition.generate(curResourceGroup.get(attr.recordId)! as fhir.Condition, payload)
+                          .then(_ => resolve(true))
+                          .catch(err => reject(err))
+                        break
+                      case 'Observation':
+                        // TODO
+                        break
+                      case 'Medication':
+                        if (!curResourceGroup.has(attr.recordId)) {
+                          const medicationResource: fhir.Medication = {resourceType: 'Medication', meta: {}} as fhir.Medication
+                          medicationResource.meta!.profile = [environment.profiles[profile]]
+                          curResourceGroup.set(attr.recordId, medicationResource)
+                        }
+                        Medication.generate(curResourceGroup.get(attr.recordId)! as fhir.Medication, payload)
+                          .then(_ => resolve(true))
+                          .catch(err => reject(err))
+                        break
+                      case 'MedicationStatement':
+                        if (!curResourceGroup.has(attr.recordId)) {
+                          const medicationStatement: fhir.MedicationStatement = {resourceType: 'MedicationStatement', meta: {}} as fhir.MedicationStatement
+                          medicationStatement.meta!.profile = [environment.profiles[profile]]
+                          curResourceGroup.set(attr.recordId, medicationStatement)
+                        }
+                        MedicationStatement.generate(curResourceGroup.get(attr.recordId)! as fhir.MedicationStatement, payload)
+                          .then(_ => resolve(true))
+                          .catch(err => reject(err))
+                        break
+                      default:
+                        resolve(true)
+                    }
+                  } else {
+                    // log.warn(`${entry[attr.value!]} Empty field`)
+                    resolve(true)
+                  }
+                })
+              }) || [])
               }))
                 .then((res) => {
                   // End of the row - resources are created for one row
@@ -260,6 +259,8 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
       }))
       , Promise.resolve()
     )
+      .then(() => log.info('Validation completed'))
+      .catch(err => log.error(`Error in Validation. ${err}`))
   })
     .catch(err => {
       event.sender.send(`validate-error-${filePath}`, {status: 'error', description: `File not found : ${filePath}`})
