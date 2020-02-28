@@ -1,4 +1,7 @@
 import HmacSHA256 from 'crypto-js/hmac-md5'
+import { FhirService } from './../services/fhir.service'
+import { environment } from './../environment'
+import electronStore from './../electron-store'
 
 export class FHIRUtil {
 
@@ -43,6 +46,82 @@ export class FHIRUtil {
       return acc
     }, {})
   }
+
+  /**
+   * Parses elements of a StructureDefinition resource (StructureDefinition.snapshot.element)
+   * @param parameter - Search parameter
+   * @param profileId
+   */
+  static parseElementDefinitions (parameter: string, profileId: string): Promise<any> {
+    const fhirService: FhirService = new FhirService(electronStore.get('fhirBase'))
+    const query = {}
+    query[parameter] = profileId
+    return new Promise((resolveParam, rejectParam) => {
+      fhirService.search('StructureDefinition', query, true)
+        .then(res => {
+          const bundle = res.data as fhir.Bundle
+          if (bundle.entry?.length) {
+            const resource = bundle.entry[0].resource as fhir.StructureDefinition
+            const list: fhir.ElementTree[] = []
+            Promise.all(resource?.snapshot?.element.map((element: fhir.ElementDefinition) => {
+              return new Promise(resolveElement => {
+                const parts = element?.id?.split('.') || []
+                let tmpList = list
+                Promise.all(parts.map(part => {
+                  return new Promise((resolveElementPart => {
+                    let match = tmpList.findIndex(l => l.label === part)
+                    if (match === -1) {
+                      match = 0
+                      const item: fhir.ElementTree = {
+                        value: element?.id,
+                        label: part,
+                        definition: element?.definition,
+                        comment: element?.comment,
+                        short: element?.short,
+                        min: element?.min,
+                        max: element?.max,
+                        type: [],
+                        children: []
+                      }
+                      Promise.all(element.type?.map((_: fhir.ElementDefinitionType) => {
+                        return new Promise(resolveElementType => {
+                          if (_.code && _.code[0] === _.code[0].toUpperCase() && environment.datatypes[_.code]) {
+
+                            const cached = electronStore.get(`datatype-${_.code}`)
+                            if (cached) {
+                              item.type?.push(cached)
+                              resolveElementType()
+                            } else {
+                              if (_.code === 'Reference') resolveElementType()
+                              this.parseElementDefinitions('url', environment.datatypes[_.code])
+                                .then((elementTreeList: fhir.ElementTree[]) => {
+                                  elementTreeList.length ? item.type?.push({...elementTreeList[0]}) : {}
+                                  electronStore.set(`datatype-${_.code}`, {...elementTreeList[0]})
+                                  resolveElementType()
+                                })
+                                .catch(err => resolveElementType())
+                            }
+                          } else {
+                            item.type?.push({value: _.code})
+                            resolveElementType()
+                          }
+                        })
+                      }) || []).then(() => resolveElementPart()).catch(() => resolveElementPart())
+                      tmpList.push(item)
+                    } else resolveElementPart()
+                    tmpList = tmpList[match].children as fhir.ElementTree[]
+                  }))
+                })).then(() => resolveElement()).catch(() => resolveElement())
+              })
+            }) || [])
+              .then(() => resolveParam(list))
+              .catch(() => rejectParam([]))
+          } else { resolveParam([]) }
+        })
+        .catch(() => rejectParam([]))
+    })
+  }
+
 
   private static readonly secretKey: string = 'E~w*c`r8e?aetZeid]b$y+aIl&p4eNr*a'
 

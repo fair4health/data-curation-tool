@@ -96,7 +96,7 @@ const fhirStore = {
           commit('setElementList', cached)
           resolve(true)
         } else {
-          state.fhirService.parseElementDefinitions('_id', profileId)
+          FHIRUtil.parseElementDefinitions('_id', profileId)
             .then(res => {
               commit('setElementList', res[0]?.children || [])
               electronStore.set(`StructureDefinition-${profileId}`, res[0]?.children || [])
