@@ -2,115 +2,117 @@
   <div>
     <q-toolbar class="bg-grey-4 top-fix-column">
       <q-toolbar-title class="text-grey-8">
-        Curation - <span class="text-subtitle1">Confirm and Transform</span>
+        Curation - <span class="text-subtitle1">Transformer</span>
       </q-toolbar-title>
     </q-toolbar>
     <q-card flat bordered class="q-ma-sm">
       <q-card-section>
-        <q-table flat binary-state-sort title="Mappings" :data="mappingList" :columns="columns" row-key="name"
-                 :rows-per-page-options="[0]" :pagination.sync="pagination" :filter="filter" class="sticky-header-table"
-                 table-style="max-height: 60vh" :loading="loading" color="primary"
-        >
-          <template v-slot:top-right>
-            <q-input borderless dense v-model="filter" placeholder="Search">
-              <template v-slot:append>
-                <q-icon name="search" />
-              </template>
-            </q-input>
-          </template>
-          <template v-slot:header-cell="props">
-            <q-th :props="props">
-              <q-icon v-if="props.col.icon" :name="props.col.icon" />
-              <span class="vertical-middle q-ml-xs">{{ props.col.label }}</span>
-            </q-th>
-          </template>
-          <template v-slot:body="props">
-            <q-tr :props="props">
-              <q-td key="status" :props="props">
-                <template v-if="props.row.transform.status === 'processing'">
+        <q-item-label class="text-h5 q-ma-md">Transform</q-item-label>
+        <q-list separator class="rounded-borders">
+          <q-item class="q-py-md text-white bg-primary" style="font-size: 13px">
+            <q-item-section top avatar>Status</q-item-section>
+            <q-item-section top class="col-1 gt-sm" />
+            <q-item-section top class="col-7">Resource Type</q-item-section>
+            <q-item-section top>Count</q-item-section>
+            <q-item-section top side class="text-white">Actions</q-item-section>
+          </q-item>
+          <template v-if="transformList.length">
+            <q-item v-for="resource in transformList" :key="resource.resourceType" class="q-py-md bg-grey-1">
+              <q-item-section avatar>
+                <template v-if="resource.status === 'in-progress'">
                   <span>
                     <q-spinner color="grey-9" />
                     <q-tooltip>Transforming...</q-tooltip>
                   </span>
                 </template>
-                <template v-else-if="props.row.transform.status === 'done'">
+                <template v-else-if="resource.status === 'success'">
                   <q-icon name="check" color="green">
                     <q-tooltip>Completed</q-tooltip>
                   </q-icon>
                 </template>
-                <template v-else-if="props.row.transform.status === 'warning'">
+                <template v-else-if="resource.status === 'warning'">
                   <q-icon name="warning" color="orange-6">
-                    <q-tooltip>{{ props.row.transform.description }}</q-tooltip>
+                    <q-tooltip>{{ resource.description }}</q-tooltip>
                   </q-icon>
                 </template>
-                <template v-else-if="props.row.transform.status === 'error'">
-                  <q-icon name="error_outline" color="red">
-                    <q-tooltip>{{ props.row.transform.description }}</q-tooltip>
+                <template v-else-if="resource.status === 'error'">
+                  <q-icon name="error_outline" color="red" class="cursor-pointer">
+                    <q-tooltip content-class="error-tooltip" class="ellipsis-3-lines">{{ resource.validation.description }}</q-tooltip>
                   </q-icon>
                 </template>
                 <template v-else>
-                  <q-icon name="access_time" color="grey-9">
+                  <q-icon name="access_time" color="grey-7">
                     <q-tooltip>Waiting</q-tooltip>
                   </q-icon>
                 </template>
-              </q-td>
-              <q-td key="file" :props="props">
-                <q-btn dense round flat size="sm" :icon="props.expand ? 'arrow_drop_up' : 'arrow_drop_down'" @click="props.expand = !props.expand" />
-                {{ props.row.file }}
-              </q-td>
-              <q-td key="sheet" :props="props">
-                {{ props.row.sheet }}
-              </q-td>
-              <q-td key="targets" :props="props" class="text-weight-bold">
-                {{ props.row.targets }}
-              </q-td>
-            </q-tr>
-            <q-tr v-show="props.expand" :props="props">
-              <q-td colspan="100%" class="bg-grey-2">
-                <q-card flat bordered>
-                  <q-item>
-                    <q-item-section avatar>
-                      <q-avatar>
-                        <q-icon name="far fa-file-alt" />
-                      </q-avatar>
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label>{{ props.row.sheet }}</q-item-label>
-                      <q-item-label caption>{{ props.row.file }}</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-item-label>Total</q-item-label>
-                      <q-item-label caption>{{ (props.row.info && props.row.info.total) || '-' }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
+              </q-item-section>
 
-                  <q-separator />
+              <q-item-section class="col-1 gt-sm">
+                <template v-if="resource.status === 'in-progress'"><q-item-label class="q-mt-sm" caption>In progress</q-item-label></template>
+                <template v-else-if="resource.status === 'success'"><q-item-label class="q-mt-sm" caption>Completed</q-item-label></template>
+                <template v-else-if="resource.status === 'error'"><q-item-label class="q-mt-sm" caption>Error</q-item-label></template>
+                <template v-else-if="resource.status === 'warning'"><q-item-label class="q-mt-sm" caption>Warning</q-item-label></template>
+                <template v-else><q-item-label class="q-mt-sm" caption>Pending</q-item-label></template>
+              </q-item-section>
 
-                  <q-card-section class="q-mb-xs q-pt-xs overflow-auto" >
-                    <div class="text-grey-8" style="max-height: 15vh">
-                      <div v-for="(target, index) in props.row.targetList" :key="index">
-                        {{target.value}} -> {{target.target.map(_ => _.value)}} <br/>
-                      </div>
-                    </div>
-                  </q-card-section>
-                </q-card>
-              </q-td>
-            </q-tr>
+              <q-item-section class="col-7">
+                <q-item-label lines="2">
+                  <span class="text-weight-medium text-grey-7" style="font-size: 15px">{{ resource.resourceType }}</span>
+                </q-item-label>
+              </q-item-section>
+
+              <q-item-section>
+                <div>
+                  <q-chip square class="bg-orange-6 text-white">
+                    {{ resource.count }}
+                  </q-chip>
+                  <q-chip v-if="resource.createdCount" square class="bg-green text-white">
+                    {{ resource.createdCount }}
+                  </q-chip>
+                </div>
+              </q-item-section>
+
+              <q-item-section side>
+                <div class="text-grey-8 q-gutter-xs">
+                  <q-btn class="gt-xs" size="12px" flat dense round icon="delete" color="red-7" @click="removeResourceFromStore(resource.resourceType)"
+                         :disable="transformStatus === 'in-progress'">
+                    <q-tooltip content-class="bg-white text-red-7">Remove</q-tooltip>
+                  </q-btn>
+                  <q-btn size="12px" flat dense round icon="more_vert" :disable="transformStatus === 'in-progress'">
+                    <q-tooltip content-class="bg-white text-grey-9">More</q-tooltip>
+                    <q-menu transition-show="jump-down" transition-hide="jump-up" auto-close>
+                      <q-list style="min-width: 150px">
+                        <q-item clickable @click="removeResourceFromFHIR(resource.resourceType)">
+                          <q-item-section style="font-size: 12px">Remove from FHIR</q-item-section>
+                        </q-item>
+                      </q-list>
+                    </q-menu>
+                  </q-btn>
+                </div>
+              </q-item-section>
+            </q-item>
           </template>
-        </q-table>
+          <template v-else>
+            <div class="text-grey-9 q-ma-md">
+              <q-icon name="warning" size="sm" />
+              <span class="q-pl-sm" style="font-size: 13px">No data available</span>
+            </div>
+          </template>
+          <q-separator />
+        </q-list>
         <div class="row content-end q-gutter-sm">
           <q-space />
-          <q-btn class="q-mt-lg" color="primary" label="Remove Resource" no-caps>
-            <q-spinner class="q-ml-sm" size="xs" v-show="loading" />
-            <q-menu transition-show="jump-down" transition-hide="jump-up" auto-close>
-              <q-list style="min-width: 100px">
-                <q-item clickable v-for="(resource, index) in resourceList" :key="index" @click="remove(resource)">
-                  <q-item-section>{{ resource }}</q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
+          <q-btn unelevated color="primary" label="Details" @click="openOutcomeDetailCard(transformOutcomeDetails)" class="q-mt-lg"
+                 v-show="transformStatus !== 'in-progress' && transformStatus !== 'pending'" no-caps />
+          <q-btn outline color="primary" @click="transform" class="q-mt-lg"
+                 :disable="transformStatus === 'in-progress' || !transformList.length" no-caps>
+            <span v-if="transformStatus !== 'pending'" class="q-mr-sm">
+              <q-spinner size="xs" v-show="transformStatus === 'in-progress'" />
+              <q-icon name="check" size="xs" color="green" v-show="transformStatus === 'success'" />
+              <q-icon name="error_outline" size="xs" color="red" v-show="transformStatus === 'error'" />
+            </span>
+            <span>Transform</span>
           </q-btn>
-          <q-btn flat label="Transform" class="q-mt-lg" @click="startTransform" no-caps />
         </div>
       </q-card-section>
     </q-card>
@@ -122,134 +124,74 @@
 
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
-  import { FileSource } from '@/common/model/file-source'
   import { ipcRenderer } from 'electron'
-  import { mappingDataTableHeaders } from '@/common/model/data-table'
+  import OutcomeCard from '@/components/OutcomeCard.vue'
+  import electronStore from '../common/electron-store'
 
   @Component
   export default class Transformer extends Vue {
-    private mappingList: any[] = []
-    // Mapping data grouped by file and sheets
-    private mappingObj: Map<string, any> = new Map<string, any>()
+    private resources: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
+    private transformList: TransformListItem[] = []
     private pagination = { page: 1, rowsPerPage: 0 }
-    private filter: string = ''
-    private loading: boolean = false
-    private resourceList: string[] = ['Patient', 'Practitioner', 'Condition', 'Observation']
+    private columns = [
+      { name: 'status', label: 'Status', field: 'status', align: 'center', icon: 'fas fa-info-circle',
+        classes: 'bg-grey-2', headerClasses: 'bg-primary text-white col-1', style: 'width: 50px' },
+      { name: 'resourceType', label: 'Resource', field: 'resourceType', align: 'center', sortable: true,
+        classes: 'bg-grey-1', headerClasses: 'bg-grey-4 text-grey-10 col-1' },
+      { name: 'count', label: 'Count', field: 'count', align: 'center', sortable: true }
+    ]
+    private transformStatus: status = 'pending'
+    private transformOutcomeDetails: OutcomeDetail[] = []
 
-    get columns (): object[] { return mappingDataTableHeaders }
-    get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
+    get fhirBase (): string { return this.$store.getters['fhir/fhirBase'] }
 
     mounted () {
-      this.loading = true
-      setTimeout(() => {
-        this.getMappings().then(() => {
-          let index = 0
-          this.mappingList = Object.keys(this.mappingObj).flatMap(f =>
-            Object.keys(this.mappingObj[f]).map(s =>
-              ({name: index++, file: f, sheet: s, targets: this.mappingObj[f][s].length, targetList: this.mappingObj[f][s], transform: 0})))
-          this.loading = false
-        })
-      }, 0)
+      this.onInit()
     }
 
-    startTransform () {
-      const fhirBase: string = this.$store.getters['fhir/fhirBase']
-      const filePathList = Object.keys(this.groupBy(this.mappingList, 'file'))
-      for (let i = 0, p = Promise.resolve(); i < filePathList.length; i++) {
-        p = p.then(_ => new Promise(resolve => {
-          const filePath = filePathList[i]
-          this.$q.loading.show({
-            message: `Loading ${filePath.split('\\').pop()}...`
-          })
-          this.mappingList = this.mappingList.map(item => {
-            if (item.file === filePath) {
-              item.transform = {status: 'processing'}
-            }
-            return item
-          })
-          const sheets = this.mappingObj[filePath]
-          ipcRenderer.send('transform', fhirBase, {filePath, sheets})
+    onInit () {
+      this.resources = new Map(Object.entries(electronStore.get('resources') || {}))
+      this.transformList = Array.from(this.resources.entries()).map(resource => ({resourceType: resource[0], count: resource[1].length, status: 'pending'}))
+    }
 
-          // In case of file reading failure
-          // Delete all other sheets listeners in that file
-          ipcRenderer.on(`transforming-${filePath}`, (event, result) => {
-            this.$q.loading.hide()
-            ipcRenderer.removeAllListeners(`transforming-${filePath}`)
-          })
+    transform () {
+      if (this.transformList.length) {
+        ipcRenderer.send('transform', this.fhirBase)
+        this.transformStatus = 'in-progress'
+        this.transformList.map((item: TransformListItem) => {
 
-          Promise.all(Object.keys(this.mappingObj[filePath]).map(sheet => {
-            return new Promise(resolve1 => {
-              ipcRenderer.on(`info-${filePath}-${sheet}`, (event, result) => {
-                this.mappingList = this.mappingList.map(item => {
-                  if ((item.file === filePath) && (item.sheet === sheet)) {
-                    if (!item.info) item.info = {}
-                    Object.assign(item.info, result)
-                  }
-                  return item
-                })
-                // TODO:
-                // ipcRenderer.removeAllListeners(`info-${filePath}-${sheet}`)
+          ipcRenderer.on('transform-result', (event, result: OutcomeDetail) => {
+            ipcRenderer.removeAllListeners(`transform-${item.resourceType}`)
+            // TODO: Check emitters - can be merged
+            this.transformStatus = result.status
+            this.transformOutcomeDetails = result.outcomeDetails || []
+          })
+          ipcRenderer.on(`transform-${item.resourceType}`, (event, result: OutcomeDetail) => {
+            if (result.status === 'in-progress') {
+
+              this.transformList = this.transformList.map(_ => {
+                if (_.resourceType === item.resourceType) _.status = 'in-progress'
+                return _
               })
-              ipcRenderer.on(`transforming-${filePath}-${sheet}`, (event, result) => {
-                ipcRenderer.removeAllListeners(`transforming-${filePath}-${sheet}`)
 
-                // Update status of mapping entries
-                this.mappingList = this.mappingList.map(v => {
-                  if (v.file === filePath && v.sheet === sheet) {
-                    v.transform = result
-                  }
-                  return v
-                })
-                if (result && result.status === 'done') {
-                  this.$log.success('Transform', `Transform done ${sheet} in ${filePath}`)
-                  resolve1()
-                } else {
-                  this.$log.error('Transform', `${result.description}. Transform error for ${sheet} in ${filePath}. For more details see logs/main`)
-                  resolve1()
+            } else {
+
+              this.transformList = this.transformList.map(_ => {
+                if (_.resourceType === item.resourceType) {
+                  _.status = result.status
+                  _.createdCount = (result.outcomeDetails || []).filter(value => value.status === 'success').length
                 }
+                return _
               })
-            })
-          }))
-          .then(() => resolve())
-          .catch(() => resolve())
-        }))
+              ipcRenderer.removeAllListeners(`transform-${item.resourceType}`)
+
+            }
+
+          })
+        })
       }
     }
-    getMappings (): Promise<any> {
-      return Promise.all(this.fileSourceList.map(async file => {
-        this.mappingObj[file.path] = {}
-        const currFile = this.mappingObj[file.path]
-        return Promise.all(file.sheets?.map(async sheet => {
-          // TODO:
-          // Filter headers which have any targets
-          const headersWithTarget = sheet.headers?.filter(h => h.target?.length) || []
-          if (headersWithTarget.length) {
-            currFile[sheet.label] = headersWithTarget
-          }
-        }) || [])
-      }))
-    }
-    groupBy (xs, key): any {
-      return xs.reduce((rv, x) => {
-        (rv[x[key]] = rv[x[key]] || []).push(x)
-        return rv
-      }, {})
-    }
-    remove (resourceType: string) {
-      this.loading = true
-      const fhirBase: string = this.$store.getters['fhir/fhirBase']
-      ipcRenderer.send('delete-resource', fhirBase, resourceType)
-      ipcRenderer.on('delete-resource-result', (event, result) => {
-        ipcRenderer.removeAllListeners('delete-resource-result')
-        if (result) {
-          this.loading = false
-          this.$q.notify({message: `${resourceType} Resources removed successfully`, color: 'grey-8'})
-        } else {
-          this.loading = false
-          this.$q.notify({message: 'Something went wrong', color: 'grey-8'})
-        }
-      })
-    }
+
     previousStep () {
       this.$q.dialog({
         title: '<i class="fas fa-info text-primary"> Previous Step </i>',
@@ -261,5 +203,43 @@
         this.$store.commit('decrementStep')
       })
     }
+
+    removeResourceFromStore (resourceType: string) {
+      this.$q.dialog({
+        title: '<i class="fas fa-trash text-red-7"> Remove Resource </i>',
+        message: `Are you sure to remove ${resourceType} resource. ${resourceType} resources will not be transformed.`,
+        class: 'text-grey-9',
+        cancel: true,
+        html: true
+      }).onOk(() => {
+        electronStore.delete(`resources.${resourceType}`)
+        this.onInit()
+      })
+    }
+
+    removeResourceFromFHIR (resourceType: string) {
+      this.$q.loading.show()
+      const fhirBase: string = this.$store.getters['fhir/fhirBase']
+      ipcRenderer.send('delete-resource', fhirBase, resourceType)
+      ipcRenderer.on('delete-resource-result', (event, result) => {
+        ipcRenderer.removeAllListeners('delete-resource-result')
+        if (result) {
+          this.$q.loading.hide()
+          this.$q.notify({message: `${resourceType} Resources removed successfully`, color: 'grey-8'})
+        } else {
+          this.$q.loading.hide()
+          this.$q.notify({message: 'Something went wrong', color: 'grey-8'})
+        }
+      })
+    }
+
+    openOutcomeDetailCard (outcomeDetails: OutcomeDetail[]) {
+      this.$store.commit('fhir/setOutcomeDetails', outcomeDetails)
+      this.$q.dialog({
+        component: OutcomeCard,
+        parent: this
+      })
+    }
+
   }
 </script>

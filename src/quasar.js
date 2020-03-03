@@ -25,6 +25,7 @@ import {
   QSeparator,
   QCard,
   QCardSection,
+  QCardActions,
   QInput,
   QExpansionItem,
   QStepper,
@@ -52,7 +53,10 @@ import {
   QChip,
   ClosePopup,
   QPageSticky,
-  QRadio
+  QRadio,
+  QDialog,
+  QToggle,
+  QBar
 } from 'quasar'
 
 Vue.use(Quasar, {
@@ -69,7 +73,7 @@ Vue.use(Quasar, {
       textColor: 'white',
       timeout: 1500,
       position: 'top',
-      classes: 'notify-opacity',
+      color: 'grey-8',
       actions: [ { icon: 'clear', color: 'white' } ]
     }
   },
@@ -91,6 +95,7 @@ Vue.use(Quasar, {
     QSeparator,
     QCard,
     QCardSection,
+    QCardActions,
     QInput,
     QExpansionItem,
     QStepper,
@@ -113,7 +118,10 @@ Vue.use(Quasar, {
     QMenu,
     QChip,
     QPageSticky,
-    QRadio
+    QRadio,
+    QDialog,
+    QToggle,
+    QBar
   },
   directives: {
     ClosePopup

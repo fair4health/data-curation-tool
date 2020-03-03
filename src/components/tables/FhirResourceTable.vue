@@ -7,7 +7,7 @@
             <span><q-icon name="fas fa-fire" size="xs" color="primary" class="q-mr-xs" /> FHIR Resource</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense v-model="currentFHIRRes" :options="fhirResourceOptions" label="FHIR Resource"
+          <q-select outlined dense v-model="currentFHIRRes" class="ellipsis" :options="fhirResourceOptions" label="FHIR Resource"
                     @filter="filterFn" use-input input-debounce="0">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
@@ -26,7 +26,7 @@
             <span><q-icon name="far fa-file-alt" size="xs" color="primary" class="q-mr-xs" /> Profiles</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense v-model="currentFHIRProf" :options="fhirProfileList" label="Profiles" :disable="!fhirProfileList.length">
+          <q-select outlined dense v-model="currentFHIRProf" class="ellipsis" :options="fhirProfileList" label="Profiles" :disable="!fhirProfileList.length">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -40,6 +40,9 @@
           </q-select>
         </div>
       </q-card-section>
+      <div class="q-px-sm bg-grey-2" style="margin-top: -10px; margin-bottom: -10px">
+        <q-toggle v-model="showMustFields" checked-icon="star" size="xs" color="red" label="Only must fields" class="text-grey-8" unchecked-icon="clear" />
+      </div>
       <q-card-section>
         <div>
           <q-item-section class="q-px-xs">
@@ -54,56 +57,80 @@
           </q-item-section>
           <q-separator />
           <div style="overflow-y: auto">
-            <q-splitter v-model="splitterModel">
+            <q-splitter v-model="splitterModel" :limits="[50, 98]">
               <!--Fhir Element Tree Part-->
               <template v-slot:before>
                 <q-scroll-area style="height: 50vh">
-                  <q-tree :nodes="fhirElementList"
+                  <q-tree :nodes="filteredFhirElementList"
                           ref="fhirTree"
                           node-key="value"
                           label-key="label"
                           tick-strategy="strict"
                           :ticked.sync="tickedFHIRAttr"
-                          :selected.sync="selectedStr"
                           :expanded.sync="expanded"
                           :filter="filter"
                           no-nodes-label="Please select a resource"
                           no-results-label="No result found"
                           selected-color="primary"
-                          @update:selected="onSelected"
                           default-expand-all
                   >
                     <template v-slot:default-header="prop">
                       <div class="row items-center full-width bg-grey-1 q-pa-xs">
                         <div class="col">
-                          <q-icon :name="prop.node.children && prop.node.children.length ? 'account_tree' : 'lens'"
-                                  color="orange-5"
-                                  :size="prop.node.children && prop.node.children.length ? 'sm' : 'xs'"
-                                  class="q-mr-sm"
-                          />
-                          <span>{{ prop.node.label }} <span class="text-red">{{ prop.node.min ? '*' : '' }}</span></span>
+                          <div class="row items-center">
+                            <q-icon :name="prop.node.children && prop.node.children.length ? 'account_tree' : 'lens'"
+                                    color="orange-5"
+                                    :size="prop.node.children && prop.node.children.length ? 'sm' : 'xs'"
+                                    class="q-mr-sm"
+                            />
+                            <div class="cursor-pointer fhir-element-text" v-bind:class="{'text-primary': selectedStr === prop.node.value}"
+                                  @click="onSelected(prop.node.value)">
+                              {{ prop.node.label }}
+                              <span class="text-red">{{ prop.node.min ? '*' : '' }}</span>
+                            </div>
+                            <q-chip v-if="prop.node.selectedType" :label="prop.node.selectedType" size="sm"
+                                    :removable="prop.node.type && prop.node.type.length > 0"
+                                    @remove="prop.node.selectedType=''; $store.commit('fhir/setElementList', fhirElementList)"
+                            />
+                          </div>
+                          <div class="row">
+                            <div v-if="prop.node.type && prop.node.type.length && (prop.node.type.length > 1 || env.datatypes[prop.node.type[0].value])"
+                                 class="full-width">
+                              <q-list dense class="q-ma-sm" style="font-size: 13px">
+                                <q-tree :nodes="prop.node.type"
+                                        node-key="value"
+                                        accordion
+                                >
+                                  <template v-slot:default-header="prop2">
+                                    <template v-if="prop2.node.children && prop2.node.children.length > 0">
+                                      <span class="text-grey-8 text-weight-bold q-pl-md">{{ prop2.node.value }}</span>
+                                    </template>
+                                    <template v-else>
+                                      <div class="row full-width items-center">
+                                        <div>
+                                          <q-radio dense v-model="prop.node.selectedType" class="text-grey-8 text-weight-medium full-width" :val="prop2.node.value"
+                                                   :label="prop2.node.value" size="xs" @input="$store.commit('fhir/setElementList', fhirElementList)"
+                                          />
+                                        </div>
+                                        <q-space />
+                                        <div>
+                                          <span v-if="prop2.node.type" class="text-caption text-primary">{{ prop2.node.type.map(_ => _.value).join(', ') }}</span>
+                                        </div>
+                                      </div>
+                                    </template>
+                                  </template>
+                                </q-tree>
+                              </q-list>
+                            </div>
+                          </div>
                         </div>
                         <div class="col-4 text-right">
-                          <span v-if="prop.node.type" class="text-caption text-primary">{{ prop.node.type.join(', ') }}</span>
+                          <span v-if="prop.node.type" class="text-caption text-primary">{{ prop.node.type.map(_ => _.value).join(', ') }}</span>
                         </div>
-                      </div>
-                    </template>
-                    <template v-slot:default-body="prop">
-                      <div v-if="prop.node.type && prop.node.type.length>1">
-                        <q-list dense bordered class="q-ma-sm">
-                          <q-item v-for="(type, index) in prop.node.type" :key="index">
-                            <q-radio v-model="prop.node.selectedType" class="text-grey-8" :val="type" :label="type" size="xs" />
-                          </q-item>
-                          <q-separator />
-                          <q-item>
-                            <q-btn flat label="Save" color="primary" @click="fhirElementList=fhirElementList" :disabled="prop.node.selectedType===''" />
-                            <q-space />
-                            <q-btn flat label="Clear" color="red-6" @click="prop.node.selectedType=''" :disabled="prop.node.selectedType===''" />
-                          </q-item>
-                        </q-list>
                       </div>
                     </template>
                   </q-tree>
+                  <Loading v-if="loadingFhir" />
                 </q-scroll-area>
               </template>
 
@@ -112,7 +139,7 @@
                 <q-scroll-area style="height: 50vh" v-if="selectedElem">
                   <div>
                     <q-toolbar class="bg-grey-2">
-                      <q-item-label class="text-weight-bold text-grey-7">
+                      <q-item-label class="text-weight-bold text-grey-7 ellipsis">
                       <span class="text-weight-regular text-primary">
                         [{{ selectedElem.min }}..{{ selectedElem.max }}]
                       </span>
@@ -122,6 +149,8 @@
                         </u>
                         <span class="text-red">{{ selectedElem.min ? '*' : '' }}</span>
                       </q-item-label>
+                      <q-space />
+                      <q-btn unelevated round dense size="sm" icon="close" color="white" text-color="grey-9" @click="selectedStr=null; selectedElem=null" />
                     </q-toolbar>
                     <div class="q-ma-sm q-gutter-sm">
                       <q-card flat bordered v-if="selectedElem.short">
@@ -161,10 +190,16 @@
 <script lang="ts">
   import { Component, Vue, Watch } from 'vue-property-decorator'
   import { FileSource, Sheet } from '@/common/model/file-source'
+  import Loading from '@/components/Loading.vue'
+  import { environment } from '@/common/environment'
 
-  @Component
+  @Component({
+    components: {
+      Loading
+    }
+  })
   export default class FhirResourceTable extends Vue {
-    private splitterModel = 50
+    private splitterModel = 100
     private loadingFhir: boolean = false
     private pagination = { page: 1, rowsPerPage: 0 }
     private selectedStr: string = ''
@@ -172,6 +207,8 @@
     private expanded: string[] = []
     private filter: string = ''
     private fhirResourceOptions: string[] = []
+    private showMustFields: boolean = false
+    private env = environment
 
     get fhirResourceList (): string[] { return this.$store.getters['fhir/resourceList'] }
     get fhirProfileList (): string[] { return this.$store.getters['fhir/profileList'].map(r => r.id) }
@@ -183,7 +220,10 @@
     get currentFHIRProf (): string { return this.$store.getters['fhir/currentProfile'] }
     set currentFHIRProf (value) { this.$store.commit('fhir/setCurrentProfile', value) }
 
-    get fhirElementList (): object[] { return this.$store.getters['fhir/elementList'] }
+    get filteredFhirElementList (): fhir.ElementTree[] {
+      return this.$store.getters['fhir/elementList'].filter(child => !this.showMustFields || child.min)
+    }
+    get fhirElementList (): fhir.ElementTree[] { return this.$store.getters['fhir/elementList'] }
     set fhirElementList (value) { this.$store.commit('fhir/setElementList', value) }
 
     get fhirElementListFlat (): any { return this.$store.getters['fhir/elementListFlat'] }
@@ -210,17 +250,16 @@
       this.$store.dispatch('fhir/getProfilesByRes', this.currentFHIRRes)
         .then(result => {
           if (result) {
-            this.loadingFhir = false
             this.currentFHIRProf = this.fhirProfileList.length ? this.fhirProfileList[0] : ''
             // Fetch elements of base resources
             if (!this.currentFHIRProf) {
               this.$store.dispatch('fhir/getElements', this.currentFHIRRes)
                 .then(() => this.loadingFhir = false )
-                .catch(err => {
+                .catch(() => {
                   this.loadingFhir = false
-                  throw err
+                  this.$q.notify({message: 'Resource elements couldn\'t be loaded', color: 'red'})
                 })
-            }
+            } else this.loadingFhir = false
           }
         })
         .catch(err => {
@@ -228,21 +267,29 @@
           throw err
         })
     }
+
     @Watch('currentFHIRProf')
     onFHIRProfileChanged (newVal: any): void {
       if (newVal) {
-        ([this.tickedFHIRAttr, this.selectedElem, this.expanded] = [[], null, [this.currentFHIRRes]])
+        ([this.tickedFHIRAttr, this.selectedElem, this.expanded, this.fhirElementList] = [[], null, [this.currentFHIRRes], []])
         this.loadingFhir = true
         this.$store.dispatch('fhir/getElements', this.currentFHIRProf)
           .then(() => {
             this.loadingFhir = false
           })
-          .catch(err => {
+          .catch(() => {
             this.loadingFhir = false
-            throw err
+            this.$q.notify({message: 'Resource elements couldn\'t be loaded', color: 'red'})
           })
       }
     }
+
+    @Watch('selectedStr')
+    onChangedSelectedStr () {
+      if (this.selectedStr) this.splitterModel = 50
+      else this.splitterModel = 100
+    }
+
     filterFn (val, update) {
       if (val === '') {
         update(_ => this.fhirResourceOptions = this.fhirResourceList)
@@ -250,10 +297,17 @@
       }
       update(_ => this.fhirResourceOptions = this.fhirResourceList.filter(v => v.toLowerCase().indexOf(val.toLowerCase()) > -1))
     }
+
     onSelected (target) {
+      this.selectedStr = target
       const filtered = this.fhirElementListFlat.filter(item => item.value === target)
       this.selectedElem = filtered.length ? filtered[0] : null
     }
 
   }
 </script>
+
+<style lang="stylus">
+  .fhir-element-text:hover
+    text-decoration underline
+</style>

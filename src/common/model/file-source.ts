@@ -10,15 +10,25 @@ export interface File {
 export interface SourceDataElement {
   type?: string
   value?: string
-  target?: Target[]
-  group?: any
+  record?: Record[]
 }
 
-export interface Target {
+export interface Record {
+  target?: TargetResource[]
+  recordId: string
+}
+
+export interface TargetResource {
   resource: string
   profile: string
   value: string
   type?: string
+}
+
+export interface BufferElement {
+  type?: string
+  value?: string
+  target?: TargetResource[]
 }
 
 export class FileSource implements File {

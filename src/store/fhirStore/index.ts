@@ -1,7 +1,8 @@
 import { FhirService } from '@/common/services/fhir.service'
 import { environment } from '@/common/environment'
 import StructureDefinition = fhir.StructureDefinition
-import { FHIRUtils } from '@/common/utils/fhir-util'
+import { FHIRUtil } from '@/common/utils/fhir-util'
+import electronStore from '@/common/electron-store'
 
 const fhirStore = {
   namespaced: true,
@@ -14,7 +15,8 @@ const fhirStore = {
     currentProfile: '',
     selectedElements: [],
     fhirBase: '',
-    fhirService: new FhirService()
+    fhirService: new FhirService(),
+    outcomeDetails: []
   },
   getters: {
     resourceList: state => state.resourceList || [],
@@ -25,7 +27,8 @@ const fhirStore = {
     currentProfile: state => state.currentProfile || '',
     selectedElements: state => state.selectedElements || [],
     fhirBase: state => state.fhirBase,
-    fhirService: state => state.fhirService
+    fhirService: state => state.fhirService,
+    outcomeDetails: state => state.outcomeDetails || []
   },
   mutations: {
     setResourceList (state, list) {
@@ -36,7 +39,7 @@ const fhirStore = {
     },
     setElementList (state, list) {
       state.elementList = list
-      state.elementListFlat = list?.length ? FHIRUtils.flatten(list) : []
+      state.elementListFlat = list?.length ? FHIRUtil.flatten(list) : []
     },
     setSelectedElements (state, list) {
       state.selectedElements = list
@@ -50,6 +53,10 @@ const fhirStore = {
     updateFhirBase (state, baseUrl: string) {
       state.fhirBase = baseUrl
       state.fhirService = new FhirService(baseUrl)
+      electronStore.set('fhirBase', baseUrl)
+    },
+    setOutcomeDetails (state, outcomeDetails: OutcomeDetail[]) {
+      state.outcomeDetails = outcomeDetails
     }
   },
   actions: {
@@ -84,43 +91,19 @@ const fhirStore = {
     },
     getElements ({ commit, state }, profileId: string): Promise<boolean> {
       return new Promise((resolve, reject) => {
-        state.fhirService.search('StructureDefinition', {_id: profileId}, true)
-          .then(res => {
-            const bundle = res.data as fhir.Bundle
-            if (bundle.entry?.length) {
-              const resource = bundle.entry[0].resource as fhir.StructureDefinition
-              const list: fhir.ElementTree[] = []
-              resource?.snapshot?.element.forEach((element) => {
-                const parts = element?.id?.split('.') || []
-                let part: any
-                let tmpList = list
-                part = parts.shift()
-                while (part) {
-                  let match = tmpList.findIndex(l => l.label === part)
-                  if (match === -1) {
-                    match = 0
-                    tmpList.push({
-                      value: element?.id,
-                      label: part,
-                      definition: element?.definition,
-                      comment: element?.comment,
-                      short: element?.short,
-                      min: element?.min,
-                      max: element?.max,
-                      type: element.type?.map(_ => _.code) || [],
-                      children: []
-                    })
-                  }
-                  tmpList = tmpList[match].children as fhir.ElementTree[]
-                  part = parts.shift()
-                }
-              })
-
-              commit('setElementList', list)
-            }
-            resolve(true)
-          })
-          .catch(err => reject(err) )
+        const cached = electronStore.get(`StructureDefinition-${profileId}`)
+        if (cached) {
+          commit('setElementList', cached)
+          resolve(true)
+        } else {
+          FHIRUtil.parseElementDefinitions('_id', profileId)
+            .then(res => {
+              commit('setElementList', res[0]?.children || [])
+              electronStore.set(`StructureDefinition-${profileId}`, res[0]?.children || [])
+              resolve(true)
+            })
+            .catch(err => reject(err))
+        }
       })
     },
     searchResource ({ commit, state }, resourceType: string): Promise<any> {

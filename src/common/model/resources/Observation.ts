@@ -1,5 +1,7 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
 import { Resource } from './Resource'
+import { FHIRUtil } from './../../utils/fhir-util'
+import { environment } from './../../environment'
 
 export class Observation extends Resource {
 
@@ -21,8 +23,7 @@ export class Observation extends Resource {
               date = new Date(value)
             }
             try {
-              resource.effectiveDateTime = date.getFullYear() + '-' +
-                ('0' + (date.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + date.getUTCDate()).slice(-2)
+              resource.effectiveDateTime = DataTypeFactory.createDateString(date)
             } catch (e) {
               reject(e)
             }
@@ -35,16 +36,16 @@ export class Observation extends Resource {
         case 'code':
           // TODO: <Review>
           if (value)
-            resource.code = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding('http://snomed.info/sct', value, value))
+            resource.code = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding(environment.codesystems.LOINC, value, value))
           resolve(true)
           break
         case 'subject':
-          resource.subject = {reference: `Patient/${value}`} as fhir.Reference
+          resource.subject = DataTypeFactory.createReference({reference: `Patient/${FHIRUtil.hash(value)}`})
           resolve(true)
           break
         case 'performer':
           if (resource.performer?.length) resource.performer = []
-          resource.performer?.push({reference: `Practitioner/${value}`})
+          resource.performer?.push(DataTypeFactory.createReference({reference: `Practitioner/${FHIRUtil.hash(value)}`}))
           resolve(true)
           break
         default:

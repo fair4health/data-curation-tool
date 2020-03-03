@@ -1,192 +1,91 @@
-import * as Excel from 'xlsx'
-import fs from 'fs'
 import log from 'electron-log'
-import 'isomorphic-fetch'
 import { ipcMain } from 'electron'
-import { workbookMap } from '../model/workbook'
-import { SourceDataElement, Target } from './../model/file-source'
+import electronStore from './../electron-store'
 import { FhirService } from './../services/fhir.service'
-import { Patient, Practitioner, Condition, Observation } from './../model/resources'
-import { v4 as uuid } from 'uuid'
 
-/**
- * Start point of Transforming data to FHIR
- */
-ipcMain.on('transform', (event, fhirBase: string, data: any) => {
+ipcMain.on('transform', (event, fhirBase: string) => {
   const fhirService: FhirService = new FhirService(fhirBase)
-  const filePath = data.filePath
 
-  const getWorkbooks = new Promise<Excel.WorkBook>(((resolve, reject) => {
-    if (workbookMap.has(filePath)) {
-      event.sender.send(`transforming-${filePath}`, [])
-      resolve(workbookMap.get(filePath))
-    } else {
-      fs.readFile(filePath, (err, buffer) => {
-        if (err) {
-          reject(err)
-          return
-        }
-        const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', cellDates: true})
-        // Save buffer workbook to map
-        workbookMap.set(filePath, workbook)
-        event.sender.send(`transforming-${filePath}`, [])
-        resolve(workbook)
-      })
-    }
-  }))
-  getWorkbooks.then(workbook => {
-    for (const sheet of Object.keys(data.sheets)) {
-      const entries: any[] = Excel.utils.sheet_to_json(workbook.Sheets[sheet]) || []
-      const sheetTargets = data.sheets[sheet]
+  let resources: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
 
-      event.sender.send(`info-${filePath}-${sheet}`, {total: entries.length})
-      log.info(`Starting transform ${sheet} in ${filePath}`)
+  try {
+    resources = new Map(Object.entries(electronStore.get('resources') || {}))
+  } catch (e) {
+    log.error('Electron store couldn\'t get the resources')
+  }
 
-      // Start transform action
-      // Create records row by row in entries
-      const resources: fhir.Resource[] = []
+  Promise.all(Array.from(resources.keys()).map(resourceType => {
+    const resourceList = resources.get(resourceType)
+    return new Promise((resolve, reject) => {
 
-      Promise.all(entries.map(entry => {
+      event.sender.send(`transform-${resourceType}`, {status: 'in-progress'} as OutcomeDetail)
 
-        // For each row create resource instances
-        const patientResource: fhir.Patient = {resourceType: 'Patient'}
-        const practitionerResource: fhir.Practitioner = {resourceType: 'Practitioner'}
-        const conditionMap: Map<string, fhir.Condition> = new Map<string, fhir.Condition>()
-        const observationMap: Map<string, fhir.Observation> = new Map<string, fhir.Observation>()
+      // Batch upload resources
+      // Max capacity 1000 resources
+      const len = Math.ceil(resourceList!.length / 1000)
 
-        return Promise.all(sheetTargets.map((attr: SourceDataElement) => {
-          return Promise.all(attr.target?.map((target: Target) => {
-            return new Promise((resolve, reject) => {
-              if (entry[attr.value!] !== null && entry[attr.value!] !== undefined && entry[attr.value!] !== '') {
-                const [resource, field, ...subfields] = target.value.split('.')
-                const payload: ResourceGenerator.Payload = {
-                  value: String(entry[attr.value!]),
-                  sourceType: attr.type,
-                  targetField: field,
-                  targetSubFields: subfields,
-                  fhirType: target.type
-                }
-                switch (resource) {
-                  case 'Patient':
-                    Patient.generate(patientResource, payload)
-                      .then(_ => resolve(true))
-                      .catch(err => reject(err))
-                    break
-                  case 'Practitioner':
-                    Practitioner.generate(practitionerResource, payload)
-                      .then(_ => resolve(true))
-                      .catch(err => reject(err))
-                    break
-                  case 'Condition':
-                    // TODO: Review group assignments
-                    const conditionGroupIds = attr.group ? Object.keys(attr.group) : [uuid().slice(0, 8)]
-                    Promise.all(conditionGroupIds.map(groupId => {
-                      return new Promise((resolve1, reject1) => {
-                        if (!conditionMap.has(groupId)) {
-                          const conditionResource: fhir.Condition = {resourceType: 'Condition', subject: {}} as fhir.Condition
-                          conditionMap.set(groupId, conditionResource)
-                        }
-                        Condition.generate(conditionMap.get(groupId)!, payload)
-                            .then(_ => resolve1(true))
-                            .catch(err => reject1(err))
-                      })
-                    }))
-                      .then(_ => resolve(true))
-                      .catch(err => reject(err))
-                    break
-                  case 'Observation':
-                    // TODO
-                    // const observationGroupIds = attr.group ? Object.keys(attr.group) : [uuid().slice(0, 8)]
-                    // Promise.all(observationGroupIds.map(groupId => {
-                    //   return new Promise((resolve1, reject1) => {
-                    //     if (!observationMap.has(groupId)) {
-                    //       const observationResource: fhir.Observation = {resourceType: 'Observation', status: 'final', subject: {}} as fhir.Observation
-                    //       observationMap.set(groupId, observationResource)
-                    //     }
-                    //     Observation.generate(observationMap.get(groupId)!, payload)
-                    //       .then(_ => resolve1(true))
-                    //       .catch(err => reject1(err))
-                    //   })
-                    // }))
-                    //   .then(_ => resolve(true))
-                    //   .catch(err => reject(err))
-                    break
-                  default:
-                    resolve(true)
-                }
-              } else {
-                // log.warn(`${entry[attr.value!]} Empty field`)
-                resolve(true)
-              }
-            })
-          }) || [])
-        }))
-          .then((res) => {
-            // End of transforming for one row
+      const batchPromiseList: Array<Promise<any>> = []
 
-            // Patients
-            if (patientResource.id) resources.push(patientResource)
-            // Practitioners
-            if (practitionerResource.id) resources.push(practitionerResource)
-            // Conditions
-            for (const conditionResource of Array.from(conditionMap.values())) resources.push(conditionResource)
+      for (let i = 0, p = Promise.resolve(); i < len; i++) {
+        batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
+          fhirService.postBatch(resourceList!.slice(i * 1000, (i + 1) * 1000), 'PUT')
+            .then(res => {
+              const bundle: fhir.Bundle = res.data as fhir.Bundle
+              const outcomeDetails: OutcomeDetail[] = []
+              let hasError: boolean = false
 
-          })
-          .catch(err => {
-            // event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'error', description: `Transform error for sheet: ${sheet}`})
-            log.error(`Transform error in one row for sheet: ${sheet} in ${filePath}: ${err.message}`)
-          })
-      }))
-        .then(() => { // End of sheet
-          if (entries.length) {
-            // Batch upload resources
-            // Max capacity 5000 resources
-            const len = Math.ceil(resources.length / 5000)
-
-            const bulkPromiseList: Array<Promise<any>> = []
-
-            for (let i = 0, p = Promise.resolve(); i < len; i++) {
-              bulkPromiseList.push(p.then(_ => new Promise((resolve, reject) => {
-                fhirService.postBatch(resources.slice(i * 5000, (i + 1) * 5000))
-                  .then(() => resolve())
-                  .catch(err => {
-                    log.warn(`Batch upload error: ${err}`)
-                    reject(err)
+              // Check batch bundle response for errors
+              Promise.all(bundle.entry?.map(_ => {
+                if (!_.resource) {
+                  const operationOutcome: fhir.OperationOutcome = _.response!.outcome as fhir.OperationOutcome
+                  operationOutcome.issue.map(issue => {
+                    if (issue.severity === 'error') {
+                      hasError = true
+                      outcomeDetails.push({status: 'error', resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
+                    } else if (issue.severity === 'information') {
+                      outcomeDetails.push({status: 'success', resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
+                    }
                   })
-              })))
-            }
+                } else {
+                  outcomeDetails.push({status: 'success', resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
+                }
+              }) || [])
+                .then(() => {
+                  if (hasError) rejectBatch(outcomeDetails)
+                  else resolveBatch(outcomeDetails)
+                })
+                .catch(err => rejectBatch(err))
+            })
+            .catch(err => {
+              log.error(`Batch process error. ${err}`)
+              rejectBatch(err)
+            })
+        }).catch(_ => _)))
+      }
 
-            Promise.all(bulkPromiseList)
-              .then(res => {
-                event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'done'})
-                log.info(`Transform done ${sheet} in ${filePath}`)
-              })
-              .catch(err => {
-                event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'error', description: `Batch upload error - ${err.message}`})
-                // log.error(`BATCH ERROR ${filePath}-${sheet} - ${JSON.stringify(err)}`)
-              })
-
-          } else {
-            event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'warning', description: 'Empty sheet'})
-            log.warn(`Empty sheet: ${sheet} in ${filePath}`)
-          }
+      Promise.all(batchPromiseList)
+        .then(res => {
+          const concatResult: OutcomeDetail[] = [].concat.apply([], res)
+          log.info(`Batch process completed for Resource: ${resourceType}`)
+          event.sender.send(`transform-${resourceType}`, {status: 'success', outcomeDetails: concatResult} as OutcomeDetail)
+          resolve(concatResult)
         })
         .catch(err => {
-          event.sender.send(`transforming-${filePath}-${sheet}`, {status: 'error', description: `Transform error for sheet: ${sheet}`})
-          log.error(`Transform error for sheet: ${sheet} in ${filePath}: ${err}`)
+          log.error(`Batch process error for Resource: ${resourceType}`)
+          event.sender.send(`transform-${resourceType}`, {status: 'error'} as OutcomeDetail)
+          reject(err)
         })
-    }
-  })
-    .catch(err => {
-      event.sender.send(`transforming-${filePath}`, [])
-      log.error(err)
-      return
-    })
-})
 
-ipcMain.on('delete-resource', (event, fhirBase: string, resourceType: string) => {
-  const fhirService: FhirService = new FhirService(fhirBase)
-  fhirService.deleteAll(resourceType)
-    .then(_ => event.sender.send(`delete-resource-result`, true))
-    .catch(_ => event.sender.send(`delete-resource-result`, false))
+    }).catch(_ => _)
+
+  }))
+    .then((res: any[]) => {
+      event.sender.send(`transform-result`, {status: 'success', outcomeDetails: [].concat.apply([], res)})
+      log.info(`Transform completed`)
+    })
+    .catch(err => {
+      event.sender.send(`transform-result`, {status: 'error', description: 'Transform error', outcomeDetails: err})
+      log.error(`Transform error. ${err}`)
+    })
+
 })

@@ -25,7 +25,14 @@ ipcMain.on('browse-file', (event) => {
  */
 ipcMain.on('read-file', (event, path) => {
   if (path) {
-    const workbook: Excel.WorkBook = Excel.readFile(path, {type: 'binary', cellDates: true})
+    let workbook: Excel.WorkBook
+    try {
+      workbook = Excel.readFile(path, {type: 'binary', cellDates: true})
+    } catch (e) {
+      log.error(`Cannot read file ${path}`)
+      event.sender.send('worksheets-ready', undefined)
+      return
+    }
     workbookMap.set(path, workbook)
     log.info('Read file ' + path)
     event.sender.send('worksheets-ready', workbook.SheetNames)
@@ -41,14 +48,20 @@ ipcMain.on('read-file', (event, path) => {
 ipcMain.on('get-sheet-headers', (event, data) => {
   const headers: object[] = []
   if (!workbookMap.has(data.path)) {
-    workbookMap.set(data.path, Excel.readFile(data.path, {type: 'binary', cellDates: true}))
+    try {
+      workbookMap.set(data.path, Excel.readFile(data.path, {type: 'binary', cellDates: true}))
+    } catch (e) {
+      log.error(`Cannot read file ${data.path}`)
+      event.sender.send('ready-sheet-headers', [])
+      return
+    }
   }
   const workbook = workbookMap.get(data.path)
   const sheet: Excel.WorkSheet | null = workbook ? workbook.Sheets[data.sheet] : null
   if (!(sheet && sheet['!ref'])) {
     event.sender.send('ready-sheet-headers', [])
     log.warn(`No columns found in ${data.path} - ${data.sheet}`)
-    return;
+    return
   }
   const range = Excel.utils.decode_range(sheet['!ref'] as string)
   const R = range.s.r
@@ -60,7 +73,7 @@ ipcMain.on('get-sheet-headers', (event, data) => {
     let header: any = {type: 's', value: `UNKNOWN ${C}`}
     if (cell && cell.t) header = {type: cellType[cell.t] || 'ErrorType', value: cell.v}
 
-    headers.push(header);
+    headers.push(header)
   }
   event.sender.send('ready-sheet-headers', headers)
 })
@@ -75,6 +88,11 @@ ipcMain.on('browse-mapping', (event) => {
   }, (files) => {
     if (files && files.length) {
       fs.readFile(files[0], (err, data) => {
+        if (err) {
+          log.error(`Cannot read mapping file ${files[0]}`)
+          event.sender.send('selected-mapping', undefined)
+          return
+        }
         log.info(`Mapping loaded from ${files[0]}`)
         event.sender.send('selected-mapping', JSON.parse(data.toString()))
       })
@@ -90,13 +108,13 @@ ipcMain.on('export-file', (event, content) => {
     filters: [{ extensions: ['json'], name: 'JSON (.json)' }]
   }, (filename) => {
     if (!filename) {
-      return;
+      return
     }
     fs.writeFile(filename, content, (err) => {
       if (err) {
         log.error(`Export file: ${err}`)
         event.sender.send('export-done', null)
-        return;
+        return
       }
       event.sender.send('export-done', true)
     })

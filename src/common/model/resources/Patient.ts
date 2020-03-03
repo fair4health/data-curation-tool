@@ -1,6 +1,6 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { Resource } from './Resource'
+import electronStore from './../../electron-store'
 
 export class Patient extends Resource {
 
@@ -11,14 +11,10 @@ export class Patient extends Resource {
     const {value, sourceType, targetField, targetSubFields, fhirType} = payload
 
     return new Promise<any>((resolve, reject) => {
-      if (!resource.meta?.profile) {
-        resource.meta = {}
-        resource.meta.profile = [environment.profiles.patient_uv_ips]
-      }
       switch (targetField) {
         case 'id':
           resource.id = value
-          const identifier: fhir.Identifier = {system: environment.server.config.baseUrl, value}
+          const identifier: fhir.Identifier = {system: electronStore.get('fhirBase'), value}
           resource.identifier = [identifier]
           resolve(true)
           break
@@ -37,7 +33,7 @@ export class Patient extends Resource {
           resolve(true)
           break
         case 'gender':
-          resource.gender = value.toLowerCase()
+          resource.gender = 'male'
           resolve(true)
           break
         case 'birthDate':
@@ -64,23 +60,11 @@ export class Patient extends Resource {
           } else {
             if (!resource.name?.length)
               resource.name = [{}] as fhir.HumanName[]
-            switch (targetSubFields[0]) {
-              case 'text':
-                resource.name[0].text = value
-                break
-              case 'family':
-                resource.name[0].family = value
-                break
-              case 'given':
-                resource.name[0].given = value.split(' ')
-                break
-              case 'prefix':
-                resource.name[0].prefix = value.split(' ')
-                break
-              case 'suffix':
-                resource.name[0].suffix = value.split(' ')
-                break
-            }
+            if (targetSubFields[0] === 'text' || targetSubFields[0] === 'family')
+              resource.name[0][targetSubFields[0]] = value
+            else
+              resource.name[0][targetSubFields[0]] = value.split(' ')
+
           }
           resolve(true)
           break
@@ -91,6 +75,23 @@ export class Patient extends Resource {
           break
         case 'contact':
           // TODO
+          resolve(true)
+          break
+        case 'deceased[x]':
+          if (fhirType === 'dateTime') {
+            let date = value
+            if (!(date instanceof Date)) {
+              date = new Date(value)
+            }
+            try {
+              resource.deceasedDateTime = DataTypeFactory.createDateString(date)
+            } catch (e) {
+              reject(e)
+            }
+          } else if (fhirType === 'boolean') {
+            // TODO
+            resource.deceasedBoolean = !!value
+          }
           resolve(true)
           break
         default:

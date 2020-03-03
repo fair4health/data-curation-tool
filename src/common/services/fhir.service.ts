@@ -107,11 +107,35 @@ export class FhirService {
       entry: []
     }
     for (const resource of resources) {
-      if (resource.resourceType === 'Patient' || resource.resourceType === 'Practitioner')
-        method = 'PUT'
+      // if (resource.resourceType === 'Patient' || resource.resourceType === 'Practitioner')
+      //   method = 'PUT'
       const request: fhir.BundleEntryRequest = {
         method: method || 'POST',
         url: resource.resourceType + (method === 'PUT' ? `/${resource.id}` : '')
+      }
+      transactionResource.entry?.push({
+        resource,
+        request
+      })
+    }
+    return axios.post(this.config.baseUrl, transactionResource, {headers: this.config.headers, httpAgent})
+  }
+
+  /**
+   * Validates resources
+   * @param resources
+   */
+  validate (resources: fhir.Resource[]): Promise<any> {
+    const httpAgent = new http.Agent({keepAlive: true})
+    const transactionResource: fhir.Bundle = {
+      resourceType: 'Bundle',
+      type: 'batch',
+      entry: []
+    }
+    for (const resource of resources) {
+      const request: fhir.BundleEntryRequest = {
+        method: 'POST',
+        url: `${resource.resourceType}/$validate?profile=${resource.meta?.profile![0]}`
       }
       transactionResource.entry?.push({
         resource,

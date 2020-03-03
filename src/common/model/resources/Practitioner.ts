@@ -1,6 +1,6 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { Resource } from './Resource'
+import electronStore from './../../electron-store'
 
 export class Practitioner extends Resource {
 
@@ -9,20 +9,24 @@ export class Practitioner extends Resource {
     const {value, sourceType, targetField, targetSubFields, fhirType} = payload
 
     return new Promise<any>((resolve, reject) => {
-      if (!resource.meta?.profile) {
-        resource.meta = {}
-        resource.meta.profile = [environment.profiles.practitioner_uv_ips]
-      }
       switch (targetField) {
         case 'id':
           resource.id = value
-          const identifier: fhir.Identifier = {system: environment.server.config.baseUrl, value}
+          const identifier: fhir.Identifier = {system: electronStore.get('fhirBase'), value}
           resource.identifier = [identifier]
           resolve(true)
           break
         case 'address':
-          const address: fhir.Address = {}
-          address.country = value
+          const address: fhir.Address = resource.address?.length ? resource.address[0] : {}
+          if (!targetSubFields.length) {
+            address.country = value
+          } else {
+            if (targetSubFields[0] === 'line') {
+              address.line = [value]
+            } else {
+              address[targetSubFields[0]] = value
+            }
+          }
           resource.address = [address]
           resolve(true)
           break
@@ -35,23 +39,10 @@ export class Practitioner extends Resource {
           } else {
             if (!resource.name?.length)
               resource.name = [{}] as fhir.HumanName[]
-            switch (targetSubFields[0]) {
-              case 'text':
-                resource.name[0].text = value
-                break
-              case 'family':
-                resource.name[0].family = value
-                break
-              case 'given':
-                resource.name[0].given = value.split(' ')
-                break
-              case 'prefix':
-                resource.name[0].prefix = value.split(' ')
-                break
-              case 'suffix':
-                resource.name[0].suffix = value.split(' ')
-                break
-            }
+            if (targetSubFields[0] === 'text' || targetSubFields[0] === 'family')
+              resource.name[0][targetSubFields[0]] = value
+            else
+              resource.name[0][targetSubFields[0]] = value.split(' ')
           }
           resolve(true)
           break

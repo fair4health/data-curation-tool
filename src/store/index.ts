@@ -13,11 +13,15 @@ export default new Vuex.Store({
   },
   state: {
     curationStep: 1,
-    log: ''
+    log: '',
+    mappingList: [],
+    validationStatus: ''
   },
   getters: {
     curationStep: state => state.curationStep,
-    log: state => state.log
+    log: state => state.log,
+    mappingList: state => state.mappingList || [],
+    validationStatus: state => state.validationStatus
   },
   mutations: {
     incrementStep (state) {
@@ -28,6 +32,12 @@ export default new Vuex.Store({
     },
     updateLog (state, message) {
       state.log += message + '<br/>'
+    },
+    setMappingList (state, list: any) {
+      state.mappingList = list
+    },
+    setValidationStatus (state, status: status) {
+      state.validationStatus = status
     }
   },
   actions: {}
