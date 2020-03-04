@@ -44,7 +44,7 @@
     private verificationStatus: string = ''
 
     mounted () {
-      const url = localStorage.getItem('f4h-onfhirBaseUrl')
+      const url = localStorage.getItem('fhirBaseUrl')
       if (url) {
         this.onfhirBaseUrl = url
       }
@@ -54,10 +54,9 @@
       if (this.onfhirBaseUrl) {
         this.verificationStatus = 'waiting'
         this.$store.commit('fhir/updateFhirBase', this.onfhirBaseUrl)
-        localStorage.setItem('f4h-onfhirBaseUrl', this.onfhirBaseUrl)
-        this.$store.dispatch('fhir/searchResource', 'Patient')
-          .then(_ => this.verificationStatus = 'done')
-          .catch(_ => this.verificationStatus = 'error')
+        this.$store.dispatch('fhir/searchResource', 'metadata')
+          .then(() => this.verificationStatus = 'done')
+          .catch(() => this.verificationStatus = 'error')
       }
     }
   }

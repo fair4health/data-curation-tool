@@ -87,8 +87,11 @@
           <template v-slot:body-cell-target="props">
             <q-td :props="props">
               <div v-for="(target, index) in props.row.target" :key="index">
-                <q-chip dense removable @remove="removeTarget(props.row.value, index)" :color="'orange-'+(index%3*2+6)" text-color="white">
+                <q-chip dense removable @remove="removeTarget(props.row.value, index)" color="orange" text-color="white">
                   <span class="q-mx-xs" style="font-size: 12px">{{ target.value }}</span>
+                </q-chip>
+                <q-chip v-if="!!target.type" dense color="grey-2" text-color="grey-8" style="font-size: 11px">
+                  {{ target.type }}
                 </q-chip>
               </div>
             </q-td>

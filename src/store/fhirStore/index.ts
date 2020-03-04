@@ -2,7 +2,6 @@ import { FhirService } from '@/common/services/fhir.service'
 import { environment } from '@/common/environment'
 import StructureDefinition = fhir.StructureDefinition
 import { FHIRUtil } from '@/common/utils/fhir-util'
-import electronStore from '@/common/electron-store'
 
 const fhirStore = {
   namespaced: true,
@@ -53,7 +52,7 @@ const fhirStore = {
     updateFhirBase (state, baseUrl: string) {
       state.fhirBase = baseUrl
       state.fhirService = new FhirService(baseUrl)
-      electronStore.set('fhirBase', baseUrl)
+      localStorage.setItem('fhirBaseUrl', baseUrl)
     },
     setOutcomeDetails (state, outcomeDetails: OutcomeDetail[]) {
       state.outcomeDetails = outcomeDetails
@@ -62,10 +61,9 @@ const fhirStore = {
   actions: {
     getResources ({ commit, state }): Promise<boolean> {
       return new Promise((resolve, reject) => {
-        state.fhirService.search('CapabilityStatement', null)
+        state.fhirService.search('metadata', null)
           .then(res => {
-            const bundle = res.data as fhir.Bundle
-            const resource = bundle.entry?.length ? bundle.entry[0].resource as fhir.CapabilityStatement : null
+            const resource = res.data as fhir.CapabilityStatement
             if (resource && resource.rest?.length && resource.rest[0].resource?.length) {
               commit('setResourceList', resource.rest[0].resource.map(r => r.type) || [])
             }
@@ -91,15 +89,15 @@ const fhirStore = {
     },
     getElements ({ commit, state }, profileId: string): Promise<boolean> {
       return new Promise((resolve, reject) => {
-        const cached = electronStore.get(`StructureDefinition-${profileId}`)
-        if (cached) {
+        const cached = JSON.parse(localStorage.getItem(`${state.fhirBase}-StructureDefinition-${profileId}`) || '{}')
+        if (cached && !FHIRUtil.isEmpty(cached)) {
           commit('setElementList', cached)
           resolve(true)
         } else {
           FHIRUtil.parseElementDefinitions('_id', profileId)
             .then(res => {
               commit('setElementList', res[0]?.children || [])
-              electronStore.set(`StructureDefinition-${profileId}`, res[0]?.children || [])
+              localStorage.setItem(`${state.fhirBase}-StructureDefinition-${profileId}`, JSON.stringify(res[0]?.children || []))
               resolve(true)
             })
             .catch(err => reject(err))

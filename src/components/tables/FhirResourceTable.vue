@@ -8,7 +8,7 @@
           </q-item-label>
           <q-separator spaced />
           <q-select outlined dense v-model="currentFHIRRes" class="ellipsis" :options="fhirResourceOptions" label="FHIR Resource"
-                    @filter="filterFn" use-input input-debounce="0">
+                    @filter="filterFn" use-input input-debounce="0" :loading="loadingResources">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -209,6 +209,7 @@
     private fhirResourceOptions: string[] = []
     private showMustFields: boolean = false
     private env = environment
+    private loadingResources: boolean = false
 
     get fhirResourceList (): string[] { return this.$store.getters['fhir/resourceList'] }
     get fhirProfileList (): string[] { return this.$store.getters['fhir/profileList'].map(r => r.id) }
@@ -237,9 +238,16 @@
     set tickedFHIRAttr (value) { this.$store.commit('fhir/setSelectedElements', value) }
 
     created () {
+      this.loadingResources = true
       this.$store.dispatch('fhir/getResources')
-        .then(res => { if (res) this.fhirElementList = [] })
-        .catch(err => { throw err })
+        .then(res => {
+          this.loadingResources = false
+          if (res) this.fhirElementList = []
+        })
+        .catch(err => {
+          this.loadingResources = false
+          this.$q.notify({message: 'Something went wrong while fetching resource-generators'})
+        })
       if (this.currentFHIRRes) this.onFHIRResourceChanged()
     }
 
@@ -251,7 +259,7 @@
         .then(result => {
           if (result) {
             this.currentFHIRProf = this.fhirProfileList.length ? this.fhirProfileList[0] : ''
-            // Fetch elements of base resources
+            // Fetch elements of base resource-generators
             if (!this.currentFHIRProf) {
               this.$store.dispatch('fhir/getElements', this.currentFHIRRes)
                 .then(() => this.loadingFhir = false )

@@ -17,4 +17,8 @@ export class DataTypeFactory {
     return {reference: ref.reference}
   }
 
+  static createTiming () {
+
+  }
+
 }

@@ -37,7 +37,7 @@
           <q-card-section class="row">
             <q-space />
             <div class="q-gutter-sm">
-              <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" icon="sync_alt" unelevated label="Match"
+              <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" unelevated label="Match"
                      color="blue-1" text-color="primary" @click="matchFields" no-caps />
               <q-btn unelevated v-show="!editRecordId" color="green" label="Add Record" icon="check" @click="addRecord" no-caps />
               <q-btn unelevated v-show="editRecordId" color="primary" label="Update" icon="edit" @click="addRecord" no-caps />
@@ -74,14 +74,14 @@
                                 expand-icon-class="text-white"
               >
                 <div v-for="sheet in file.sheets" :key="sheet.sheetName" class="q-pa-md">
-                  <div class="row text-grey-6 text-weight-bold">{{sheet.sheetName}}</div>
+                  <div class="row text-grey-6 text-weight-bold">{{ sheet.sheetName }}</div>
                   <q-separator spaced />
                   <div class="row">
                     <div v-for="(record, index) in sheet.records" :key="index" class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
                       <q-card class="q-ma-xs" bordered flat>
-                        <q-card-section class="text-caption bg-grey-3 text-weight-bold text-italic q-pa-xs">
+                        <q-card-section class="text-caption bg-grey-3 text-weight-bold q-pa-xs">
                           <div class="row items-center">
-                            <q-chip class="text-grey-8" color="white" style="font-size: 12px">#{{record.recordId}}</q-chip>
+                            <q-chip class="text-grey-8" color="white" style="font-size: 12px">#{{ record.recordId }}</q-chip>
                             <q-space />
                             <div class="q-gutter-xs">
                               <q-btn flat round dense size="sm" icon="edit" color="grey-9"
@@ -90,18 +90,37 @@
                                      @click="removeRecordPopup(file.fileName, sheet.sheetName, record.recordId)" />
                             </div>
                           </div>
+                          <div class="row">
+                            <div class="text-grey-8 text-weight-regular">
+                              <q-chip dense class="text-grey-8" color="white" style="font-size: 11px">
+                                <span class="text-weight-bold"> {{ record.resource }} </span> - {{ record.profile }}
+                              </q-chip>
+                            </div>
+                          </div>
                         </q-card-section>
                         <q-card-section>
                           <q-list separator>
                             <q-item v-for="(column, index) in record.data" :key="index">
-                              <q-item-section style="font-size: 12px">{{column.value}}</q-item-section>
+                              <div class="col-3 ellipsis items-center" style="font-size: 12px">{{ column.value }}</div>
                               <div class="row col">
                                 <q-chip dense removable v-for="(target, targetI) in column.target" :key="targetI"
                                         color="orange" text-color="white" class="cursor-pointer"
-                                        @remove="removeMatching(file.fileName, sheet.sheetName, record.recordId, column.value, target.value)">
-                                  <span class="q-mx-xs ellipsis" style="font-size: 12px">{{target.value}}</span>
-                                  <q-tooltip>{{target.value}}</q-tooltip>
+                                        @remove="removeMatching(file.fileName, sheet.sheetName, record.recordId, column.value, target.value, target.type)">
+                                  <span class="q-mx-xs ellipsis" style="font-size: 12px">{{ target.value }}</span>
+                                  <q-tooltip>{{ target.value }}</q-tooltip>
                                 </q-chip>
+                              </div>
+                              <div class="row col q-pl-xs">
+                                <div v-for="(target, targetI) in column.target" :key="targetI" class="full-width">
+                                  <q-chip dense v-if="!!target.type"
+                                          color="grey-2" text-color="grey-8" class="cursor-pointer">
+                                    <div class="q-mx-xs ellipsis" style="font-size: 11px">{{ target.type }}</div>
+                                    <q-tooltip>{{ target.type }}</q-tooltip>
+                                  </q-chip>
+                                  <q-chip v-else dense color="white" text-color="grey-8">
+                                    <div class="q-mx-xs ellipsis" style="font-size: 12px">-</div>
+                                  </q-chip>
+                                </div>
                               </div>
                             </q-item>
                           </q-list>
@@ -208,11 +227,14 @@
             const sheet = file[sheetName]
             const records: store.Record[] = []
             return Promise.all(Object.keys(sheet).map((recordId: string) => {
+              const record = sheet[recordId]
               records.push(
                 {
                   recordId,
-                  data: sheet[recordId]
-                }
+                  resource: record[0].target[0].resource,
+                  profile: record[0].target[0].profile,
+                  data: record
+                } as store.Record
               )
             })). then(_ => {
               if (records.length) sheets.push({sheetName, records})
@@ -277,14 +299,14 @@
         cancel: true,
         persistent: true
       }).onOk(mappingName => {
-        let fileStore: any = localStorage.getItem('f4h-store-fileSourceList')
+        let fileStore: any = localStorage.getItem('store-fileSourceList')
         if (fileStore) {
           fileStore = JSON.parse(fileStore) as any[]
           fileStore.push({date: new Date(), name: mappingName, data: this.$store.state.file})
         } else {
           fileStore = [{date: new Date(), name: mappingName, data: this.$store.state.file}]
         }
-        localStorage.setItem('f4h-store-fileSourceList', JSON.stringify(fileStore))
+        localStorage.setItem('store-fileSourceList', JSON.stringify(fileStore))
         this.$q.notify({ message: 'Saved', icon: 'check', color: 'green-6' })
       })
     }
@@ -385,9 +407,9 @@
           const sheet = file[0].sheets?.filter(_ => _.sheetName === sheetName) || []
           if (sheet.length === 1) {
             const record = sheet[0].records?.filter(_ => _.recordId === recordId)
-            const sourceAttrs: SourceTargetGroup[] = record[0].data || []
+            const sourceAttrs: store.SourceTargetGroup[] = record[0].data || []
             sourceAttrs.map(_ => {
-              const tmp = this.bufferSheetHeaders.filter(field => field.value === _.value) || []
+              const tmp: BufferElement[] = this.bufferSheetHeaders.filter(field => field.value === _.value) || []
               if (tmp.length) {
                 tmp[0].type = _.type
                 tmp[0].target = [..._.target]
@@ -441,7 +463,7 @@
       }
     }
 
-    removeMatching (fileName: string, sheetName: string, recordId: string, sourceValue: string, targetValue: string) {
+    removeMatching (fileName: string, sheetName: string, recordId: string, sourceValue: string, targetValue: string, targetType: string) {
       this.$q.loading.show()
       const file = this.fileSourceList.filter(_ => _.path === fileName) || []
       if (file.length === 1) {
@@ -453,7 +475,7 @@
               column.record.map((record: Record) => {
                 if (record.recordId === recordId) {
                   for (let i = 0; i < (record.target?.length || 0); i++) {
-                    if (record.target![i].value === targetValue)
+                    if (record.target![i].value === targetValue && record.target![i].type === targetType)
                       record.target?.splice(i, 1)
                   }
                 }

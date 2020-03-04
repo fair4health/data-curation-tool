@@ -60,6 +60,7 @@ export let environment = {
     ContactPoint: `${hl7Base}/StructureDefinition/ContactPoint`,
     Count: `${hl7Base}/StructureDefinition/Count`,
     Distance: `${hl7Base}/StructureDefinition/Distance`,
+    Dosage: `${hl7Base}/StructureDefinition/Dosage`,
     Duration: `${hl7Base}/StructureDefinition/Duration`,
     HumanName: `${hl7Base}/StructureDefinition/HumanName`,
     Identifier: `${hl7Base}/StructureDefinition/Identifier`,

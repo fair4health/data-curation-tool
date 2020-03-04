@@ -15,7 +15,7 @@ export class FhirService {
   }
 
   /**
-   * Returns resources searched by resourceType and query as Bundle
+   * Returns resource-generators searched by resourceType and query as Bundle
    * @param resourceType
    * @param query
    * @param all
@@ -122,7 +122,7 @@ export class FhirService {
   }
 
   /**
-   * Validates resources
+   * Validates resource-generators
    * @param resources
    */
   validate (resources: fhir.Resource[]): Promise<any> {
@@ -133,9 +133,16 @@ export class FhirService {
       entry: []
     }
     for (const resource of resources) {
+      let url
+
+      if (resource.meta?.profile?.length && resource.meta.profile[0])
+        url = resource.resourceType + '/$validate?profile=' + resource.meta.profile[0]
+      else
+        url = resource.resourceType + '/$validate'
+
       const request: fhir.BundleEntryRequest = {
         method: 'POST',
-        url: `${resource.resourceType}/$validate?profile=${resource.meta?.profile![0]}`
+        url
       }
       transactionResource.entry?.push({
         resource,
@@ -147,7 +154,7 @@ export class FhirService {
 
   /**
    * Just for DEV
-   * Delete all resources
+   * Delete all resource-generators
    * @param resourceType
    */
   deleteAll (resourceType: string) {

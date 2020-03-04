@@ -34,12 +34,34 @@ export class ResourceFactory {
       case 'MedicationStatement':
         const medicationStatement: fhir.MedicationStatement = resource as fhir.MedicationStatement
         if (medicationStatement.status) value += medicationStatement.status
+        if (medicationStatement.subject?.reference) value += medicationStatement.subject.reference
         if (medicationStatement.medicationCodeableConcept?.coding && medicationStatement.medicationCodeableConcept.coding.length)
           value += medicationStatement.medicationCodeableConcept.coding[0].code
         if (medicationStatement.medicationReference) value += medicationStatement.medicationReference.reference
         if (medicationStatement.effectiveDateTime) value += medicationStatement.effectiveDateTime
         if (medicationStatement.effectivePeriod?.start) value += medicationStatement.effectivePeriod.start
         if (medicationStatement.effectivePeriod?.end) value += medicationStatement.effectivePeriod.end
+        break
+      case 'MedicationRequest':
+        const medicationRequest: fhir.MedicationRequest = resource as fhir.MedicationRequest
+        if (medicationRequest.status) value += medicationRequest.status
+        if (medicationRequest.intent) value += medicationRequest.intent
+        if (medicationRequest.subject?.reference) value += medicationRequest.subject.reference
+        if (medicationRequest.medicationCodeableConcept?.coding && medicationRequest.medicationCodeableConcept.coding.length)
+          value += medicationRequest.medicationCodeableConcept.coding[0].code
+        if (medicationRequest.medicationReference) value += medicationRequest.medicationReference.reference
+        break
+      case 'Observation':
+        const observation: fhir.Observation = resource as fhir.Observation
+        if (observation.status) value += observation.status
+        if (observation.code?.coding && observation.code.coding.length) value += observation.code.coding[0].code
+        if (observation.valueCodeableConcept?.coding?.length) value += observation.valueCodeableConcept.coding[0].code
+        if (observation.valueQuantity?.value) value += observation.valueQuantity.value
+        if (observation.subject?.reference) value += observation.subject.reference
+        if (observation.effectiveInstant) value += observation.effectiveInstant
+        if (observation.effectiveDateTime) value += observation.effectiveDateTime
+        if (observation.effectivePeriod) value += String(observation.effectivePeriod?.start) + String(observation.effectivePeriod?.end)
+        if (observation.effectiveTiming?.code?.coding?.length) value += observation.effectiveTiming.code.coding[0].code
         break
       default:
         break

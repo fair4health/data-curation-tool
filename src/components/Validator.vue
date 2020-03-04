@@ -99,21 +99,40 @@
                       <div v-for="(record, index) in computedSavedRecord(props.row.file, props.row.sheet)" :key="index"
                            class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
                         <q-card class="q-ma-xs" bordered flat>
-                          <q-card-section class="text-caption bg-grey-3 text-weight-bold text-italic fa-border">
+                          <q-card-section class="text-caption bg-grey-3 text-weight-bold q-pa-xs">
                             <div class="row items-center">
                               <q-chip class="text-grey-8" color="white" style="font-size: 12px">#{{record.recordId}}</q-chip>
+                            </div>
+                            <div class="row">
+                              <div class="text-grey-8 text-weight-regular">
+                                <q-chip dense class="text-grey-8" color="white" style="font-size: 11px">
+                                  <span class="text-weight-bold"> {{ record.resource }} </span> - {{record.profile}}
+                                </q-chip>
+                              </div>
                             </div>
                           </q-card-section>
                           <q-card-section>
                             <q-list separator>
                               <q-item v-for="(column, index) in record.data" :key="index">
-                                <q-item-section style="font-size: 12px">{{column.value}}</q-item-section>
+                                <div class="col-3 ellipsis items-center" style="font-size: 12px">{{ column.value }}</div>
                                 <div class="row col">
                                   <q-chip dense v-for="(target, targetI) in column.target" :key="targetI"
                                           color="primary" text-color="white" class="cursor-pointer">
-                                    <span class="q-mx-xs ellipsis" style="font-size: 12px">{{target.value}}</span>
-                                    <q-tooltip>{{target.value}}</q-tooltip>
+                                    <div class="q-mx-xs row ellipsis-2-lines" style="font-size: 12px">{{ target.value }}</div>
+                                    <q-tooltip>{{ target.value }} - {{ target.type }}</q-tooltip>
                                   </q-chip>
+                                </div>
+                                <div class="row col q-pl-xs">
+                                  <div v-for="(target, targetI) in column.target" :key="targetI" class="full-width">
+                                    <q-chip dense v-if="!!target.type"
+                                            color="grey-2" text-color="grey-8" class="cursor-pointer">
+                                      <div class="q-mx-xs ellipsis" style="font-size: 11px">{{ target.type }}</div>
+                                      <q-tooltip>{{ target.type }}</q-tooltip>
+                                    </q-chip>
+                                    <q-chip v-else dense color="white" text-color="grey-8">
+                                      <div class="q-mx-xs ellipsis" style="font-size: 12px">-</div>
+                                    </q-chip>
+                                  </div>
                                 </div>
                               </q-item>
                             </q-list>
@@ -200,7 +219,7 @@
     validate () {
       // Init status
       this.validationStatus = 'in-progress'
-      // If there are resources created, clear them
+      // If there are resource-generators created, clear them
       electronStore.set('resources', null)
       const filePathList = Object.keys(FHIRUtil.groupBy(this.mappingList, 'file'))
 
@@ -210,7 +229,7 @@
         return
       }
 
-      // Submit each file to create resources and validate them
+      // Submit each file to create resource-generators and validate them
       filePathList.reduce((promise: Promise<any>, filePath: string) =>
         promise.finally(() => new Promise((resolveFile, rejectFile) => {
           this.$q.loading.show({
@@ -222,7 +241,9 @@
             }
             return _
           })
-          const sheets = this.mappingObj[filePath]
+          // const sheets = this.mappingObj[filePath]
+          const sheets = this.savedRecords.find((files: store.SavedRecord) => files.fileName === filePath)!.sheets
+
           ipcRenderer.send('validate', this.fhirBase, {filePath, sheets})
 
           ipcRenderer.on(`validate-read-file-${filePath}`, (event, result) => {

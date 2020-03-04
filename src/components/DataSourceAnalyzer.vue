@@ -155,7 +155,7 @@
 
     get files (): string[] { return this.fileSourceList.map(f => f.value) }
     get savedMappings (): store.MappingObject[] {
-      const savedMappings = localStorage.getItem('f4h-store-fileSourceList')
+      const savedMappings = localStorage.getItem('store-fileSourceList')
       this.mappingStore = savedMappings ? JSON.parse(savedMappings) : []
       return this.mappingStore
     }
@@ -207,7 +207,7 @@
         html: true
       }).onOk(() => {
         this.mappingStore.splice(index, 1)
-        localStorage.setItem('f4h-store-fileSourceList', JSON.stringify(this.mappingStore))
+        localStorage.setItem('store-fileSourceList', JSON.stringify(this.mappingStore))
       })
     }
 
