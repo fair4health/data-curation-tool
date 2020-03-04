@@ -10,7 +10,7 @@
         default-opened
         class="q-mt-md col-12"
         icon="add"
-        label="New Record"
+        label="New Mapping"
         header-class="bg-primary text-white"
         expand-icon-class="text-white"
       >
@@ -39,7 +39,7 @@
             <div class="q-gutter-sm">
               <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" unelevated label="Match"
                      color="blue-1" text-color="primary" @click="matchFields" no-caps />
-              <q-btn unelevated v-show="!editRecordId" color="green" label="Add Record" icon="check" @click="addRecord" no-caps />
+              <q-btn unelevated v-show="!editRecordId" color="green" label="Add Mapping" icon="check" @click="addRecord" no-caps />
               <q-btn unelevated v-show="editRecordId" color="primary" label="Update" icon="edit" @click="addRecord" no-caps />
               <q-btn unelevated v-show="editRecordId" color="red" label="Exit Edit Mode" @click="exitEditMode" no-caps />
             </div>
@@ -50,7 +50,7 @@
         default-opened
         class="q-mt-md col-12"
         icon="save"
-        label="Saved Records"
+        label="Saved Mappings"
         header-class="bg-primary text-white"
         expand-icon-class="text-white"
       >
@@ -247,7 +247,7 @@
           this.$store.commit('file/setSavedRecords', this.savedRecords)
         })
       })
-        .catch(err => this.$q.notify({message: 'Cannot get saved records'}))
+        .catch(err => this.$q.notify({message: 'Cannot get saved mappings'}))
     }
 
     getMappings (): Promise<any> {

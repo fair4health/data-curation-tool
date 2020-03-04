@@ -41,7 +41,7 @@
         </div>
       </q-card-section>
       <div class="q-px-sm bg-grey-2" style="margin-top: -10px; margin-bottom: -10px">
-        <q-toggle v-model="showMustFields" checked-icon="star" size="xs" color="red" label="Only must fields" class="text-grey-8" unchecked-icon="clear" />
+        <q-toggle v-model="showMustFields" checked-icon="star" size="xs" color="red" label="Show mandatory fields only" class="text-grey-8" unchecked-icon="clear" />
       </div>
       <q-card-section>
         <div>
