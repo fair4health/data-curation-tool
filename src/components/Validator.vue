@@ -168,7 +168,7 @@
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
       <q-space />
       <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="validationStatus !== 'success'"
-             @click="$store.commit('incrementStep')" no-caps />
+             @click="nextStep" no-caps />
     </div>
   </div>
 </template>
@@ -200,6 +200,12 @@
 
     get validationStatus (): status { return this.$store.getters['validationStatus'] }
     set validationStatus (value) { this.$store.commit('setValidationStatus', value) }
+
+    get resources (): Map<string, fhir.Resource[]> { return this.$store.getters['resources'] }
+    set resources (value) { this.$store.commit('setResources', value) }
+
+    get transformList (): TransformListItem[] { return this.$store.getters['transformList'] }
+    set transformList (value) { this.$store.commit('setTransformList', value) }
 
     mounted () {
       this.loading = true
@@ -367,6 +373,17 @@
         }
         ipcRenderer.removeAllListeners('export-done')
       })
+    }
+
+    nextStep () {
+      try {
+        this.resources = new Map(Object.entries(electronStore.get('resources') || {}))
+        this.transformList = Array.from(this.resources.entries()).map(resource => ({resourceType: resource[0], count: resource[1].length, status: 'pending'}))
+        this.$store.commit('setTransformStatus', 'pending')
+        this.$store.commit('incrementStep')
+      } catch (e) {
+        this.$q.notify({ message: 'Cannot load created resources. Try again.', color: 'red' })
+      }
     }
 
   }

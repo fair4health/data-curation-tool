@@ -15,13 +15,21 @@ export default new Vuex.Store({
     curationStep: 1,
     log: '',
     mappingList: [],
-    validationStatus: ''
+    validationStatus: '',
+    resources: new Map<string, fhir.Resource[]>(),
+    transformList: [] as TransformListItem[],
+    transformStatus: '',
+    transformOutcomeDetails: [] as OutcomeDetail[]
   },
   getters: {
     curationStep: state => state.curationStep,
     log: state => state.log,
     mappingList: state => state.mappingList || [],
-    validationStatus: state => state.validationStatus
+    validationStatus: state => state.validationStatus,
+    resources: state => state.resources || new Map<string, fhir.Resource[]>(),
+    transformList: state => state.transformList || [],
+    transformStatus: state => state.transformStatus,
+    transformOutcomeDetails: state => state.transformOutcomeDetails || []
   },
   mutations: {
     incrementStep (state) {
@@ -38,6 +46,18 @@ export default new Vuex.Store({
     },
     setValidationStatus (state, status: status) {
       state.validationStatus = status
+    },
+    setResources (state, resources: Map<string, fhir.Resource[]>) {
+      state.resources = resources
+    },
+    setTransformList (state, list: TransformListItem[]) {
+      state.transformList = list
+    },
+    setTransformStatus (state, status: status) {
+      state.transformStatus = status
+    },
+    setTransformOutcomeDetails (state, details: OutcomeDetail[]) {
+      state.transformOutcomeDetails = details
     }
   },
   actions: {}
