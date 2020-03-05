@@ -119,7 +119,7 @@
                                   <q-chip dense v-for="(target, targetI) in column.target" :key="targetI"
                                           color="primary" text-color="white" class="cursor-pointer">
                                     <div class="q-mx-xs row ellipsis-2-lines" style="font-size: 12px">{{ target.value }}</div>
-                                    <q-tooltip>{{ target.value }} - {{ target.type }}</q-tooltip>
+                                    <q-tooltip>{{ target.value }}</q-tooltip>
                                   </q-chip>
                                 </div>
                                 <div class="row col q-pl-xs">
@@ -151,7 +151,9 @@
         </q-table>
         <div class="row content-end q-gutter-sm">
           <q-space />
-          <q-btn outline label="Validate" icon="verified_user" color="green-7"
+          <q-btn v-if="validationStatus==='success'" label="Export Resources" color="green" icon="publish"
+                 class="q-mt-lg" @click="exportResources" no-caps />
+          <q-btn outline label="Validate" icon="verified_user" :color="validationStatus==='in-progress' ? 'grey-7' : 'green-7'"
                  :disable="validationStatus === 'in-progress'" @click="validate" class="q-mt-lg" no-caps>
               <span class="q-ml-sm">
                 <q-spinner class="q-ml-sm" size="xs" v-show="validationStatus==='in-progress'" />
@@ -351,6 +353,19 @@
       this.$q.dialog({
         component: OutcomeCard,
         parent: this
+      })
+    }
+
+    exportResources () {
+      const resources: any = electronStore.get('resources')
+      ipcRenderer.send('export-file', JSON.stringify(resources))
+      ipcRenderer.on('export-done', (event, result) => {
+        if (result) {
+          this.$q.notify({message: 'File is successfully exported', color: 'green-6'})
+        } else {
+          this.$q.notify({message: 'Something went wrong, try again', color: 'red-6'})
+        }
+        ipcRenderer.removeAllListeners('export-done')
       })
     }
 
