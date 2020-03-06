@@ -17,11 +17,11 @@ export class Medication implements Generator {
 
       if (resource.has('Medication.code')) {
         const value = String(resource.get('Medication.code')!.value)
-        medication.code = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding(environment.codesystems.SNOMED, value, value))
+        medication.code = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding(environment.codesystems.ATC, value, value))
       }
       if (resource.has('Medication.code.coding')) {
         const value = String(resource.get('Medication.code.coding')!.value)
-        medication.code = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding(environment.codesystems.SNOMED, value, value))
+        medication.code = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding(environment.codesystems.ATC, value, value))
       }
       if (resource.has('Medication.ingredient.item[x]')) {
         ingredient.itemCodeableConcept = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding(
@@ -36,7 +36,8 @@ export class Medication implements Generator {
 
       medication.id = this.generateID(medication)
 
-      resolve(medication)
+      if (medication.id) resolve(medication)
+      else reject('Id field is empty')
     })
   }
 

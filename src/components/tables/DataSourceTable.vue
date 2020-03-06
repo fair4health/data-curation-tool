@@ -7,7 +7,7 @@
             <span><q-icon name="fas fa-file" size="xs" color="primary" class="q-mr-xs" /> Source File</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense v-model="currentSource" class="ellipsis" :options="fileSourceList" label="Source File">
+          <q-select outlined dense v-model="currentSource" class="ellipsis" :options="fileSourceList" option-value="path" label="Source File">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -50,6 +50,7 @@
               <div class="row items-center q-gutter-xs">
                 <q-item-label class="text-h5 text-grey-10">Data Source</q-item-label>
                 <q-space />
+                <q-btn flat rounded label="Reload File" icon="sync" color="grey-9" @click="fetchSheets" no-caps />
                 <q-input dense rounded standout="bg-grey-3" v-model.lazy.trim="filter" class="cursor-pointer"
                          input-class="text-grey-8" placeholder="Search..." @keydown.esc="filter = ''"
                 >
@@ -150,17 +151,19 @@
         this.fetchSheets()
       }
     }
+
     @Watch('currentSheet')
     onSheetChanged (): void {
       ([this.sheetHeaders, this.selectedAttr, this.bufferSheetHeaders] = [[], [], []])
       if (this.currentSheet) {
         // If headers have been already fetched, load from cache; else fetch headers from file
-        if (this.currentSheet.headers && this.currentSheet.headers.length)
+        if (this.currentSheet?.headers?.length)
           this.bufferSheetHeaders = this.currentSheet.headers.map(_ => ({type: _.type, value: _.value}))
         else
           this.fetchHeaders()
       }
     }
+
     filterTable (rows, terms) {
       terms = terms.toLowerCase()
       return rows.filter(row => (
@@ -174,7 +177,7 @@
       this.loadingAttr = true
       this.$q.loadingBar.start()
       this.sheetHeaders = []
-      ipcRenderer.send('read-file', this.currentSource.value)
+      ipcRenderer.send('read-file', this.currentSource.path)
       ipcRenderer.on('worksheets-ready', (event, worksheets) => {
         this.sheets = worksheets || []
         // this.currentSheet = null
@@ -186,7 +189,7 @@
 
     fetchHeaders (): void {
       this.loadingAttr = true
-      ipcRenderer.send('get-sheet-headers', {path: this.currentSource?.value, sheet: this.currentSheet?.value})
+      ipcRenderer.send('get-sheet-headers', {path: this.currentSource?.path, sheet: this.currentSheet?.value})
       ipcRenderer.on('ready-sheet-headers', (event, headers) => {
         if (!headers.length) {
           this.$log.warning('No Sheet Headers', 'Headers couldn\'t be detected')

@@ -46,7 +46,7 @@
                       </q-item-section>
                       <q-item-section>
                         <q-item-label>{{ file.label }}</q-item-label>
-                        <q-item-label caption>{{ file.value }}</q-item-label>
+                        <q-item-label caption>{{ file.path }}</q-item-label>
                       </q-item-section>
                       <q-item-section side>
                         <q-btn flat round icon="delete" @click="fileSourceList.splice(Number(index),1)" />
@@ -153,7 +153,7 @@
     get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
     set fileSourceList (value) { this.$store.commit('file/updateSourceList', value) }
 
-    get files (): string[] { return this.fileSourceList.map(f => f.value) }
+    get files (): string[] { return this.fileSourceList.map(f => f.path) }
     get savedMappings (): store.MappingObject[] {
       const savedMappings = localStorage.getItem('store-fileSourceList')
       this.mappingStore = savedMappings ? JSON.parse(savedMappings) : []

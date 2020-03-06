@@ -15,7 +15,7 @@ export class FhirService {
   }
 
   /**
-   * Returns resource-generators searched by resourceType and query as Bundle
+   * Returns resources searched by resourceType and query as Bundle
    * @param resourceType
    * @param query
    * @param all
@@ -122,7 +122,7 @@ export class FhirService {
   }
 
   /**
-   * Validates resource-generators
+   * Validates resources
    * @param resources
    */
   validate (resources: fhir.Resource[]): Promise<any> {
@@ -154,7 +154,7 @@ export class FhirService {
 
   /**
    * Just for DEV
-   * Delete all resource-generators
+   * Delete all resources
    * @param resourceType
    */
   deleteAll (resourceType: string) {

@@ -8,7 +8,7 @@ import { FhirService } from './../services/fhir.service'
 import generators from '../model/resource-generators'
 
 /**
- * Create and validate resource-generators
+ * Create and validate resources
  */
 ipcMain.on('validate', (event, fhirBase: string, data: any) => {
   const fhirService: FhirService = new FhirService(fhirBase)
@@ -42,7 +42,7 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
         event.sender.send(`info-${filePath}-${sheet.sheetName}`, {total: entries.length})
         log.info(`Creating resources in ${sheet.sheetName} in ${filePath}`)
 
-        // Create resource-generators row by row in entries
+        // Create resources row by row in entries
         // Start validation operation
         const resources: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
 
@@ -61,17 +61,20 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
 
                 Promise.all(record.data.map((sourceData: store.SourceTargetGroup) => {
                   return new Promise((resolveTargets, rejectTargets) => {
-                    const value: any = entry[sourceData.value]
-                    Promise.all(sourceData.target.map((target: store.Target) => {
+                    const entryValue: any = entry[sourceData.value]
+                    if (entryValue !== undefined && entryValue !== null && entryValue !== '') {
+                      const value = String(entryValue)
+                      Promise.all(sourceData.target.map((target: store.Target) => {
 
-                      if (target.value.substr(target.value.length - 3) === '[x]' && target.type)
-                        bufferResourceMap.set(`${target.value}.${target.type}`, {value, sourceType: sourceData.type, targetType: target.type})
-                      else
-                        bufferResourceMap.set(target.value, {value, sourceType: sourceData.type, targetType: target.type})
+                        if (target.value.substr(target.value.length - 3) === '[x]' && target.type)
+                          bufferResourceMap.set(`${target.value}.${target.type}`, {value, sourceType: sourceData.type, targetType: target.type})
+                        else
+                          bufferResourceMap.set(target.value, {value, sourceType: sourceData.type, targetType: target.type})
 
-                    }))
-                      .then(() => resolveTargets())
-                      .catch(() => resolveTargets())
+                      }))
+                        .then(() => resolveTargets())
+                        .catch(() => resolveTargets())
+                    } else resolveTargets()
                   })
                 }))
                   .then(() => {
@@ -114,8 +117,8 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
                 }
                 const resourceList = resources.get(resourceType)
                 return new Promise((resolve, reject) => {
-                  // Batch upload resource-generators
-                  // Max capacity 1000 resource-generators
+                  // Batch upload resources
+                  // Max capacity 1000 resources
                   const len = Math.ceil(resourceList!.length / 1000)
 
                   const batchPromiseList: Array<Promise<any>> = []

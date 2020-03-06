@@ -107,7 +107,8 @@ export class Condition implements Generator {
 
       condition.id = this.generateID(condition)
 
-      resolve(condition)
+      if (condition.id) resolve(condition)
+      else reject('Id field is empty')
     })
   }
 

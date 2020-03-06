@@ -1,7 +1,6 @@
 export interface File {
   path: string
   extension: string
-  value: string
   label: string
   sheets?: Sheet[]
   currentSheet?: Sheet | null
@@ -34,13 +33,12 @@ export interface BufferElement {
 export class FileSource implements File {
   path: string
   extension: string
-  value: string
   label: string
   sheets?: Sheet[] = []
   currentSheet?: Sheet | null = null
 
   constructor (path: string) {
-    this.path = this.value = path
+    this.path = path
     this.label = path.split('\\').pop() || ''
     this.extension = this.label.split('.').pop() || ''
   }

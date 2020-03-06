@@ -12,6 +12,8 @@ export class MedicationStatement implements Generator {
     const medicationStatement: fhir.MedicationStatement = { resourceType: 'MedicationStatement' } as fhir.MedicationStatement
     medicationStatement.meta = { profile: [environment.profiles[profile]] }
 
+    const dosage: fhir.DoseAndRateElement = {}
+
     return new Promise<fhir.MedicationStatement>((resolve, reject) => {
 
       if (resource.has('MedicationStatement.status')) { medicationStatement.status = 'active' }
@@ -32,6 +34,17 @@ export class MedicationStatement implements Generator {
       }
       if (resource.has('MedicationStatement.subject.reference')) {
         medicationStatement.subject = DataTypeFactory.createReference({reference: `Patient/${FHIRUtil.hash(String(resource.get('MedicationStatement.subject.reference')!.value))}`})
+      }
+      if (resource.has('MedicationStatement.dateAsserted')) {
+
+        const item = resource.get('MedicationStatement.dateAsserted')!
+        try {
+          if (item.sourceType === 'Date') {
+            let date = item.value
+            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            medicationStatement.dateAsserted = DataTypeFactory.createDateString(date)
+          }
+        } catch (e) { log.error('Date insertion error.', e) }
       }
       if (resource.has('MedicationStatement.effective[x].dateTime')) {
 
@@ -71,11 +84,55 @@ export class MedicationStatement implements Generator {
         } catch (e) { log.error('Date insertion error.', e) }
       }
 
+      if (resource.has('MedicationStatement.dosage.doseAndRate.dose[x].Quantity.value')) {
+        if (!dosage.doseQuantity) dosage.doseQuantity = {}
+
+        dosage.doseQuantity.value = Number(resource.get('MedicationStatement.dosage.doseAndRate.dose[x].Quantity.value')!.value)
+      }
+      if (resource.has('MedicationStatement.dosage.doseAndRate.dose[x].Quantity.unit')) {
+        if (!dosage.doseQuantity) dosage.doseQuantity = {}
+
+        dosage.doseQuantity.unit = String(resource.get('MedicationStatement.dosage.doseAndRate.dose[x].Quantity.unit')!.value)
+      }
+      if (resource.has('MedicationStatement.dosage.doseAndRate.dose[x].Range.low')) {
+        if (!dosage.doseRange) dosage.doseRange = {}
+
+        dosage.doseRange.low = { value: Number(resource.get('MedicationStatement.dosage.doseAndRate.dose[x].Range.low')!.value) }
+      }
+      if (resource.has('MedicationStatement.dosage.doseAndRate.dose[x].Range.high')) {
+        if (!dosage.rateRange) dosage.rateRange = {}
+
+        dosage.rateRange.high = { value: Number(resource.get('MedicationStatement.dosage.doseAndRate.dose[x].Range.high')!.value) }
+      }
+      if (resource.has('MedicationStatement.dosage.doseAndRate.rate[x].Range.low')) {
+        if (!dosage.rateRange) dosage.rateRange = {}
+
+        dosage.rateRange.low = { value: Number(resource.get('MedicationStatement.dosage.doseAndRate.rate[x].Range.low')!.value) }
+      }
+      if (resource.has('MedicationStatement.dosage.doseAndRate.rate[x].Range.high')) {
+        if (!dosage.rateRange) dosage.rateRange = {}
+
+        dosage.rateRange.high = { value: Number(resource.get('MedicationStatement.dosage.doseAndRate.rate[x].Range.high')!.value) }
+      }
+      if (resource.has('MedicationStatement.dosage.doseAndRate.rate[x].Quantity.value')) {
+        if (!dosage.rateQuantity) dosage.rateQuantity = {}
+
+        dosage.rateQuantity.value = Number(resource.get('MedicationStatement.dosage.rateAndRate.rate[x].Quantity.value')!.value)
+      }
+      if (resource.has('MedicationStatement.dosage.doseAndRate.rate[x].Quantity.unit')) {
+        if (!dosage.rateQuantity) dosage.rateQuantity = {}
+
+        dosage.rateQuantity.unit = String(resource.get('MedicationStatement.dosage.rateAndRate.rate[x].Quantity.unit')!.value)
+      }
+
       // TODO: Dosage
+
+      if (!FHIRUtil.isEmpty(dosage)) medicationStatement.dosage = [{doseAndRate: [dosage]}]
 
       medicationStatement.id = this.generateID(medicationStatement)
 
-      resolve(medicationStatement)
+      if (medicationStatement.id) resolve(medicationStatement)
+      else reject('Id field is empty')
     })
   }
 
@@ -90,6 +147,7 @@ export class MedicationStatement implements Generator {
     if (resource.effectiveDateTime) value += resource.effectiveDateTime
     if (resource.effectivePeriod?.start) value += resource.effectivePeriod.start
     if (resource.effectivePeriod?.end) value += resource.effectivePeriod.end
+    if (resource.dosage?.length) value += JSON.stringify(resource.dosage[0])
 
     return FHIRUtil.hash(value)
   }

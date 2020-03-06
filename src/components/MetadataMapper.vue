@@ -106,7 +106,7 @@
                                 <q-chip dense removable v-for="(target, targetI) in column.target" :key="targetI"
                                         color="orange" text-color="white" class="cursor-pointer"
                                         @remove="removeMatching(file.fileName, sheet.sheetName, record.recordId, column.value, target.value, target.type)">
-                                  <span class="q-mx-xs ellipsis" style="font-size: 12px">{{ target.value }}</span>
+                                  <div class="q-mx-xs ellipsis" style="font-size: 12px">{{ target.value }}</div>
                                   <q-tooltip>{{ target.value }}</q-tooltip>
                                 </q-chip>
                               </div>
@@ -154,7 +154,6 @@
   import { QTree } from 'quasar'
   import Loading from '@/components/Loading.vue'
   import { v4 as uuid } from 'uuid'
-  import SourceTargetGroup = store.SourceTargetGroup
 
   @Component({
     components: {
@@ -277,7 +276,21 @@
     }
 
     exportState () {
-      ipcRenderer.send('export-file', JSON.stringify(this.$store.state.file))
+      const mappingState: FileSource[] = this.$store.getters['file/sourceList']
+
+      ipcRenderer.send('export-file', JSON.stringify(
+        {
+          fileSourceList: mappingState.map(_ =>
+            ({
+              extension: _.extension,
+              label: _.label,
+              path: _.path,
+              sheets: _.sheets,
+              currentSheet: null
+            })
+          )
+        })
+      )
       ipcRenderer.on('export-done', (event, result) => {
         if (result) {
           this.$q.notify({message: 'File is successfully exported', color: 'green-6'})

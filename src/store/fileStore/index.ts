@@ -43,11 +43,6 @@ const fileSource = {
         state.currentFile.currentSheet.headers = headers
       }
     },
-    updateSheetHeaders (state, headers: any) {
-      if (state.currentFile) {
-        state.currentFile.currentSheet.headers = headers
-      }
-    },
     setCurrentSheet (state, sheet: Sheet | null) {
       if (state.currentFile) {
         state.currentFile.currentSheet = sheet

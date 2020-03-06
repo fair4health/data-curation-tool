@@ -19,7 +19,7 @@ export class Patient implements Generator {
     return new Promise<fhir.Patient>((resolve, reject) => {
 
       if (resource.has('Patient.id')) { patient.id = String(resource.get('Patient.id')?.value || '') }
-      if (resource.has('Patient.gender')) { patient.gender = 'male' }
+      if (resource.has('Patient.gender')) { patient.gender = String(resource.get('Patient.gender')?.value || 'male') }
       if (resource.has('Patient.telecom')) {
         telecom.system = 'phone'
         telecom.value = String(resource.get('Patient.telecom')!.value)
@@ -55,6 +55,16 @@ export class Patient implements Generator {
         // TODO
         patient.deceasedBoolean = !!item.value
       }
+      if (resource.has('Patient.multipleBirth[x].boolean')) {
+        const item = resource.get('Patient.multipleBirth[x].boolean')!
+
+        patient.multipleBirthBoolean = String(item.value) === 'true'
+      }
+      if (resource.has('Patient.multipleBirth[x].integer')) {
+        const item = resource.get('Patient.multipleBirth[x].integer')!
+
+        patient.multipleBirthInteger = Number(item.value)
+      }
 
       if (resource.has('Patient.name.text')) { name.text = String(resource.get('Patient.name.text')!.value) }
       if (resource.has('Patient.name.family')) { name.family = String(resource.get('Patient.name.family')!.value) }
@@ -77,7 +87,8 @@ export class Patient implements Generator {
 
       patient.id = this.generateID(patient)
 
-      resolve(patient)
+      if (patient.id) resolve(patient)
+      else reject('Id field is empty')
     })
   }
 

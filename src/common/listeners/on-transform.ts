@@ -11,7 +11,7 @@ ipcMain.on('transform', (event, fhirBase: string) => {
   try {
     resources = new Map(Object.entries(electronStore.get('resources') || {}))
   } catch (e) {
-    log.error('Electron store couldn\'t get the resource-generators')
+    log.error('Electron store couldn\'t get the resources')
   }
 
   Promise.all(Array.from(resources.keys()).map(resourceType => {
@@ -20,8 +20,8 @@ ipcMain.on('transform', (event, fhirBase: string) => {
 
       event.sender.send(`transform-${resourceType}`, {status: 'in-progress'} as OutcomeDetail)
 
-      // Batch upload resource-generators
-      // Max capacity 1000 resource-generators
+      // Batch upload resources
+      // Max capacity 1000 resources
       const len = Math.ceil(resourceList!.length / 1000)
 
       const batchPromiseList: Array<Promise<any>> = []

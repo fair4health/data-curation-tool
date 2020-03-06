@@ -4746,12 +4746,16 @@ declare namespace fhir {
     site?: CodeableConcept;
     route?: CodeableConcept;
     method?: CodeableConcept;
-    doseRange?: Range;
-    doseQuantity?: Quantity;
+    doseAndRate: DoseAndRateElement[];
     maxDosePerPeriod?: Ratio;
     maxDosePerAdministration?: Quantity;
     maxDosePerLifetime?: Quantity;
     rateRatio?: Ratio;
+  }
+  interface DoseAndRateElement extends Element {
+    type?: CodeableConcept;
+    doseRange?: Range;
+    doseQuantity?: Quantity;
     rateRange?: Range;
     rateQuantity?: Quantity;
   }

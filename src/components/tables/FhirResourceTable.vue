@@ -246,7 +246,7 @@
         })
         .catch(err => {
           this.loadingResources = false
-          this.$q.notify({message: 'Something went wrong while fetching resource-generators'})
+          this.$q.notify({message: 'Something went wrong while fetching resources'})
         })
       if (this.currentFHIRRes) this.onFHIRResourceChanged()
     }
@@ -259,7 +259,7 @@
         .then(result => {
           if (result) {
             this.currentFHIRProf = this.fhirProfileList.length ? this.fhirProfileList[0] : ''
-            // Fetch elements of base resource-generators
+            // Fetch elements of base resources
             if (!this.currentFHIRProf) {
               this.$store.dispatch('fhir/getElements', this.currentFHIRRes)
                 .then(() => this.loadingFhir = false )

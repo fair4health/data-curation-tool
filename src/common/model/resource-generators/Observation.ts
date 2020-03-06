@@ -305,7 +305,8 @@ export class Observation implements Generator {
 
       observation.id = this.generateID(observation)
 
-      resolve(observation)
+      if (observation.id) resolve(observation)
+      else reject('Id field is empty')
     })
   }
 

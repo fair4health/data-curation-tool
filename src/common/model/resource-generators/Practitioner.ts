@@ -59,7 +59,8 @@ export class Practitioner implements Generator {
 
       practitioner.id = this.generateID(practitioner)
 
-      resolve(practitioner)
+      if (practitioner.id) resolve(practitioner)
+      else reject('Id field is empty')
     })
   }
 

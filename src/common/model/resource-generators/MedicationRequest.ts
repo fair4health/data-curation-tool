@@ -47,7 +47,8 @@ export class MedicationRequest implements Generator {
 
       medicationRequest.id = this.generateID(medicationRequest)
 
-      resolve(medicationRequest)
+      if (medicationRequest.id) resolve(medicationRequest)
+      else reject('Id field is empty')
     })
   }
 

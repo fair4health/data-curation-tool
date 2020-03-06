@@ -118,7 +118,7 @@
                                 <div class="row col">
                                   <q-chip dense v-for="(target, targetI) in column.target" :key="targetI"
                                           color="primary" text-color="white" class="cursor-pointer">
-                                    <div class="q-mx-xs row ellipsis-2-lines" style="font-size: 12px">{{ target.value }}</div>
+                                    <div class="q-mx-xs ellipsis" style="font-size: 12px">{{ target.value }}</div>
                                     <q-tooltip>{{ target.value }}</q-tooltip>
                                   </q-chip>
                                 </div>
@@ -227,7 +227,7 @@
     validate () {
       // Init status
       this.validationStatus = 'in-progress'
-      // If there are resource-generators created, clear them
+      // If there are resources created, clear them
       electronStore.set('resources', null)
       const filePathList = Object.keys(FHIRUtil.groupBy(this.mappingList, 'file'))
 
@@ -237,7 +237,7 @@
         return
       }
 
-      // Submit each file to create resource-generators and validate them
+      // Submit each file to create resources and validate them
       filePathList.reduce((promise: Promise<any>, filePath: string) =>
         promise.finally(() => new Promise((resolveFile, rejectFile) => {
           this.$q.loading.show({

@@ -116,7 +116,8 @@ export class Device implements Generator {
 
       device.id = this.generateID(device)
 
-      resolve(device)
+      if (device.id) resolve(device)
+      else reject('Id field is empty')
     })
   }
 
