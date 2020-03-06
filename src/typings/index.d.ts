@@ -4870,3 +4870,9 @@ declare interface BufferResource {
   sourceType: string
   targetType: string | undefined
 }
+
+declare interface StepItem {
+  title: string,
+  icon: string,
+  stepId: any
+}

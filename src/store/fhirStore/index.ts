@@ -14,6 +14,7 @@ const fhirStore = {
     currentProfile: '',
     selectedElements: [],
     fhirBase: '',
+    fhirBaseVerificationStatus: '',
     fhirService: new FhirService(),
     outcomeDetails: []
   },
@@ -27,7 +28,8 @@ const fhirStore = {
     selectedElements: state => state.selectedElements || [],
     fhirBase: state => state.fhirBase,
     fhirService: state => state.fhirService,
-    outcomeDetails: state => state.outcomeDetails || []
+    outcomeDetails: state => state.outcomeDetails || [],
+    fhirBaseVerificationStatus: state => state.fhirBaseVerificationStatus
   },
   mutations: {
     setResourceList (state, list) {
@@ -56,6 +58,9 @@ const fhirStore = {
     },
     setOutcomeDetails (state, outcomeDetails: OutcomeDetail[]) {
       state.outcomeDetails = outcomeDetails
+    },
+    setFhirBaseVerificationStatus (state, status: status) {
+      state.fhirBaseVerificationStatus = status
     }
   },
   actions: {

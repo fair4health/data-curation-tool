@@ -50,14 +50,20 @@
           </q-tooltip>
         </q-item>
         <q-item v-if="$route.name==='curation'" animation>
-          <q-stepper flat vertical :contracted="isCollapsed" v-model="step"
+          <q-stepper flat vertical :contracted="isCollapsed" v-model="currentStep"
                      ref="stepper" alternative-labels color="primary" class="bg-grey-3"
                      :style="isCollapsed ? 'padding: 0; width: 70px' : ''">
-            <q-step :name="1" title="Verify FHIR Repo" icon="fas fa-fire" :done="step > 1" />
-            <q-step :name="2" title="Analyze Data Source" icon="fas fa-database" :done="step > 2" />
-            <q-step :name="3" title="Map Metadata" icon="fas fa-list-ul" :done="step > 3" />
-            <q-step :name="4" title="Validate" icon="fas fa-check-circle" :done="step > 4" />
-            <q-step :name="5" title="Confirm and Transform" icon="fas fa-exchange-alt" :done="step > 5" />
+            <q-step v-for="step in steps" :key="step.stepId"
+                    :class="{'step-item cursor-pointer': currentStep > step.stepId}"
+                    @click="changeStep(step.stepId)"
+                    :name="step.stepId"
+                    :title="step.title"
+                    :icon="step.icon"
+                    :done-icon="step.icon"
+                    :done="currentStep > step.stepId"
+                    active-color="grey-7"
+                    done-color="primary"
+            />
           </q-stepper>
         </q-item>
         <q-separator />
@@ -162,8 +168,17 @@
     private leftDrawerOpen: boolean = false
     private searchKey: string = ''
     private matchCount: number = 0
+    private steps: StepItem[] = [
+      { title: 'Verify FHIR Repo', icon: 'fas fa-fire', stepId: 1 },
+      { title: 'Analyze Data Source', icon: 'fas fa-database', stepId: 2 },
+      { title: 'Map Metadata', icon: 'fas fa-list-ul', stepId: 3 },
+      { title: 'Validate', icon: 'fas fa-check-circle', stepId: 4 },
+      { title: 'Confirm and Transform', icon: 'fas fa-exchange-alt', stepId: 5 },
+    ]
 
-    get step () { return this.$store.getters.curationStep }
+    get currentStep (): number { return this.$store.getters.curationStep }
+    set currentStep (value) { this.$store.commit('setStep', value) }
+
     get style () { return {height: this.$q.screen.height - 50 + 'px'} }
     get limits () { return [20, Math.floor(100 - (50.0 / (this.$q.screen.height - 50) * 100))] }
     get isCollapsed () { return (this.$q.screen.gt.xs && (this.$q.screen.lt.lg || this.miniState)) }
@@ -184,6 +199,21 @@
         }, 0)
       }
     }
+
+    changeStep (newStep: number) {
+      const message = `<span class="text-weight-bold text-grey-9" style="font-size: 16px">The changes you have made will be lost.</span> <br><br>` +
+        `Are you sure you want to go to ` +
+        `<span class="text-weight-bold text-primary">${this.steps[newStep - 1].title}</span> step?`
+      this.$q.dialog({
+        title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Previous Step</span>',
+        message,
+        cancel: true,
+        html: true
+      }).onOk(() => {
+        if (newStep < 3) this.$store.dispatch('file/destroyStore')
+        this.$store.commit('setStep', newStep)
+      })
+    }
   }
 </script>
 
@@ -194,4 +224,6 @@
     margin-right auto
   .menu-list .q-item
     border-radius 0 32px 32px 0
+  .step-item:hover
+    background #e5e5e5
 </style>

@@ -38,7 +38,10 @@ export default new Vuex.Store({
     decrementStep (state) {
       state.curationStep -= 1
     },
-    updateLog (state, message) {
+    setStep (state, value: number) {
+      state.curationStep = value
+    },
+    updateLog (state, message: string) {
       state.log += message + '<br/>'
     },
     setMappingList (state, list: any) {

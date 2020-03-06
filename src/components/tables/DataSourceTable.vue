@@ -141,6 +141,7 @@
     set bufferSheetHeaders (value) { this.$store.commit('file/setBufferSheetHeaders', value) }
 
     created () {
+      this.bufferSheetHeaders = []
       if (!this.currentSource) this.currentSource = this.fileSourceList[0]
       if (this.currentSheet) this.onSheetChanged()
     }

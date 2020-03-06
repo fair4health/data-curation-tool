@@ -344,7 +344,7 @@
 
     previousStep () {
       this.$q.dialog({
-        title: '<i class="fas fa-info text-primary"> Previous Step </i>',
+        title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Previous Step</span>',
         message: 'If you go back and make any change, the changes you have made in this section will be lost.',
         class: 'text-grey-9',
         cancel: true,
