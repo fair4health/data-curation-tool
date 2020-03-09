@@ -105,7 +105,7 @@
                   </div>
                 </q-item-section>
                 <q-item-section side>
-                  <q-btn icon="more_vert" unelevated round color="grey-3" text-color="grey" no-caps>
+                  <q-btn icon="more_vert" flat round color="grey" no-caps>
                     <q-menu>
                       <q-list separator style="min-width: 200px">
                         <q-item clickable class="text-grey-9" @click="loadFromStorage(mapping)" v-close-popup>

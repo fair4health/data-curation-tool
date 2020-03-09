@@ -201,18 +201,20 @@
     }
 
     changeStep (newStep: number) {
-      const message = `<span class="text-weight-bold text-grey-9" style="font-size: 16px">The changes you have made will be lost.</span> <br><br>` +
-        `Are you sure you want to go to ` +
-        `<span class="text-weight-bold text-primary">${this.steps[newStep - 1].title}</span> step?`
-      this.$q.dialog({
-        title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Previous Step</span>',
-        message,
-        cancel: true,
-        html: true
-      }).onOk(() => {
-        if (newStep < 3) this.$store.dispatch('file/destroyStore')
-        this.$store.commit('setStep', newStep)
-      })
+      if (this.currentStep > newStep) {
+        const message = `<span class="text-weight-bold text-grey-9" style="font-size: 16px">The changes you have made will be lost.</span> <br><br>` +
+          `Are you sure you want to go to ` +
+          `<span class="text-weight-bold text-primary">${this.steps[newStep - 1].title}</span> step?`
+        this.$q.dialog({
+          title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Previous Step</span>',
+          message,
+          cancel: true,
+          html: true
+        }).onOk(() => {
+          if (newStep < 3) this.$store.dispatch('file/destroyStore')
+          this.$store.commit('setStep', newStep)
+        })
+      }
     }
   }
 </script>

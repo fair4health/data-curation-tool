@@ -39,8 +39,11 @@
           </q-select>
         </div>
       </q-card-section>
+      <div class="q-px-sm bg-grey-2">
+        <q-toggle v-model="showMappedFields" checked-icon="star" size="xs" color="green" label="Show mapped fields only" class="text-grey-8" unchecked-icon="clear" />
+      </div>
       <q-card-section>
-        <q-table flat class="sticky-header-table q-mb-lg" title="Data Source" :data="bufferSheetHeaders" binary-state-sort
+        <q-table flat class="sticky-header-table q-mb-lg" title="Data Source" :data="filteredBufferSheetHeaders" binary-state-sort
                  :columns="dataSourceColumns" row-key="value" selection="multiple" :selected.sync="selectedAttr"
                  :loading="loadingAttr" :grid="$q.screen.lt.sm" :rows-per-page-options="[10, 20, 0]" :pagination.sync="pagination"
                  color="primary" table-style="max-height: 46vh" :filter="filter" :filter-method="filterTable" style="margin-top: -10px"
@@ -118,6 +121,7 @@
     private sheetHeaders: SourceDataElement[] = []
     private pagination = { page: 1, rowsPerPage: 10 }
     private filter: string = ''
+    private showMappedFields: boolean = false
 
     get dataSourceColumns (): object[] { return sourceDataTableHeaders }
     get fieldTypes (): string[] { return Object.values(cellType) }
@@ -139,6 +143,10 @@
 
     get bufferSheetHeaders (): BufferElement[] { return this.$store.getters['file/bufferSheetHeaders'] }
     set bufferSheetHeaders (value) { this.$store.commit('file/setBufferSheetHeaders', value) }
+
+    get filteredBufferSheetHeaders (): BufferElement[] {
+      return this.bufferSheetHeaders.filter(_ => !this.showMappedFields || _.target)
+    }
 
     created () {
       this.bufferSheetHeaders = []
