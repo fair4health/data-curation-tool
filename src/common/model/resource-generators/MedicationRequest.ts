@@ -7,9 +7,9 @@ export class MedicationRequest implements Generator {
 
   MedicationRequest () {}
 
-  public generateResource (resource: Map<string, BufferResource>, profile: string): Promise<fhir.MedicationRequest> {
+  public generateResource (resource: Map<string, BufferResource>, profile: string | undefined): Promise<fhir.MedicationRequest> {
     const medicationRequest: fhir.MedicationRequest = { resourceType: 'MedicationRequest' } as fhir.MedicationRequest
-    // medicationRequest.meta = { profile: [environment.profiles[profile]] }
+    if (profile) medicationRequest.meta = { profile: [profile] }
 
     return new Promise<fhir.MedicationRequest>((resolve, reject) => {
 

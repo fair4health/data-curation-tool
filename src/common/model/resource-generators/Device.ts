@@ -8,9 +8,9 @@ export class Device implements Generator {
 
   Device () {}
 
-  public generateResource (resource: Map<string, BufferResource>, profile: string): Promise<fhir.Device> {
+  public generateResource (resource: Map<string, BufferResource>, profile: string | undefined): Promise<fhir.Device> {
     const device: fhir.Device = { resourceType: 'Device' } as fhir.Device
-    device.meta = { profile: [environment.profiles[profile]] }
+    if (profile) device.meta = { profile: [profile] }
 
     const udi: fhir.DeviceUdi = {}
     const deviceName: fhir.DeviceName = {}

@@ -8,9 +8,9 @@ export class Condition implements Generator {
 
   Condition () {}
 
-  public generateResource (resource: Map<string, BufferResource>, profile: string): Promise<fhir.Condition> {
+  public generateResource (resource: Map<string, BufferResource>, profile: string | undefined): Promise<fhir.Condition> {
     const condition: fhir.Condition = { resourceType: 'Condition' } as fhir.Condition
-    condition.meta = { profile: [environment.profiles[profile]] }
+    if (profile) condition.meta = { profile: [profile] }
 
     return new Promise<fhir.Condition>((resolve, reject) => {
 

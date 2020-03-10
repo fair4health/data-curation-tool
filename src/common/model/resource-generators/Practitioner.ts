@@ -1,4 +1,3 @@
-import { environment } from './../../environment'
 import { FHIRUtil } from './../../utils/fhir-util'
 import { Generator } from './Generator'
 import log from 'electron-log'
@@ -7,9 +6,9 @@ export class Practitioner implements Generator {
 
   Practitioner () {}
 
-  public generateResource (resource: Map<string, BufferResource>, profile: string): Promise<fhir.Practitioner> {
+  public generateResource (resource: Map<string, BufferResource>, profile: string | undefined): Promise<fhir.Practitioner> {
     const practitioner: fhir.Practitioner = { resourceType: 'Practitioner' } as fhir.Practitioner
-    practitioner.meta = { profile: [environment.profiles[profile]] }
+    if (profile) practitioner.meta = { profile: [profile] }
 
     const name: fhir.HumanName = {}
     const address: fhir.Address = {}

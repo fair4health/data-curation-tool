@@ -8,9 +8,9 @@ export class MedicationStatement implements Generator {
 
   MedicationStatement () {}
 
-  public generateResource (resource: Map<string, BufferResource>, profile: string): Promise<fhir.MedicationStatement> {
+  public generateResource (resource: Map<string, BufferResource>, profile: string | undefined): Promise<fhir.MedicationStatement> {
     const medicationStatement: fhir.MedicationStatement = { resourceType: 'MedicationStatement' } as fhir.MedicationStatement
-    medicationStatement.meta = { profile: [environment.profiles[profile]] }
+    if (profile) medicationStatement.meta = { profile: [profile] }
 
     const dosage: fhir.DoseAndRateElement = {}
 

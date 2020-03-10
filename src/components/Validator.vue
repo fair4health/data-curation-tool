@@ -47,9 +47,17 @@
                   </div>
                 </template>
                 <template v-else-if="props.row.validation.status === 'warning'">
-                  <q-icon name="warning" color="orange-6" @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)">
-                    <q-tooltip content-class="bg-white text-orange-6">{{ props.row.validation.description }}</q-tooltip>
-                  </q-icon>
+                  <div class="row items-center">
+                    <div class="col-6">
+                      <q-icon name="warning" color="orange-6">
+                        <q-tooltip content-class="bg-white text-orange-6">Warning</q-tooltip>
+                      </q-icon>
+                    </div>
+                    <div class="col-6 bg-grey-3">
+                      <q-btn flat dense icon="feedback" color="grey-8" label="Details" size="sm"
+                             @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)" no-caps />
+                    </div>
+                  </div>
                 </template>
                 <template v-else-if="props.row.validation.status === 'error'">
                   <q-icon name="error_outline" color="red" class="cursor-pointer"
@@ -101,13 +109,20 @@
                         <q-card class="q-ma-xs" bordered flat>
                           <q-card-section class="text-caption bg-grey-3 text-weight-bold q-pa-xs">
                             <div class="row items-center">
-                              <q-chip class="text-grey-8" color="white" style="font-size: 12px">#{{record.recordId}}</q-chip>
+                              <q-chip class="text-white" color="blue-grey-4" style="font-size: 12px">#{{record.recordId}}</q-chip>
                             </div>
-                            <div class="row">
-                              <div class="text-grey-8 text-weight-regular">
-                                <q-chip dense class="text-grey-8" color="white" style="font-size: 11px">
-                                  <span class="text-weight-bold"> {{ record.resource }} </span> - {{record.profile}}
-                                </q-chip>
+                            <div class="row ellipsis no-wrap">
+                              <div class="text-grey-8 ellipsis no-wrap text-weight-regular">
+                                <div class="row no-wrap">
+                                  <q-chip class="text-grey-8 cursor-pointer" color="white" style="font-size: 11px">
+                                    <span class="text-weight-bold ellipsis"> {{ record.resource }}</span>
+                                    <q-tooltip content-class="bg-grey-2 text-primary">{{record.resource}}</q-tooltip>
+                                  </q-chip>
+                                  <q-chip class="text-grey-8 ellipsis cursor-pointer" color="white" style="font-size: 11px">
+                                    <span class="ellipsis">{{ record.profile || '-' }}</span>
+                                    <q-tooltip content-class="bg-grey-2 text-primary">{{record.profile}}</q-tooltip>
+                                  </q-chip>
+                                </div>
                               </div>
                             </div>
                           </q-card-section>
@@ -159,6 +174,7 @@
                 <q-spinner class="q-ml-sm" size="xs" v-show="validationStatus==='in-progress'" />
                 <q-icon name="check" size="xs" color="green" v-show="validationStatus==='success'" />
                 <q-icon name="error_outline" size="xs" color="red" v-show="validationStatus==='error'" />
+                <q-icon name="warning" size="xs" color="orange-6" v-show="validationStatus==='warning'" />
               </span>
           </q-btn>
         </div>
@@ -305,7 +321,9 @@
                   resolveSheet()
                 } else {
                   this.$log.error('Validation', `${result.description}. Validation error for ${sheet} in ${filePath}. For more details see logs`)
-                  rejectSheet()
+                  // Reject even if a resource has error
+                  resolveSheet()
+                  // rejectSheet()
                 }
               })
             })

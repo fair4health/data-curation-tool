@@ -176,7 +176,9 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
               }))
                 .then((res: any[]) => {
                   resolveSheet()
-                  event.sender.send(`validate-${filePath}-${sheet.sheetName}`, {status: 'done', outcomeDetails: [].concat.apply([], res)})
+                  const outcomeDetails: OutcomeDetail[] = [].concat.apply([], res)
+                  const status = !!outcomeDetails.find(_ => _.status === 'error') ? 'warning' : 'done'
+                  event.sender.send(`validate-${filePath}-${sheet.sheetName}`, {status, outcomeDetails})
                   log.info(`Validation completed ${sheet.sheetName} in ${filePath}`)
                 })
                 .catch(err => {

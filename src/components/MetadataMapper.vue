@@ -81,7 +81,7 @@
                       <q-card class="q-ma-xs" bordered flat>
                         <q-card-section class="text-caption bg-grey-3 text-weight-bold q-pa-xs">
                           <div class="row items-center">
-                            <q-chip class="text-grey-8" color="white" style="font-size: 12px">#{{ record.recordId }}</q-chip>
+                            <q-chip class="text-white" color="blue-grey-4" style="font-size: 12px">#{{ record.recordId }}</q-chip>
                             <q-space />
                             <div class="q-gutter-xs">
                               <q-btn flat round dense size="sm" icon="edit" color="grey-9"
@@ -90,11 +90,18 @@
                                      @click="removeRecordPopup(file.fileName, sheet.sheetName, record.recordId)" />
                             </div>
                           </div>
-                          <div class="row">
-                            <div class="text-grey-8 text-weight-regular">
-                              <q-chip dense class="text-grey-8" color="white" style="font-size: 11px">
-                                <span class="text-weight-bold"> {{ record.resource }} </span> - {{ record.profile }}
-                              </q-chip>
+                          <div class="row ellipsis no-wrap">
+                            <div class="text-grey-8 ellipsis no-wrap text-weight-regular">
+                              <div class="row no-wrap">
+                                <q-chip class="text-grey-8 cursor-pointer" color="white" style="font-size: 11px">
+                                  <span class="text-weight-bold ellipsis"> {{ record.resource }}</span>
+                                  <q-tooltip content-class="bg-grey-2 text-primary">{{record.resource}}</q-tooltip>
+                                </q-chip>
+                                <q-chip class="text-grey-8 ellipsis cursor-pointer" color="white" style="font-size: 11px">
+                                  <span class="ellipsis">{{ record.profile || '-' }}</span>
+                                  <q-tooltip content-class="bg-grey-2 text-primary">{{record.profile}}</q-tooltip>
+                                </q-chip>
+                              </div>
                             </div>
                           </div>
                         </q-card-section>

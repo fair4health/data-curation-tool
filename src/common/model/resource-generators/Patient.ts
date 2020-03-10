@@ -1,5 +1,4 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { FHIRUtil } from './../../utils/fhir-util'
 import { Generator } from './Generator'
 import log from 'electron-log'
@@ -8,9 +7,9 @@ export class Patient implements Generator {
 
   Patient () {}
 
-  public generateResource (resource: Map<string, BufferResource>, profile: string): Promise<fhir.Patient> {
+  public generateResource (resource: Map<string, BufferResource>, profile: string | undefined): Promise<fhir.Patient> {
     const patient: fhir.Patient = { resourceType: 'Patient' } as fhir.Patient
-    patient.meta = { profile: [environment.profiles[profile]] }
+    if (profile) patient.meta = { profile: [profile] }
 
     const name: fhir.HumanName = {}
     const address: fhir.Address = {}

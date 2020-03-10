@@ -7,7 +7,7 @@ export interface Generator {
    * @param resource
    * @param profile
    */
-  generateResource (resource: Map<string, BufferResource>, profile: string): Promise<any>
+  generateResource (resource: Map<string, BufferResource>, profile: string | undefined): Promise<any>
 
   /**
    * Generates an id considering different criteria for each resource type

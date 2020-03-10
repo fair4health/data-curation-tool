@@ -8,9 +8,9 @@ export class Observation implements Generator {
 
   Observation () {}
 
-  public generateResource (resource: Map<string, BufferResource>, profile: string): Promise<fhir.Observation> {
+  public generateResource (resource: Map<string, BufferResource>, profile: string | undefined): Promise<fhir.Observation> {
     const observation: fhir.Observation = { resourceType: 'Observation' } as fhir.Observation
-    observation.meta = { profile: [environment.profiles[profile]] }
+    if (profile) observation.meta = { profile: [profile] }
 
     const effectiveTiming: fhir.Timing = {}
     const components: fhir.ObservationComponent[] = []

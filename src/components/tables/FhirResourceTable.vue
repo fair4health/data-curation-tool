@@ -26,14 +26,15 @@
             <span><q-icon name="far fa-file-alt" size="xs" color="primary" class="q-mr-xs" /> Profiles</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense v-model="currentFHIRProf" class="ellipsis" :options="fhirProfileList" label="Profiles" :disable="!fhirProfileList.length">
+          <q-select outlined dense v-model="currentFHIRProf" class="ellipsis" :options="fhirProfileList"
+                     :option-label="item => item.split('/').pop()" label="Profiles" :disable="!fhirProfileList.length">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
                   <q-icon name="fas fa-file-alt" size="xs" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label v-html="scope.opt" />
+                  <q-item-label v-html="scope.opt.split('/').pop()" />
                 </q-item-section>
               </q-item>
             </template>
@@ -212,13 +213,13 @@
     private loadingResources: boolean = false
 
     get fhirResourceList (): string[] { return this.$store.getters['fhir/resourceList'] }
-    get fhirProfileList (): string[] { return this.$store.getters['fhir/profileList'].map(r => r.id) }
+    get fhirProfileList (): any[] { return this.$store.getters['fhir/profileList'].map(_ => _.url) }
     set fhirProfileList (value) { this.$store.commit('fhir/setProfileList', value) }
 
     get currentFHIRRes (): string { return this.$store.getters['fhir/currentResource'] }
     set currentFHIRRes (value) { this.$store.commit('fhir/setCurrentResource', value) }
 
-    get currentFHIRProf (): string { return this.$store.getters['fhir/currentProfile'] }
+    get currentFHIRProf (): any { return this.$store.getters['fhir/currentProfile'] }
     set currentFHIRProf (value) { this.$store.commit('fhir/setCurrentProfile', value) }
 
     get filteredFhirElementList (): fhir.ElementTree[] {
@@ -261,7 +262,7 @@
             this.currentFHIRProf = this.fhirProfileList.length ? this.fhirProfileList[0] : ''
             // Fetch elements of base resources
             if (!this.currentFHIRProf) {
-              this.$store.dispatch('fhir/getElements', this.currentFHIRRes)
+              this.$store.dispatch('fhir/getElements', {parameterName: '_id', profile: this.currentFHIRRes})
                 .then(() => this.loadingFhir = false )
                 .catch(() => {
                   this.loadingFhir = false
@@ -281,7 +282,7 @@
       if (newVal) {
         ([this.tickedFHIRAttr, this.selectedElem, this.expanded, this.fhirElementList] = [[], null, [this.currentFHIRRes], []])
         this.loadingFhir = true
-        this.$store.dispatch('fhir/getElements', this.currentFHIRProf)
+        this.$store.dispatch('fhir/getElements', {parameterName: 'url', profile: this.currentFHIRProf})
           .then(() => {
             this.loadingFhir = false
           })

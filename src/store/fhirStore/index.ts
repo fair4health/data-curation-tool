@@ -69,9 +69,16 @@ const fhirStore = {
         state.fhirService.search('metadata', null)
           .then(res => {
             const resource = res.data as fhir.CapabilityStatement
+            let resources: fhir.CapabilityStatementRestResource[] = []
             if (resource && resource.rest?.length && resource.rest[0].resource?.length) {
-              commit('setResourceList', resource.rest[0].resource.map(r => r.type) || [])
+              resources = resource.rest[0].resource
             }
+            commit('setResourceList', resources.map(r => r.type) || [])
+            const profileMap: Map<string, string> = new Map<string, string>()
+            resources.flatMap(r => r.supportedProfile).filter(_ => !!_).map(_ => {
+              const id = _!.split('/').pop()
+              if (id) profileMap.set(id, _!)
+            })
             resolve(true)
           })
           .catch(err => reject(err) )
@@ -85,24 +92,25 @@ const fhirStore = {
             const bundle = res.data as fhir.Bundle
             commit('setProfileList', bundle.entry?.map(e => {
               const structure = e.resource as fhir.StructureDefinition
-              return {id: structure.id, title: structure.title}
+              return {id: structure.id, title: structure.title, url: structure.url}
             }) || [])
             resolve(true)
           })
           .catch(err => reject(err) )
       })
     },
-    getElements ({ commit, state }, profileId: string): Promise<boolean> {
+    getElements ({ commit, state }, { parameterName, profile }): Promise<boolean> {
       return new Promise((resolve, reject) => {
-        const cached = JSON.parse(localStorage.getItem(`${state.fhirBase}-StructureDefinition-${profileId}`) || '{}')
+        const cached = JSON.parse(localStorage.getItem(`${state.fhirBase}-StructureDefinition-${profile}`) || '{}')
         if (cached && !FHIRUtil.isEmpty(cached)) {
           commit('setElementList', cached)
           resolve(true)
         } else {
-          FHIRUtil.parseElementDefinitions('_id', profileId)
+          FHIRUtil.parseElementDefinitions(parameterName, profile)
             .then(res => {
-              commit('setElementList', res[0]?.children || [])
-              localStorage.setItem(`${state.fhirBase}-StructureDefinition-${profileId}`, JSON.stringify(res[0]?.children || []))
+              const elementList = res[0]?.children || []
+              commit('setElementList', elementList)
+              localStorage.setItem(`${state.fhirBase}-StructureDefinition-${profile}`, JSON.stringify(elementList))
               resolve(true)
             })
             .catch(err => reject(err))

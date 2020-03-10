@@ -1018,7 +1018,8 @@ declare namespace fhir {
   }
   interface CapabilityStatementRestResource extends Element {
     type: code;
-    profile?: Reference;
+    profile?: uri;
+    supportedProfile?: uri[];
     documentation?: markdown;
     interaction: CapabilityStatementRestResourceInteraction[];
     versioning?: code;
