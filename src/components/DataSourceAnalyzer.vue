@@ -212,6 +212,7 @@
     }
 
     importSavedMapping (): void {
+      this.$q.loading.show({spinner: undefined})
       ipcRenderer.send('browse-mapping')
       ipcRenderer.on('selected-mapping', (event, data) => {
         if (data) {
@@ -223,10 +224,8 @@
               this.$q.notify({message: 'Data could\'t be imported', color: 'red-6'})
               this.$log.error('Import Mapping', 'Data could\'t be imported')
             })
-        } else {
-          this.$q.notify({message: 'Data could\'t be imported', color: 'red-6'})
-          this.$log.error('Import Mapping', 'Data could\'t be imported')
         }
+        this.$q.loading.hide()
         ipcRenderer.removeAllListeners('selected-mapping')
       })
     }
@@ -236,11 +235,15 @@
     }
 
     browseFile (): void {
+      this.$q.loading.show({spinner: undefined})
       ipcRenderer.send('browse-file')
       ipcRenderer.on('selected-directory', (event, data) => {
-        data.map(file => {
-          this.$store.commit('file/addFile', file)
-        })
+        if (data) {
+          data.map(file => {
+            this.$store.commit('file/addFile', file)
+          })
+        }
+        this.$q.loading.hide()
         this.$log.info('Import Data Source',
           `${this.fileSourceList.length ? this.fileSourceList.length : 'No'} source(s) imported`)
         ipcRenderer.removeAllListeners('selected-directory')

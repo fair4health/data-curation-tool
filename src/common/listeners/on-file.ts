@@ -1,7 +1,7 @@
 import * as Excel from 'xlsx'
 import fs from 'fs'
 import log from 'electron-log'
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, BrowserWindow } from 'electron'
 import { cellType } from '../model/data-table'
 import { workbookMap } from '../model/workbook'
 
@@ -9,14 +9,14 @@ import { workbookMap } from '../model/workbook'
  * Browses files with extensions [xl*, csv] and sends back their paths as a list
  */
 ipcMain.on('browse-file', (event) => {
-  dialog.showOpenDialog({
+  dialog.showOpenDialog(BrowserWindow.getFocusedWindow()!, {
     properties: ['openFile', 'multiSelections'],
     filters: [{ extensions: ['xl*', 'csv'], name: 'Excel or CSV' }]
   }, (files) => {
     if (files) {
       log.info('Browse file - ' + files)
       event.sender.send('selected-directory', files)
-    }
+    } else event.sender.send('selected-directory', undefined)
   })
 })
 
@@ -82,7 +82,7 @@ ipcMain.on('get-sheet-headers', (event, data) => {
  * Browses files with .json extension and return parsed content
  */
 ipcMain.on('browse-mapping', (event) => {
-  dialog.showOpenDialog({
+  dialog.showOpenDialog(BrowserWindow.getFocusedWindow()!, {
     properties: ['openFile'],
     filters: [{ extensions: ['json'], name: 'JSON (.json)' }]
   }, (files) => {
@@ -96,7 +96,7 @@ ipcMain.on('browse-mapping', (event) => {
         log.info(`Mapping loaded from ${files[0]}`)
         event.sender.send('selected-mapping', JSON.parse(data.toString()))
       })
-    }
+    } else event.sender.send('selected-mapping', undefined)
   })
 })
 
@@ -104,10 +104,11 @@ ipcMain.on('browse-mapping', (event) => {
  * File export - opens SAVE dialog and saves file with json extension
  */
 ipcMain.on('export-file', (event, content) => {
-  dialog.showSaveDialog({
+  dialog.showSaveDialog(BrowserWindow.getFocusedWindow()!, {
     filters: [{ extensions: ['json'], name: 'JSON (.json)' }]
   }, (filename) => {
     if (!filename) {
+      event.sender.send('export-done', null)
       return
     }
     fs.writeFile(filename, content, (err) => {

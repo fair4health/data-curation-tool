@@ -382,13 +382,14 @@
 
     exportResources () {
       const resources: any = electronStore.get('resources')
+      this.$q.loading.show({spinner: undefined})
+
       ipcRenderer.send('export-file', JSON.stringify(resources))
       ipcRenderer.on('export-done', (event, result) => {
         if (result) {
           this.$q.notify({message: 'File is successfully exported', color: 'green-6'})
-        } else {
-          this.$q.notify({message: 'Something went wrong, try again', color: 'red-6'})
         }
+        this.$q.loading.hide()
         ipcRenderer.removeAllListeners('export-done')
       })
     }
