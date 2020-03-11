@@ -145,12 +145,12 @@
         </q-card>
       </q-expansion-item>
     </div>
-    <div class="row q-ma-md">
+    <q-footer class="row bg-grey-1 q-pa-sm" bordered>
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
       <q-space />
-      <q-btn v-if="fileSourceList.length" unelevated label="Next" icon-right="chevron_right"
+      <q-btn v-if="fileSourceList.length" unelevated label="Next" icon-right="chevron_right" :disable="!savedRecords.length"
              color="primary" @click="nextStep" no-caps />
-    </div>
+    </q-footer>
   </div>
 </template>
 
@@ -359,9 +359,6 @@
           if (column?.value === attr.value) {
             if (!column['target']) column['target'] = [...this.tickedFHIRAttr]
             else column['target'].push(...this.tickedFHIRAttr)
-            this.$log.success('Mapping',
-              this.currentSource?.label + '.' + this.currentSheet?.label + '.' + column.value +
-              ' - (' + this.tickedFHIRAttr.map(e => e.value).join(', ') + ')')
           }
         }
       }

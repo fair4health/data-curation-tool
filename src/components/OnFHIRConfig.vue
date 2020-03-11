@@ -1,5 +1,5 @@
 <template>
-  <div class="q-mt-xl">
+  <div class="q-pt-xl">
     <div class="row justify-center">
       <q-card flat class="col-6">
         <q-card-section>
@@ -51,6 +51,7 @@
       if (url) {
         this.onfhirBaseUrl = url
       }
+
     }
 
     validateFhir () {

@@ -95,79 +95,20 @@
 
     <!--Router view in page container-->
     <q-page-container class="main-page">
-      <q-page>
-        <q-splitter
-          v-model="splitterModel"
-          horizontal
-          :limits="limits"
-          :style="style"
-          after-class="bg-white logger-class"
-        >
-
-          <!--Router View-->
-          <template v-slot:before>
-            <router-view />
-          </template>
-
-          <!--Logger Component-->
-          <template v-slot:after>
-            <q-page-sticky expand position="top" style="position: sticky; transform: none">
-              <q-toolbar class="bg-grey-4">
-                <q-toolbar-title class="text-grey-8 text-subtitle1">
-                  <q-icon name="fas fa-columns fa-sm" />
-                  Console
-                </q-toolbar-title>
-                <q-space />
-                <div class="row items-center q-gutter-xs">
-                  <template v-if="splitterModel < limits[1]">
-                    <div v-if="searchKey" class="text-caption">
-                      {{ matchCount }} {{ matchCount > 1 ? ' matches' : ' match' }}
-                    </div>
-                    <q-input dense rounded standout="bg-grey-5" placeholder="Search..." v-model="searchKey"
-                             class="q-ml-md" input-class="text-grey-9" @keydown.esc="searchKey = ''"
-                    >
-                      <template v-slot:append>
-                        <q-icon v-if="searchKey === ''" name="search" color="grey-8" />
-                        <q-icon v-else name="clear" color="grey-8" class="cursor-pointer" @click="searchKey = ''" />
-                      </template>
-                    </q-input>
-                  </template>
-                  <q-btn round flat dense color="grey-8"
-                         :icon="splitterModel >= limits[1] ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
-                         @click="splitterModel >= limits[1] ? splitterModel = 70 : splitterModel = limits[1]"
-                  />
-                </div>
-              </q-toolbar>
-            </q-page-sticky>
-            <template v-if="splitterModel < limits[1]">
-              <Logger v-model="matchCount" :searchKey="searchKey" />
-            </template>
-          </template>
-
-        </q-splitter>
+      <q-page class="full-height">
+        <router-view />
       </q-page>
     </q-page-container>
   </q-layout>
 </template>
 
 <script lang="ts">
-  import { Component, Vue, Watch } from 'vue-property-decorator'
-  import Loading from '@/components/Loading.vue'
+  import { Component, Vue } from 'vue-property-decorator'
 
-  @Component({
-    components: {
-      Logger: () => ({
-        component: import('@/components/Logger.vue'),
-        loading: Loading
-      })
-    } as any
-  })
+  @Component
   export default class MainLayout extends Vue {
-    private splitterModel: any = this.limits[1]
     private miniState: boolean = true
     private leftDrawerOpen: boolean = false
-    private searchKey: string = ''
-    private matchCount: number = 0
     private steps: StepItem[] = [
       { title: 'Verify FHIR Repo', icon: 'fas fa-fire', stepId: 1 },
       { title: 'Analyze Data Source', icon: 'fas fa-database', stepId: 2 },
@@ -179,26 +120,7 @@
     get currentStep (): number { return this.$store.getters.curationStep }
     set currentStep (value) { this.$store.commit('setStep', value) }
 
-    get style () { return {height: this.$q.screen.height - 50 + 'px'} }
-    get limits () { return [20, Math.floor(100 - (50.0 / (this.$q.screen.height - 50) * 100))] }
     get isCollapsed () { return (this.$q.screen.gt.xs && (this.$q.screen.lt.lg || this.miniState)) }
-    get logger () { return this.$store.getters.log }
-
-    @Watch('$q.screen.height')
-    onScreenChange () {
-      this.splitterModel = this.limits[1]
-    }
-
-    @Watch('logger')
-    @Watch('splitterModel')
-    onLoggerChange () {
-      const logDiv = document.getElementsByClassName('logger-class')[0]
-      if (logDiv) {
-        setTimeout(() => {
-          logDiv.scrollTo(0, logDiv.scrollHeight)
-        }, 0)
-      }
-    }
 
     changeStep (newStep: number) {
       if (this.currentStep > newStep) {

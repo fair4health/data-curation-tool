@@ -56,7 +56,8 @@ import {
   QRadio,
   QDialog,
   QToggle,
-  QBar
+  QBar,
+  QFooter
 } from 'quasar'
 
 Vue.use(Quasar, {
@@ -121,7 +122,8 @@ Vue.use(Quasar, {
     QRadio,
     QDialog,
     QToggle,
-    QBar
+    QBar,
+    QFooter
   },
   directives: {
     ClosePopup

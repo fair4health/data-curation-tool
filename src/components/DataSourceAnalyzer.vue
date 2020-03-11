@@ -129,12 +129,12 @@
         </q-card-section>
       </q-card>
     </q-expansion-item>
-    <div class="row q-ma-md">
+    <q-footer class="row bg-grey-1 q-pa-sm" bordered>
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="$store.commit('decrementStep')" no-caps />
       <q-space />
       <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!fileSourceList.length"
              @click="$store.commit('incrementStep')" no-caps />
-    </div>
+    </q-footer>
   </div>
 </template>
 
@@ -218,11 +218,11 @@
         if (data) {
           this.$store.dispatch('file/initializeStore', data)
             .then(() => {
-              this.$log.info('Import Mapping', `Found ${this.fileSourceList.length} mapped file(s)`)
+              // this.$log.info('Import Mapping', `Found ${this.fileSourceList.length} mapped file(s)`)
             })
             .catch(() => {
               this.$q.notify({message: 'Data could\'t be imported', color: 'red-6'})
-              this.$log.error('Import Mapping', 'Data could\'t be imported')
+              // this.$log.error('Import Mapping', 'Data could\'t be imported')
             })
         }
         this.$q.loading.hide()
@@ -244,8 +244,6 @@
           })
         }
         this.$q.loading.hide()
-        this.$log.info('Import Data Source',
-          `${this.fileSourceList.length ? this.fileSourceList.length : 'No'} source(s) imported`)
         ipcRenderer.removeAllListeners('selected-directory')
       })
     }

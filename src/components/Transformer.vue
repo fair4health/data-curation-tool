@@ -116,9 +116,9 @@
         </div>
       </q-card-section>
     </q-card>
-    <div class="row q-ma-md">
+    <q-footer class="row bg-grey-1 q-pa-sm" bordered>
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
-    </div>
+    </q-footer>
   </div>
 </template>
 

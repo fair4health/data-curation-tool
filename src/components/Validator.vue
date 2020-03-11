@@ -180,12 +180,12 @@
         </div>
       </q-card-section>
     </q-card>
-    <div class="row q-ma-md">
+    <q-footer class="row bg-grey-1 q-pa-sm" bordered>
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
       <q-space />
       <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="validationStatus !== 'success'"
              @click="nextStep" no-caps />
-    </div>
+    </q-footer>
   </div>
 </template>
 
@@ -317,10 +317,10 @@
                   return _
                 })
                 if (result && result.status === 'done') {
-                  this.$log.success('Validation', `Validation is completed ${sheet} in ${filePath}`)
+                  // this.$log.success('Validation', `Validation is completed ${sheet} in ${filePath}`)
                   resolveSheet()
                 } else {
-                  this.$log.error('Validation', `${result.description}. Validation error for ${sheet} in ${filePath}. For more details see logs`)
+                  // this.$log.error('Validation', `${result.description}. Validation error for ${sheet} in ${filePath}. For more details see logs`)
                   // Reject even if a resource has error
                   resolveSheet()
                   // rejectSheet()

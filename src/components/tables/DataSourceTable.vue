@@ -201,7 +201,7 @@
       ipcRenderer.send('get-sheet-headers', {path: this.currentSource?.path, sheet: this.currentSheet?.value})
       ipcRenderer.on('ready-sheet-headers', (event, headers) => {
         if (!headers.length) {
-          this.$log.warning('No Sheet Headers', 'Headers couldn\'t be detected')
+          this.$q.notify({message: 'Headers couldn\'t be detected'})
         }
         // this.bufferSheetHeaders = headers.map(_ => ({type: _.type, value: _.value}))
         this.$store.commit('file/setSheetHeaders', headers)

@@ -13,7 +13,6 @@ export default new Vuex.Store({
   },
   state: {
     curationStep: 1,
-    log: '',
     mappingList: [],
     validationStatus: '',
     resources: new Map<string, fhir.Resource[]>(),
@@ -23,7 +22,6 @@ export default new Vuex.Store({
   },
   getters: {
     curationStep: state => state.curationStep,
-    log: state => state.log,
     mappingList: state => state.mappingList || [],
     validationStatus: state => state.validationStatus,
     resources: state => state.resources || new Map<string, fhir.Resource[]>(),
@@ -40,9 +38,6 @@ export default new Vuex.Store({
     },
     setStep (state, value: number) {
       state.curationStep = value
-    },
-    updateLog (state, message: string) {
-      state.log += message + '<br/>'
     },
     setMappingList (state, list: any) {
       state.mappingList = list
