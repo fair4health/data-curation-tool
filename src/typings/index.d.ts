@@ -912,15 +912,17 @@ declare namespace fhir {
   }
   interface ConceptMapGroupElementTarget extends Element {
     code?: code;
+    display?: string
     equivalence?: code;
-    comments?: string;
+    comment?: string;
     dependsOn?: ConceptMapGroupElementTargetDependsOn[];
     product?: ConceptMapGroupElementTargetDependsOn[];
   }
   interface ConceptMapGroupElementTargetDependsOn extends Element {
     property: uri;
     system?: uri;
-    code: string;
+    value: string;
+    display?: string;
   }
   interface Condition extends DomainResource {
     identifier?: Identifier[];
@@ -945,6 +947,7 @@ declare namespace fhir {
     abatementString?: string;
     assertedDate?: date;
     asserter?: Reference;
+    recordedDate?: dateTime,
     stage?: ConditionStage;
     evidence?: ConditionEvidence[];
     note?: Annotation[];
@@ -4779,6 +4782,7 @@ declare namespace fhir {
     max?: string
     type?: ElementTree[]
     selectedType?: string
+    noTick?: boolean
     children?: ElementTree[]
   }
   type Resource = (DomainResource|Account|ActivityDefinition|AllergyIntolerance|Appointment|AppointmentResponse|
@@ -4801,10 +4805,6 @@ declare namespace fhir {
 
 interface Date {
   toISODateString (): string;
-}
-
-interface String {
-  linkify (options?: any): string;
 }
 
 declare namespace ResourceGenerator {
@@ -4840,7 +4840,8 @@ declare namespace store {
   interface SourceTargetGroup {
     type: string
     value: string
-    target: Target[]
+    target: Target[],
+    conceptMap?: {id: string, name: string}
   }
   interface Target {
     resource: string
@@ -4867,9 +4868,10 @@ declare interface TransformListItem {
 }
 
 declare interface BufferResource {
-  value: any,
+  value: any
   sourceType: string
   targetType: string | undefined
+  conceptMap?: fhir.ConceptMap
 }
 
 declare interface StepItem {

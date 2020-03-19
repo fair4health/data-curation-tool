@@ -1,6 +1,7 @@
 import HmacSHA256 from 'crypto-js/hmac-md5'
 import { FhirService } from './../services/fhir.service'
 import { environment } from './../environment'
+import { DataTypeFactory } from './../model/factory/data-type-factory'
 
 export class FHIRUtil {
 
@@ -71,11 +72,11 @@ export class FHIRUtil {
               const list: fhir.ElementTree[] = []
               Promise.all(resource?.snapshot?.element.map((element: fhir.ElementDefinition) => {
                 return new Promise(resolveElement => {
-                  const parts = element?.id?.split('.') || []
+                  let parts = element?.id?.split('.') || []
                   let tmpList = list
                   Promise.all(parts.map(part => {
                     return new Promise((resolveElementPart => {
-                      let match = tmpList.findIndex(l => l.label === part)
+                      let match = tmpList.findIndex(_ => _.label === part)
                       if (match === -1) {
                         match = 0
                         const item: fhir.ElementTree = {
@@ -101,7 +102,7 @@ export class FHIRUtil {
                                 if (_.code === 'Reference') resolveElementType()
                                 this.parseElementDefinitions('url', environment.datatypes[_.code])
                                   .then((elementTreeList: fhir.ElementTree[]) => {
-                                    elementTreeList.length ? item.type?.push({...elementTreeList[0]}) : {}
+                                    if (elementTreeList.length) item.type?.push({...elementTreeList[0]})
                                     // electronStore.set(`datatype-${_.code}`, {...elementTreeList[0]})
                                     localStorage.setItem(`${fhirBase}-StructureDefinition-${_.code}`, JSON.stringify({...elementTreeList[0]}))
                                     resolveElementType()
@@ -114,11 +115,19 @@ export class FHIRUtil {
                             }
                           })
                         }) || [])
-                          .then(() => resolveElementPart())
+                          .then(() => {
+                            // If the item is not a BackboneElement, remove its children
+                            if (item.type[0].value !== 'BackboneElement') item.children = []
+                            else item.noTick = true
+                            resolveElementPart()
+                          })
                           .catch(() => resolveElementPart())
+
                         tmpList.push(item)
-                      } else resolveElementPart()
+                        resolveElementPart()
+                      }
                       tmpList = tmpList[match].children as fhir.ElementTree[]
+                      resolveElementPart()
                     }))
                   })).then(() => resolveElement()).catch(() => resolveElement())
                 })
@@ -132,6 +141,38 @@ export class FHIRUtil {
     })
   }
 
+  /**
+   * Returns the code of target group element matching the source code as string
+   * @param conceptMap
+   * @param sourceCode
+   */
+  static getConceptMapTargetAsString (conceptMap: fhir.ConceptMap, sourceCode: string): string | null {
+    if (conceptMap.group?.length && conceptMap.group[0].element.length) {
+      const conceptMapGroupElement = conceptMap.group[0].element.find(element => element.code === sourceCode)
+      if (conceptMapGroupElement?.target?.length) {
+        return conceptMapGroupElement.target[0].code || null
+      } else return null
+    } else return null
+  }
+
+  /**
+   * Returns the code and system of target group element matching the source code as CodeableConcept
+   * @param conceptMap
+   * @param sourceCode
+   */
+  static getConceptMapTargetAsCodeable (conceptMap: fhir.ConceptMap, sourceCode: string): fhir.CodeableConcept | null {
+    if (conceptMap.group?.length && conceptMap.group[0].element.length) {
+      const conceptMapGroupElement = conceptMap.group[0].element.find(element => element.code === sourceCode)
+      if (conceptMapGroupElement?.target?.length) {
+        const conceptMapGroupElementTarget = conceptMapGroupElement.target[0]
+        return DataTypeFactory.createCodeableConcept({
+          code: conceptMapGroupElementTarget.code,
+          display: conceptMapGroupElementTarget.display,
+          system: conceptMap.group[0].target
+        }) as fhir.CodeableConcept
+      } else return null
+    } else return null
+  }
 
   private static readonly secretKey: string = 'E~w*c`r8e?aetZeid]b$y+aIl&p4eNr*a'
 
