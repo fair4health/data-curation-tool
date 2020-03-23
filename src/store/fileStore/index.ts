@@ -40,6 +40,15 @@ const fileSource = {
     },
     setSheetHeaders (state, headers: SourceDataElement[]) {
       if (state.currentFile) {
+        if (state.currentFile.currentSheet?.headers) {
+          state.currentFile.currentSheet.headers.map((header: SourceDataElement) => {
+            let existingHeader = headers.find(_ => _.value === header.value)
+            if (existingHeader) {
+              existingHeader = header
+            }
+          })
+        }
+
         state.currentFile.currentSheet.headers = headers
       }
     },

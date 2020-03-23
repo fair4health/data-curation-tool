@@ -270,11 +270,11 @@ export class CodeableConcept implements IElement {
     this.text = codeableConcept.text
   }
 
-  getCodes(): string[] {
+  getCodes (): string[] {
     return (this.coding || []).map((_coding: Coding) => _coding.code).filter(_ => _)
   }
 
-  getDisplays(): string[] {
+  getDisplays (): string[] {
     return (this.coding || []).map((_coding: Coding) => _coding.display).filter(_ => _)
   }
 

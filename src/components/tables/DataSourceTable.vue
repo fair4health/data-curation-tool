@@ -53,7 +53,7 @@
               <div class="row items-center q-gutter-xs">
                 <q-item-label class="text-h5 text-grey-10">Data Source</q-item-label>
                 <q-space />
-                <q-btn flat rounded label="Reload File" icon="sync" color="grey-9" @click="fetchSheets" no-caps />
+                <q-btn v-if="currentSheet" unelevated rounded label="Reload File" icon="sync" color="grey-1" text-color="grey-8" @click="fetchHeaders(true)" no-caps />
                 <q-input dense rounded standout="bg-grey-3" v-model.lazy.trim="filter" class="cursor-pointer"
                          input-class="text-grey-8" placeholder="Search..." @keydown.esc="filter = ''"
                 >
@@ -100,6 +100,26 @@
               </div>
             </q-td>
           </template>
+          <template v-slot:body-cell-conceptMap="props">
+            <q-td :props="props">
+              <q-select v-if="props.row.target"
+                        dense
+                        clearable
+                        :outlined="!!props.row.conceptMap"
+                        :standout="!props.row.conceptMap ? 'bg-primary text-white' : ''"
+                        :label="!props.row.conceptMap ? 'No mapping' : 'Concept Map'"
+                        :ref="props.row.value"
+                        v-model="props.row.conceptMap"
+                        :options="conceptMapList"
+                        option-label="name"
+                        option-value="id"
+                        menu-self="bottom left"
+                        style="font-size: 13px"
+                        @clear="removeConceptMap(props.row); $refs[props.row.value].blur()"
+                        @input="bufferSheetHeaders = [...bufferSheetHeaders]"
+              />
+            </q-td>
+          </template>
           <template v-slot:no-data="{ icon, message, filter }">
             {{message === 'Loading...' ? message : (currentSheet ? 'No data available' : 'Please select a sheet')}}
           </template>
@@ -144,14 +164,31 @@
     get bufferSheetHeaders (): BufferElement[] { return this.$store.getters['file/bufferSheetHeaders'] }
     set bufferSheetHeaders (value) { this.$store.commit('file/setBufferSheetHeaders', value) }
 
+    get conceptMapList (): Array<Array<{id: string, name: string}>> {
+      return this.$store.getters['fhir/conceptMapList'].map((_: fhir.ConceptMap) => ({id: _.id, name: _.name}))
+    }
+    set conceptMapList (value) { this.$store.commit('fhir/setConceptMapList', value) }
+
     get filteredBufferSheetHeaders (): BufferElement[] {
       return this.bufferSheetHeaders.filter(_ => !this.showMappedFields || _.target)
     }
 
     created () {
-      this.bufferSheetHeaders = []
-      if (!this.currentSource) this.currentSource = this.fileSourceList[0]
-      if (this.currentSheet) this.onSheetChanged()
+      this.$q.loading.show({message: 'Fetching Concept Maps...', spinner: undefined})
+      setTimeout(() => {
+        this.bufferSheetHeaders = []
+        if (!this.currentSource) this.currentSource = this.fileSourceList[0]
+        if (this.currentSheet) this.onSheetChanged()
+        this.$store.dispatch('fhir/getConceptMaps', true)
+          .then(() => this.$q.loading.hide())
+          .catch(() => {
+            this.$q.loading.hide()
+            this.$q.notify({
+              message: 'Something went wrong while fetching Concept Maps',
+              color: 'red'
+            })
+          })
+      }, 10)
     }
 
     @Watch('currentSource')
@@ -196,9 +233,9 @@
       })
     }
 
-    fetchHeaders (): void {
+    fetchHeaders (noCache?: boolean): void {
       this.loadingAttr = true
-      ipcRenderer.send('get-sheet-headers', {path: this.currentSource?.path, sheet: this.currentSheet?.value})
+      ipcRenderer.send('get-sheet-headers', {path: this.currentSource?.path, sheet: this.currentSheet?.value, noCache})
       ipcRenderer.on('ready-sheet-headers', (event, headers) => {
         if (!headers.length) {
           this.$q.notify({message: 'Headers couldn\'t be detected'})
@@ -222,6 +259,12 @@
         if (!filtered[0].target?.length) Vue.delete(filtered[0], 'target')
         this.bufferSheetHeaders = this.bufferSheetHeaders.slice()
       }
+    }
+
+    removeConceptMap (row: BufferElement) {
+      row.conceptMap = undefined
+      delete row.conceptMap
+      this.bufferSheetHeaders = this.bufferSheetHeaders.slice()
     }
 
   }

@@ -17,39 +17,40 @@ export class Device implements Generator {
 
     return new Promise<fhir.Device>((resolve, reject) => {
 
-      if (resource.has('Device.status')) {
-        // TODO: https://www.hl7.org/fhir/valueset-device-status.html
-        device.status = 'active'
+      const keys: string[] = Array.from(resource.keys())
+
+      if (resource.has('Observation.status')) {
+        const item = resource.get('Observation.status')
+        if (item.conceptMap) {
+          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
+          if (targetValue) device.status = targetValue
+        } else {
+          device.status = String(item.value)
+        }
       }
-      if (resource.has('Device.patient')) {
-        device.patient = DataTypeFactory.createReference({reference: `Patient/${FHIRUtil.hash(String(resource.get('Device.patient')!.value))}`})
+      if (resource.has('Device.patient') || resource.has('Device.patient.Reference.reference')) {
+        const item = resource.get('Device.patient') || resource.get('Device.patient.Reference.reference')
+        device.patient = DataTypeFactory.createReference({reference: `Patient/${FHIRUtil.hash(String(item.value))}`}).toJSON()
       }
-      if (resource.has('Device.patient.reference')) {
-        device.patient = DataTypeFactory.createReference({reference: `Patient/${FHIRUtil.hash(String(resource.get('Device.patient.reference')!.value))}`})
+      if (resource.has('Device.owner') || resource.has('Device.owner.Reference.reference')) {
+        const item = resource.get('Device.owner') || resource.get('Device.owner.Reference.reference')
+        device.owner = DataTypeFactory.createReference({reference: `Organization/${FHIRUtil.hash(String(item.value))}`}).toJSON()
       }
-      if (resource.has('Device.owner')) {
-        device.owner = DataTypeFactory.createReference({reference: `Organization/${FHIRUtil.hash(String(resource.get('Device.owner')!.value))}`})
-      }
-      if (resource.has('Device.owner.reference')) {
-        device.owner = DataTypeFactory.createReference({reference: `Organization/${FHIRUtil.hash(String(resource.get('Device.owner.reference')!.value))}`})
-      }
-      if (resource.has('Device.location')) {
-        device.location = DataTypeFactory.createReference({reference: `Location/${FHIRUtil.hash(String(resource.get('Device.location')!.value))}`})
-      }
-      if (resource.has('Device.location.reference')) {
-        device.location = DataTypeFactory.createReference({reference: `Location/${FHIRUtil.hash(String(resource.get('Device.location.reference')!.value))}`})
+      if (resource.has('Device.location') || resource.has('Device.location.Reference.reference')) {
+        const item = resource.get('Device.location') || resource.get('Device.location.Reference.reference')
+        device.location = DataTypeFactory.createReference({reference: `Location/${FHIRUtil.hash(String(item.value))}`}).toJSON()
       }
       if (resource.has('Device.url')) {
-        device.url = String(resource.get('Device.url')!.value)
+        device.url = String(resource.get('Device.url').value)
       }
       if (resource.has('Device.manufacturer')) {
-        device.manufacturer = String(resource.get('Device.manufacturer')!.value)
+        device.manufacturer = String(resource.get('Device.manufacturer').value)
       }
       if (resource.has('Device.lotNumber')) {
-        device.lotNumber = String(resource.get('Device.lotNumber')!.value)
+        device.lotNumber = String(resource.get('Device.lotNumber').value)
       }
       if (resource.has('Device.manufactureDate')) {
-        const item = resource.get('Device.manufactureDate')!
+        const item = resource.get('Device.manufactureDate')
         try {
           if (item.sourceType === 'Date') {
             let date = item.value
@@ -59,7 +60,7 @@ export class Device implements Generator {
         } catch (e) { log.error('Date insertion error.', e) }
       }
       if (resource.has('Device.expirationDate')) {
-        const item = resource.get('Device.expirationDate')!
+        const item = resource.get('Device.expirationDate')
         try {
           if (item.sourceType === 'Date') {
             let date = item.value
@@ -75,40 +76,55 @@ export class Device implements Generator {
         deviceName.name = String(resource.get('Device.deviceName.name')!.value)
       }
       if (resource.has('Device.deviceName.type')) {
-        // TODO: http://hl7.org/fhir/device-nametype
-        // deviceName.type = String(resource.get('Device.deviceName.type')!.value)
-        deviceName.type = 'manufacturer-name'
+        const item = resource.get('Device.deviceName.type')
+        if (item.conceptMap) {
+          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
+          if (targetValue) deviceName.type = targetValue
+        } else {
+          deviceName.type = String(item.value)
+        }
       }
       if (resource.has('Device.modelNumber')) {
-        device.modelNumber = String(resource.get('Device.modelNumber')!.value)
+        device.modelNumber = String(resource.get('Device.modelNumber').value)
       }
       if (resource.has('Device.partNumber')) {
-        device.partNumber = String(resource.get('Device.partNumber')!.value)
+        device.partNumber = String(resource.get('Device.partNumber').value)
       }
-      if (resource.has('Device.type')) {
-        const value = String(resource.get('Device.type')!.value)
-        device.type = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding(environment.codesystems.SNOMED, value))
+      if (resource.has('Device.type') || resource.get('Device.type.CodeableConcept.coding')) {
+        const item = resource.get('Device.type') || resource.get('Device.type.CodeableConcept.coding')
+        if (item.conceptMap) {
+          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
+          if (targetValue) device.type = targetValue
+        } else {
+          device.type = DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: environment.codesystems.SNOMED, code: String(item.value)})
+          )
+        }
       }
 
       if (resource.has('Device.udiCarrier.deviceIdentifier')) {
-        udi.deviceIdentifier = String(resource.get('Device.udiCarrier.deviceIdentifier')!.value)
+        udi.deviceIdentifier = String(resource.get('Device.udiCarrier.deviceIdentifier').value)
       }
       if (resource.has('Device.udiCarrier.issuer')) {
-        udi.issuer = String(resource.get('Device.udiCarrier.issuer')!.value)
+        udi.issuer = String(resource.get('Device.udiCarrier.issuer').value)
       }
       if (resource.has('Device.udiCarrier.jurisdiction')) {
-        udi.jurisdiction = String(resource.get('Device.udiCarrier.jurisdiction')!.value)
+        udi.jurisdiction = String(resource.get('Device.udiCarrier.jurisdiction').value)
       }
       if (resource.has('Device.udiCarrier.carrierAIDC')) {
-        udi.carrierAIDC = String(resource.get('Device.udiCarrier.carrierAIDC')!.value)
+        udi.carrierAIDC = String(resource.get('Device.udiCarrier.carrierAIDC').value)
       }
       if (resource.has('Device.udiCarrier.carrierHRF')) {
-        udi.carrierHRF = String(resource.get('Device.udiCarrier.carrierHRF')!.value)
+        udi.carrierHRF = String(resource.get('Device.udiCarrier.carrierHRF').value)
       }
       if (resource.has('Device.udiCarrier.entryType')) {
-        // TODO: http://hl7.org/fhir/udi-entry-type
-        // udi.entryType = String(resource.get('Device.udiCarrier.entryType')!.value)
-        udi.entryType = 'barcode'
+        const item = resource.get('Device.udiCarrier.entryType')
+        if (item.conceptMap) {
+          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
+          if (targetValue) device.status = targetValue
+        } else {
+          device.status = String(item.value)
+        }
       }
 
       if (!FHIRUtil.isEmpty(udi)) device.udi = udi
@@ -123,15 +139,8 @@ export class Device implements Generator {
 
   public generateID (resource: fhir.Device): string {
     let value: string = ''
-    // TODO
-    // if (resource.patient?.reference) value += resource.patient.reference
-    // if (resource.deviceName?.name) value += resource.deviceName.name
-    // if (resource.deviceName?.type) value += resource.deviceName.type
-    // if (resource.modelNumber) value += resource.modelNumber
+    // TODO: serialNumber ?
     if (resource.serialNumber) value += resource.serialNumber
-    // if (resource.expirationDate) value += resource.expirationDate
-    // if (resource.manufactureDate) value += resource.manufactureDate
-    // if (resource.modelNumber) value += resource.modelNumber
 
     return FHIRUtil.hash(value)
   }

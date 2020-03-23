@@ -6,6 +6,7 @@ import { ipcMain } from 'electron'
 import { workbookMap } from '../model/workbook'
 import { FhirService } from './../services/fhir.service'
 import generators from '../model/resource-generators'
+import { FHIRUtil } from './../utils/fhir-util'
 
 /**
  * Create and validate resources
@@ -33,6 +34,10 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
     }
   }))
   getWorkbooks.then(workbook => {
+    const conceptMap: Map<string, fhir.ConceptMap> = new Map<string, fhir.ConceptMap>()
+    electronStore.get(`${fhirBase}-ConceptMapList`)?.map(_ => {
+      conceptMap.set(_.id, _)
+    })
     data.sheets.reduce((promise: Promise<any>, sheet: store.Sheet) =>
       promise.then(() => new Promise((resolveSheet, rejectSheet) => {
 
@@ -59,47 +64,63 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
                 const currResourceList: fhir.Resource[] = resources.get(record.resource)!
                 const bufferResourceMap: Map<string, BufferResource> = new Map<string, BufferResource>()
 
-                Promise.all(record.data.map((sourceData: store.SourceTargetGroup) => {
-                  return new Promise((resolveTargets, rejectTargets) => {
-                    const entryValue: any = entry[sourceData.value]
-                    if (entryValue !== undefined && entryValue !== null && entryValue !== '') {
-                      const value = String(entryValue)
-                      Promise.all(sourceData.target.map((target: store.Target) => {
+                if (generator) {
+                  Promise.all(record.data.map((sourceData: store.SourceTargetGroup) => {
+                    return new Promise((resolveTargets, rejectTargets) => {
+                      const entryValue: any = entry[sourceData.value]
+                      if (entryValue !== undefined && entryValue !== null && entryValue !== '') {
+                        const value = String(entryValue)
+                        Promise.all(sourceData.target.map((target: store.Target) => {
 
-                        if (target.value.substr(target.value.length - 3) === '[x]' && target.type)
-                          bufferResourceMap.set(`${target.value}.${target.type}`, {value, sourceType: sourceData.type, targetType: target.type})
-                        else
-                          bufferResourceMap.set(target.value, {value, sourceType: sourceData.type, targetType: target.type})
+                          // Buffer Resource creation
+                          // target.value.substr(target.value.length - 3) === '[x]'
+                          if (target.type)
+                            bufferResourceMap.set(`${target.value}.${target.type}`, FHIRUtil.cleanJSON({
+                              value,
+                              sourceType: sourceData.type,
+                              targetType: target.type,
+                              conceptMap: conceptMap.get(sourceData.conceptMap?.id)
+                            }))
+                          else
+                            bufferResourceMap.set(target.value, FHIRUtil.cleanJSON({
+                              value,
+                              sourceType: sourceData.type,
+                              targetType: target.type,
+                              conceptMap: conceptMap.get(sourceData.conceptMap?.id)
+                            }))
 
-                      }))
-                        .then(() => resolveTargets())
-                        .catch(() => resolveTargets())
-                    } else resolveTargets()
-                  })
-                }))
-                  .then(() => {
-                    // End of one record
-                    // Generate FHIR Resource from bufferResourceMap
-                    generator.generateResource(bufferResourceMap, record.profile)
-                      .then((res: fhir.Resource) => {
+                        }))
+                          .then(() => resolveTargets())
+                          .catch(() => resolveTargets())
+                      } else resolveTargets()
+                    })
+                  }))
+                    .then(() => {
+                      // End of one record
+                      // Generate FHIR Resource from bufferResourceMap
+                      generator.generateResource(bufferResourceMap, record.profile)
+                        .then((res: fhir.Resource) => {
 
-                        currResourceList.push(res)
-                        setTimeout(() => { resolveRecord() }, 0)
+                          currResourceList.push(res)
+                          setTimeout(() => { resolveRecord() }, 0)
 
-                      })
-                      .catch(err => {
+                        })
+                        .catch(err => {
 
-                        log.error('Record generation error.', err)
-                        setTimeout(() => { resolveRecord() }, 0)
+                          log.error('Record generation error.', err)
+                          setTimeout(() => { resolveRecord() }, 0)
 
-                      })
+                        })
 
-                  })
-                  .catch(err => rejectRecord(err))
+                    })
+                    .catch(err => rejectRecord(err))
+                } else {
+                  rejectRecord(`${record.resource} resource couldn't be generated. Generator doesn't exist.`)
+                }
               }))
             , Promise.resolve())
               .then(() => resolveOneRow())
-              .catch(() => resolveOneRow())
+              .catch(err => rejectOneRow(err))
 
           }))
         , Promise.resolve())
@@ -195,7 +216,7 @@ ipcMain.on('validate', (event, fhirBase: string, data: any) => {
           })
           .catch(err => {
             resolveSheet()
-            event.sender.send(`validate-${filePath}-${sheet.sheetName}`, {status: 'error', description: `Validation error for sheet: ${sheet.sheetName}`})
+            event.sender.send(`validate-${filePath}-${sheet.sheetName}`, {status: 'error', description: `Validation error for sheet: ${sheet.sheetName}. ${err}`})
             log.error(`Validation error for sheet: ${sheet.sheetName} in ${filePath}: ${err}`)
           })
       }))

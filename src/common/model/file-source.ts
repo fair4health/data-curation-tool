@@ -10,6 +10,7 @@ export interface SourceDataElement {
   type?: string
   value?: string
   record?: Record[]
+  conceptMap?: {id: string, name: string}
 }
 
 export interface Record {
@@ -27,6 +28,7 @@ export interface TargetResource {
 export interface BufferElement {
   type?: string
   value?: string
+  conceptMap?: {id: string, name: string}
   target?: TargetResource[]
 }
 

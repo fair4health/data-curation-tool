@@ -11,28 +11,62 @@ export class Medication implements Generator {
     const medication: fhir.Medication = { resourceType: 'Medication' } as fhir.Medication
     if (profile) medication.meta = { profile: [profile] }
 
-    const ingredient: fhir.MedicationProductIngredient = {}
-
     return new Promise<fhir.Medication>((resolve, reject) => {
 
-      if (resource.has('Medication.code')) {
-        const value = String(resource.get('Medication.code')!.value)
-        medication.code = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding(environment.codesystems.ATC, value, value))
+      const keys: string[] = Array.from(resource.keys())
+
+      if (resource.has('Medication.status')) {
+        const item = resource.get('Medication.status')
+        if (item.conceptMap) {
+          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
+          if (targetValue) medication.status = targetValue
+        } else {
+          medication.status = String(item.value)
+        }
       }
-      if (resource.has('Medication.code.coding')) {
-        const value = String(resource.get('Medication.code.coding')!.value)
-        medication.code = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding(environment.codesystems.ATC, value, value))
+      if (resource.has('Medication.manufacturer') || resource.has('Medication.manufacturer.Reference.reference')) {
+        const item = resource.get('Medication.manufacturer') || resource.get('Medication.manufacturer.Reference.reference')
+        medication.manufacturer = DataTypeFactory.createReference({reference: `Organization/${FHIRUtil.hash(String(item.value))}`}).toJSON()
       }
-      if (resource.has('Medication.ingredient.item[x]')) {
-        ingredient.itemCodeableConcept = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding(
-          environment.codesystems.SNOMED, String(resource.get('Medication.ingredient.item[x]')!.value)))
-      }
-      if (resource.has('Medication.ingredient.item[x].CodeableConcept.coding')) {
-        ingredient.itemCodeableConcept = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding(
-          environment.codesystems.SNOMED, String(resource.get('Medication.ingredient.item[x].CodeableConcept.coding')!.value)))
+      if (resource.has('Medication.code') || resource.has('Medication.code.CodeableConcept.coding')) {
+        const item = resource.get('Medication.code') || resource.get('Medication.code.CodeableConcept.coding')
+        if (item.conceptMap) {
+          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
+          if (targetValue) medication.code = targetValue
+        } else {
+          medication.code = DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: environment.codesystems.ATC, code: String(item.value)})
+          )
+        }
       }
 
-      if (!FHIRUtil.isEmpty(ingredient)) medication.ingredient = [ingredient]
+      const medicationIngredient = keys.filter(_ => _.startsWith('Medication.ingredient'))
+      if (medicationIngredient.length) {
+        const ingredient: fhir.MedicationProductIngredient = {}
+        if (resource.has('Medication.ingredient.item[x]') || resource.has('Medication.ingredient.item[x].CodeableConcept.coding')) {
+          const item = resource.get('Medication.ingredient.item[x]') || resource.get('Medication.ingredient.item[x].CodeableConcept.coding')
+          if (item.conceptMap) {
+            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
+            if (targetValue) ingredient.itemCodeableConcept = targetValue
+          } else {
+            ingredient.itemCodeableConcept = DataTypeFactory.createCodeableConcept(
+              DataTypeFactory.createCoding({system: environment.codesystems.SNOMED, code: String(item.value)})
+            )
+          }
+        }
+        if (resource.has('Medication.ingredient.isActive')) {
+          const item = resource.get('Medication.ingredient.isActive')
+          if (item.conceptMap) {
+            const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
+            if (targetValue) ingredient.isActive = String(item.value).toLowerCase() === 'true'
+          } else {
+            ingredient.isActive = String(item.value).toLowerCase() === 'true'
+          }
+        }
+        if (!FHIRUtil.isEmpty(ingredient)) {
+          medication.ingredient = [ingredient]
+        }
+      }
 
       medication.id = this.generateID(medication)
 

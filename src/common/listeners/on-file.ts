@@ -47,7 +47,7 @@ ipcMain.on('read-file', (event, path) => {
  */
 ipcMain.on('get-sheet-headers', (event, data) => {
   const headers: object[] = []
-  if (!workbookMap.has(data.path)) {
+  if (!workbookMap.has(data.path) || data.noCache) {
     try {
       workbookMap.set(data.path, Excel.readFile(data.path, {type: 'binary', cellDates: true}))
     } catch (e) {

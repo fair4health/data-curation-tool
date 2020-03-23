@@ -72,7 +72,7 @@ export class FHIRUtil {
               const list: fhir.ElementTree[] = []
               Promise.all(resource?.snapshot?.element.map((element: fhir.ElementDefinition) => {
                 return new Promise(resolveElement => {
-                  let parts = element?.id?.split('.') || []
+                  const parts = element?.id?.split('.') || []
                   let tmpList = list
                   Promise.all(parts.map(part => {
                     return new Promise((resolveElementPart => {

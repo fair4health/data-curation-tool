@@ -947,7 +947,8 @@ declare namespace fhir {
     abatementString?: string;
     assertedDate?: date;
     asserter?: Reference;
-    recordedDate?: dateTime,
+    recorder?: Reference;
+    recordedDate?: dateTime;
     stage?: ConditionStage;
     evidence?: ConditionEvidence[];
     note?: Annotation[];
@@ -2449,6 +2450,7 @@ declare namespace fhir {
   interface Medication extends DomainResource {
     identifier?: Identifier;
     code?: CodeableConcept;
+    status?: code;
     manufacturer?: Reference;
     ingredient?: MedicationProductIngredient[];
     batch?: MedicationProductBatch[];
@@ -2541,6 +2543,7 @@ declare namespace fhir {
     basedOn?: Reference[];
     requisition?: Identifier;
     status?: code;
+    statusReason?: CodeableConcept;
     intent: code;
     medicationCodeableConcept?: CodeableConcept;
     medicationReference?: Reference;
@@ -2548,13 +2551,13 @@ declare namespace fhir {
     context?: Reference;
     supportingInformation?: Reference[];
     authoredOn?: dateTime;
-    requester?: MedicationRequestRequester;
+    requester?: Reference;
     performer?: Reference;
     recorder?: Reference;
     reasonCode?: CodeableConcept[];
     reasonReference?: Reference[];
     note?: Annotation[];
-    category?: CodeableConcept;
+    category?: CodeableConcept[];
     priority?: code;
     dosageInstruction?: DosageInstruction[];
     dispenseRequest?: MedicationRequestDispenseRequest;
@@ -2562,10 +2565,6 @@ declare namespace fhir {
     priorPrescription?: Reference;
     eventHistory?: Reference[];
     encounter?: Reference;
-  }
-  interface MedicationRequestRequester extends Element {
-    agent?: Reference;
-    onBehalfOf?: Reference;
   }
   interface MedicationRequestDispenseRequest extends Element {
     validityPeriod?: Period;
@@ -2584,6 +2583,7 @@ declare namespace fhir {
     partOf?: Reference[];
     context?: Reference;
     status: code;
+    statusReason?: CodeableConcept[];
     category?: CodeableConcept;
     medicationCodeableConcept?: CodeableConcept;
     medicationReference?: Reference;
@@ -2766,7 +2766,7 @@ declare namespace fhir {
     valueDateTime?: dateTime;
     valuePeriod?: Period;
     dataAbsentReason?: CodeableConcept;
-    interpretation?: CodeableConcept;
+    interpretation?: CodeableConcept[];
     comment?: string;
     bodySite?: CodeableConcept;
     method?: CodeableConcept;
@@ -2801,7 +2801,7 @@ declare namespace fhir {
     valueDateTime?: dateTime;
     valuePeriod?: Period;
     dataAbsentReason?: CodeableConcept;
-    interpretation?: CodeableConcept;
+    interpretation?: CodeableConcept[];
     referenceRange?: ObservationReferenceRange[];
   }
   interface OperationDefinition extends DomainResource {
