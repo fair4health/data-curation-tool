@@ -24,9 +24,6 @@
                     <q-icon name="save_alt" color="blue-2" size="72px" />
                     <p class="text-grey-9">Drag your files here</p>
                     <q-btn unelevated label="Browse" color="blue-1" text-color="primary" @click="browseFile" no-caps />
-                    <div class="q-my-xs text-weight-bold text-grey-9">OR</div>
-                    <q-btn unelevated label="Import saved mapping (json)" color="blue-1" text-color="primary"
-                           @click="importSavedMapping" icon="fas fa-file-import" no-caps />
                   </div>
                 </template>
                 <template v-else>
@@ -82,12 +79,27 @@
     </div>
     <q-expansion-item
       default-opened
-      class="overflow-hidden q-ma-md col-12"
+      class="overflow-hidden q-ma-sm col-12"
       icon="save"
       label="Saved Mappings"
       header-class="bg-primary text-white"
       expand-icon-class="text-white"
+      :expand-icon-toggle="true"
     >
+      <template v-slot:header>
+        <q-item-section avatar>
+          <q-avatar icon="save" color="primary" text-color="white" />
+        </q-item-section>
+
+        <q-item-section>
+          Saved Mappings
+        </q-item-section>
+
+        <q-item-section side>
+          <q-btn unelevated label="Import" color="white" text-color="primary"
+                 @click="importSavedMapping" icon="fas fa-file-import" no-caps />
+        </q-item-section>
+      </template>
       <q-card flat>
         <q-card-section class="bg-white text-white text-subtitle1">
           <div v-if="savedMappings.length" class="row q-mb-sm q-gutter-sm">
@@ -129,12 +141,12 @@
         </q-card-section>
       </q-card>
     </q-expansion-item>
-    <q-footer class="row bg-grey-1 q-pa-sm" bordered>
+    <div class="row q-pa-sm">
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="$store.commit('decrementStep')" no-caps />
       <q-space />
       <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!fileSourceList.length"
              @click="$store.commit('incrementStep')" no-caps />
-    </q-footer>
+    </div>
   </div>
 </template>
 

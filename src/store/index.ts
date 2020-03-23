@@ -12,6 +12,8 @@ export default new Vuex.Store({
     fhir
   },
   state: {
+    drawerOpen: true,
+    drawerMiniState: true,
     curationStep: 1,
     mappingList: [],
     validationStatus: '',
@@ -21,6 +23,8 @@ export default new Vuex.Store({
     transformOutcomeDetails: [] as OutcomeDetail[]
   },
   getters: {
+    drawerOpen: state => state.drawerOpen,
+    drawerMiniState: state => state.drawerMiniState,
     curationStep: state => state.curationStep,
     mappingList: state => state.mappingList || [],
     validationStatus: state => state.validationStatus,
@@ -30,6 +34,12 @@ export default new Vuex.Store({
     transformOutcomeDetails: state => state.transformOutcomeDetails || []
   },
   mutations: {
+    setDrawerOpen (state, value: boolean) {
+      state.drawerOpen = value
+    },
+    setDrawerMiniState (state, value: boolean) {
+      state.drawerMiniState = value
+    },
     incrementStep (state) {
       state.curationStep += 1
     },

@@ -49,8 +49,8 @@
       <q-expansion-item
         default-opened
         class="q-mt-md col-12"
-        icon="save"
-        label="Saved Mappings"
+        icon="list"
+        label="Mappings"
         header-class="bg-primary text-white"
         expand-icon-class="text-white"
       >
@@ -145,12 +145,12 @@
         </q-card>
       </q-expansion-item>
     </div>
-    <q-footer class="row bg-grey-1 q-pa-sm" bordered>
+    <div class="row q-pa-sm">
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
       <q-space />
       <q-btn v-if="fileSourceList.length" unelevated label="Next" icon-right="chevron_right" :disable="!savedRecords.length"
              color="primary" @click="nextStep" no-caps />
-    </q-footer>
+    </div>
   </div>
 </template>
 
@@ -161,6 +161,7 @@
   import { QTree } from 'quasar'
   import Loading from '@/components/Loading.vue'
   import { v4 as uuid } from 'uuid'
+  import { FHIRUtil } from '@/common/utils/fhir-util'
 
   @Component({
     components: {
@@ -269,11 +270,12 @@
 
             // const groupIds = column.group ? Object.keys(column.group) : []
             column.record!.map((record: Record) => {
-              if (record.target && record.target.length)
+              if (record.target && record.target.length) {
                 currFile[sheet.label][record.recordId] = [
                   ...(currFile[sheet.label][record.recordId] || []),
-                  {value: column.value, type: column.type, target: record.target}
+                  FHIRUtil.cleanJSON({value: column.value, type: column.type, target: record.target, conceptMap: column.conceptMap})
                 ]
+              }
             })
           })).then(_ => {
             if (!Object.keys(currFile[sheet.label]).length) Vue.delete(currFile, sheet.label)
@@ -386,6 +388,7 @@
               if (!header.record || !header.record.length) {
                 header.record = []
               }
+              header.conceptMap = {...buffer.conceptMap}
               header.type = buffer.type
               header.record.push(
                 {
@@ -430,6 +433,9 @@
               if (tmp.length) {
                 tmp[0].type = _.type
                 tmp[0].target = [..._.target]
+                if (_.conceptMap && !FHIRUtil.isEmpty(_.conceptMap)) {
+                  tmp[0].conceptMap = JSON.parse(JSON.stringify(_.conceptMap))
+                }
               }
             })
             this.bufferSheetHeaders = [...this.bufferSheetHeaders]

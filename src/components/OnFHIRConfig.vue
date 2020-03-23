@@ -1,5 +1,5 @@
 <template>
-  <div class="q-pt-xl">
+  <div class="q-py-xl">
     <div class="row justify-center">
       <q-card flat class="col-6">
         <q-card-section>

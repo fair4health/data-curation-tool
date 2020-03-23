@@ -180,12 +180,12 @@
         </div>
       </q-card-section>
     </q-card>
-    <q-footer class="row bg-grey-1 q-pa-sm" bordered>
+    <div class="row q-pa-sm">
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
       <q-space />
       <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="validationStatus !== 'success'"
              @click="nextStep" no-caps />
-    </q-footer>
+    </div>
   </div>
 </template>
 

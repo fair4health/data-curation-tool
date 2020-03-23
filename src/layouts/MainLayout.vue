@@ -1,28 +1,18 @@
 <template>
   <q-layout view="hHh Lpr lFf" class="bg-grey-3">
-    <q-header elevated class="bg-grey-9">
-      <q-toolbar>
-        <q-btn flat dense round aria-label="Menu" icon="menu"
-               @click="$q.screen.lt.lg || !leftDrawerOpen ? (leftDrawerOpen = !leftDrawerOpen) : (miniState = !miniState)"
-        />
-        <q-toolbar-title>
-          <img class="flex flex-center" src="../assets/FAIR4Health-logo.png" width="120px">
-        </q-toolbar-title>
-        <q-btn flat dense round aria-label="Fullscreen" :icon="$q.fullscreen.isActive ? 'fullscreen_exit' : 'fullscreen'"
-               @click="$q.fullscreen.isActive ? $q.fullscreen.exit() : $q.fullscreen.request()"
-        />
-      </q-toolbar>
+    <q-header elevated>
+      <TitleBar />
     </q-header>
 
     <q-drawer
-      v-model="leftDrawerOpen"
+      v-model="drawerOpen"
       show-if-above
       bordered
       content-class="bg-grey-2"
       :width="240"
       :mini-width="75"
       :breakpoint="500"
-      :mini="$q.screen.lt.lg || miniState"
+      :mini="$q.screen.lt.lg || drawerMiniState"
     >
       <q-list class="menu-list">
         <q-item to="/" exact active-class="text-primary bg-blue-grey-1 text-weight-bold">
@@ -80,7 +70,7 @@
           </q-tooltip>
         </q-item>
       </q-list>
-      <q-list v-if="($q.screen.gt.md && !miniState) || $q.screen.xs" padding class="text-grey-8 fixed-bottom">
+      <q-list v-if="($q.screen.gt.md && !drawerMiniState) || $q.screen.xs" padding class="text-grey-8 fixed-bottom">
         <q-separator />
         <q-item>
           <q-item-section>
@@ -96,7 +86,9 @@
     <!--Router view in page container-->
     <q-page-container class="main-page">
       <q-page class="full-height">
-        <router-view />
+        <div class="fill-window" style="overflow-y: auto">
+          <router-view />
+        </div>
       </q-page>
     </q-page-container>
   </q-layout>
@@ -104,11 +96,13 @@
 
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
+  import { remote } from 'electron'
+  import TitleBar from '@/layouts/TitleBar.vue'
 
-  @Component
+  @Component({
+    components: { TitleBar }
+  })
   export default class MainLayout extends Vue {
-    private miniState: boolean = true
-    private leftDrawerOpen: boolean = false
     private steps: StepItem[] = [
       { title: 'Verify FHIR Repo', icon: 'fas fa-fire', stepId: 1 },
       { title: 'Analyze Data Source', icon: 'fas fa-database', stepId: 2 },
@@ -117,10 +111,16 @@
       { title: 'Confirm and Transform', icon: 'fas fa-exchange-alt', stepId: 5 },
     ]
 
+    get drawerOpen (): boolean { return this.$store.getters.drawerOpen }
+    set drawerOpen (value) { this.$store.commit('setDrawerOpen', value) }
+
+    get drawerMiniState (): boolean { return this.$store.getters.drawerMiniState }
+    set drawerMiniState (value) { this.$store.commit('setDrawerMiniState', value) }
+
     get currentStep (): number { return this.$store.getters.curationStep }
     set currentStep (value) { this.$store.commit('setStep', value) }
 
-    get isCollapsed () { return (this.$q.screen.gt.xs && (this.$q.screen.lt.lg || this.miniState)) }
+    get isCollapsed () { return (this.$q.screen.gt.xs && (this.$q.screen.lt.lg || this.drawerMiniState)) }
 
     changeStep (newStep: number) {
       if (this.currentStep > newStep) {
@@ -142,6 +142,10 @@
 </script>
 
 <style lang="stylus">
+  .title-bar-btn
+    border-radius 0 0
+  .btn-close:hover
+    background red
   .main-page
     /*max-width 1400px*/
     margin-left auto
@@ -150,4 +154,6 @@
     border-radius 0 32px 32px 0
   .step-item:hover
     background #e5e5e5
+  .fill-window
+    height calc(100vh - 68.44px)
 </style>
