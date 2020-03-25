@@ -87,42 +87,14 @@ export class FHIRUtil {
                           short: element?.short,
                           min: element?.min,
                           max: element?.max,
-                          type: [],
+                          type: element.type.map(_ => {
+                            const elementType: fhir.ElementTree = {value: _.code, label: _.code, type: [{value: _.code, label: _.code}]}
+                            if (environment.datatypes[_.code])
+                              elementType.lazy = true
+                            return elementType
+                          }),
                           children: []
                         }
-                        Promise.all(element.type?.map((_: fhir.ElementDefinitionType) => {
-                          return new Promise(resolveElementType => {
-                            if (_.code && (_.code[0] === _.code[0].toUpperCase()) && environment.datatypes[_.code]) {
-
-                              const cached = JSON.parse(localStorage.getItem(`${fhirBase}-StructureDefinition-${_.code}`) || '{}')
-                              if (cached && !this.isEmpty(cached)) {
-                                item.type?.push(cached)
-                                resolveElementType()
-                              } else {
-                                if (_.code === 'Reference') resolveElementType()
-                                this.parseElementDefinitions('url', environment.datatypes[_.code])
-                                  .then((elementTreeList: fhir.ElementTree[]) => {
-                                    if (elementTreeList.length) item.type?.push({...elementTreeList[0]})
-                                    // electronStore.set(`datatype-${_.code}`, {...elementTreeList[0]})
-                                    localStorage.setItem(`${fhirBase}-StructureDefinition-${_.code}`, JSON.stringify({...elementTreeList[0]}))
-                                    resolveElementType()
-                                  })
-                                  .catch(err => resolveElementType())
-                              }
-                            } else {
-                              item.type?.push({value: _.code})
-                              resolveElementType()
-                            }
-                          })
-                        }) || [])
-                          .then(() => {
-                            // If the item is not a BackboneElement, remove its children
-                            if (item.type[0].value !== 'BackboneElement') item.children = []
-                            else item.noTick = true
-                            resolveElementPart()
-                          })
-                          .catch(() => resolveElementPart())
-
                         tmpList.push(item)
                         resolveElementPart()
                       }
@@ -132,7 +104,14 @@ export class FHIRUtil {
                   })).then(() => resolveElement()).catch(() => resolveElement())
                 })
               }) || [])
-                .then(() => resolveParam(list))
+                .then(() => {
+                  list[0].children.map(_ => {
+                    if (_.type[0].value !== 'BackboneElement') _.children = []
+                    else _.noTick = true
+                    return _
+                  })
+                  resolveParam(list)
+                })
                 .catch(() => rejectParam([]))
             } else { resolveParam([]) }
           })

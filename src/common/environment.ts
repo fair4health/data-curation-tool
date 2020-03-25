@@ -31,6 +31,7 @@ export let environment = {
     Distance: `${hl7Base}/StructureDefinition/Distance`,
     Dosage: `${hl7Base}/StructureDefinition/Dosage`,
     Duration: `${hl7Base}/StructureDefinition/Duration`,
+    Extension: `${hl7Base}/StructureDefinition/Extension`,
     HumanName: `${hl7Base}/StructureDefinition/HumanName`,
     Identifier: `${hl7Base}/StructureDefinition/Identifier`,
     Money: `${hl7Base}/StructureDefinition/Money`,

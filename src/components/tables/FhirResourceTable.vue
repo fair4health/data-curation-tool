@@ -76,7 +76,7 @@
                           default-expand-all
                   >
                     <template v-slot:default-header="prop">
-                      <div class="row items-center full-width bg-grey-1 q-pa-xs">
+                      <div class="row full-width bg-grey-1 q-pa-xs">
                         <div class="col">
                           <div class="row items-center">
                             <q-icon :name="prop.node.children && prop.node.children.length ? 'account_tree' : 'lens'"
@@ -95,30 +95,46 @@
                             />
                           </div>
                           <div class="row">
-                            <div v-if="prop.node.type && prop.node.type.length && (prop.node.type.length > 1 || env.datatypes[prop.node.type[0].value])"
+                            <div v-if="prop.node.type
+                                       && prop.node.type.length
+                                       && (prop.node.type.length > 1 || env.datatypes[prop.node.type[0].value])
+                                       && prop.node.type[0].value !== 'CodeableConcept'
+                                       && prop.node.type[0].value !== 'Extension'"
                                  class="full-width">
                               <q-list dense class="q-ma-sm" style="font-size: 13px">
                                 <q-tree :nodes="prop.node.type"
                                         node-key="value"
+                                        label-key="label"
+                                        @lazy-load="getDataType"
                                         accordion
                                 >
                                   <template v-slot:default-header="prop2">
-                                    <template v-if="prop2.node.children && prop2.node.children.length > 0">
-                                      <span class="text-grey-8 text-weight-bold q-pl-md">{{ prop2.node.value }}</span>
-                                    </template>
-                                    <template v-else>
+                                    <div class="row full-width">
                                       <div class="row full-width items-center">
                                         <div>
-                                          <q-radio dense v-model="prop.node.selectedType" class="text-grey-8 text-weight-medium full-width" :val="prop2.node.value"
-                                                   :label="prop2.node.value" size="xs" @input="$store.commit('fhir/setElementList', fhirElementList)"
-                                          />
+                                          <template
+                                            v-if="(prop2.node.children && prop2.node.children.length)
+                                                  || (
+                                                       prop2.node.type
+                                                       && prop2.node.type.length
+                                                       && (prop2.node.type.length > 1 || env.datatypes[prop2.node.type[0].value])
+                                                       && prop2.node.type[0].value !== 'CodeableConcept'
+                                                     )"
+                                          >
+                                            <span class="text-grey-8 text-weight-bold q-pl-md">{{ prop2.node.label }}</span>
+                                          </template>
+                                          <template v-else>
+                                            <q-radio dense v-model="prop.node.selectedType" class="text-grey-8 text-weight-medium full-width" :val="prop2.node.value"
+                                                     :label="prop2.node.label" size="xs" @input="$store.commit('fhir/setElementList', fhirElementList)"
+                                            />
+                                          </template>
                                         </div>
                                         <q-space />
                                         <div>
-                                          <span v-if="prop2.node.type" class="text-caption text-primary">{{ prop2.node.type.map(_ => _.value).join(', ') }}</span>
+                                          <span v-if="prop2.node.type" class="text-caption text-primary">{{ prop2.node.type.map(_ => _.label).join(', ') }}</span>
                                         </div>
                                       </div>
-                                    </template>
+                                    </div>
                                   </template>
                                 </q-tree>
                               </q-list>
@@ -311,6 +327,44 @@
       this.selectedStr = target
       const filtered = this.fhirElementListFlat.filter(item => item.value === target)
       this.selectedElem = filtered.length ? filtered[0] : null
+    }
+
+    getDataType ({ node, key, done, fail }) {
+      if (node.type?.length) {
+        if (node.type.length > 1) {
+
+          // If the node has more than one data type, add the types as children so that you can select one of them
+          done(node.type.map((_: fhir.ElementTree) => {
+
+            // If the type is CodeableConcept or Reference, delete lazy option to deactivate expandable root
+            if (_.type?.length && (_.type[0].value === 'CodeableConcept'))
+              delete _.lazy
+            _.value = key + '.' + _.value
+            return _
+
+          }))
+        } else {
+
+          // If there exists only one data type, fetch and display its content
+          this.$store.dispatch('fhir/getDataTypes', environment.datatypes[node.type?.length && node.type[0].value])
+            .then((elementTreeList: fhir.ElementTree[]) => {
+              if (elementTreeList.length) {
+                done(elementTreeList[0].children.map(_ => {
+                  _.value = key + '.' + _.value.split('.').slice(1).join('.')
+                  return _
+                }))
+              } else {
+                fail([])
+              }
+            })
+            .catch(err => fail([]))
+        }
+
+      } else {
+
+        fail([])
+
+      }
     }
 
   }

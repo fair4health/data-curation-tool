@@ -144,6 +144,61 @@ const fhirStore = {
             .catch(err => reject(err))
         }
       })
+    },
+    getDataTypes ({ state }, url: string): Promise<any> {
+      return new Promise((resolve, reject) => {
+        state.fhirService.search('StructureDefinition', {url}, true)
+          .then(res => {
+            const bundle = res.data as fhir.Bundle
+            if (bundle.entry?.length) {
+              const resource = bundle.entry[0].resource as fhir.StructureDefinition
+              const list: fhir.ElementTree[] = []
+              Promise.all(resource?.snapshot?.element.map((element: fhir.ElementDefinition) => {
+                return new Promise(resolveElement => {
+                  const parts = element.id?.split('.') || []
+                  let tmpList = list
+                  Promise.all(parts.map(part => {
+                    return new Promise((resolveElementPart => {
+                      let match = tmpList.findIndex(_ => _.label === part)
+                      if (match === -1) {
+                        match = 0
+                        const item: fhir.ElementTree = {
+                          value: element.id,
+                          label: part,
+                          definition: element.definition,
+                          comment: element.comment,
+                          short: element.short,
+                          min: element.min,
+                          max: element.max,
+                          type: element.type.map(_ => {
+                            const elementType: fhir.ElementTree = {value: _.code, label: _.code, type: [{value: _.code, label: _.code}]}
+                            if (environment.datatypes[_.code])
+                              elementType.lazy = true
+                            return elementType
+                          }),
+                          children: []
+                        }
+                        if (item.type?.length && (item.type.length > 1 || environment.datatypes[item.type[0].value])
+                          && item.type[0].value !== 'CodeableConcept') {
+                          item.lazy = true
+                        }
+                        tmpList.push(item)
+                        resolveElementPart()
+                      }
+                      tmpList = tmpList[match].children as fhir.ElementTree[]
+                      resolveElementPart()
+                    }))
+                  })).then(() => resolveElement()).catch(() => resolveElement())
+                })
+              }) || [])
+                .then(() => {
+                  resolve(list)
+                })
+                .catch(() => reject([]))
+            } else { resolve([]) }
+          })
+          .catch(() => reject([]))
+      })
     }
   }
 }
