@@ -88,10 +88,10 @@ export class FHIRUtil {
                           min: element?.min,
                           max: element?.max,
                           type: element.type.map(_ => {
-                            const elementType: fhir.ElementTree = {value: _.code, label: _.code, type: [{value: _.code, label: _.code}]}
-                            if (environment.datatypes[_.code])
+                            const elementType: fhir.ElementTree = {value: _.code, label: _.code, type: [{value: _.code, label: _.code}], targetProfile: _.targetProfile}
+                            if (_.code !== 'CodeableConcept' && _.code !== 'Reference' && environment.datatypes[_.code])
                               elementType.lazy = true
-                            return elementType
+                            return FHIRUtil.cleanJSON(elementType)
                           }),
                           children: []
                         }
@@ -151,6 +151,23 @@ export class FHIRUtil {
         }) as fhir.CodeableConcept
       } else return null
     } else return null
+  }
+
+  /**
+   * Returns the Reference object according to the specified resource type
+   * @param keyList
+   * @param resource
+   * @param phrase
+   */
+  static searchForReference (keyList: string[], resource: Map<string, BufferResource>, phrase: string): fhir.Reference | null {
+    const key: string = keyList.find(_ => _.startsWith(phrase))
+    if (key) {
+      const resourceType: string = key.split('.').pop()
+      const item = resource.get(key)
+      return DataTypeFactory.createReference({reference: `${resourceType}/${FHIRUtil.hash(String(item.value))}`}).toJSON()
+    } else {
+      return null
+    }
   }
 
   private static readonly secretKey: string = 'E~w*c`r8e?aetZeid]b$y+aIl&p4eNr*a'

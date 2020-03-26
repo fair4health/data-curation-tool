@@ -36,8 +36,8 @@ export class Patient implements Generator {
           patient.gender = String(item.value)
         }
       }
-      if (resource.has('Patient.maritalStatus') || resource.has('Patient.maritalStatus.CodeableConcept.coding')) {
-        const item = resource.get('Patient.maritalStatus') || resource.get('Patient.maritalStatus.CodeableConcept.coding')
+      if (resource.has('Patient.maritalStatus')) {
+        const item = resource.get('Patient.maritalStatus')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) patient.maritalStatus = targetValue
@@ -56,7 +56,7 @@ export class Patient implements Generator {
             telecom.system = String(item.value)
           }
         }
-        if (resource.has('Patient.telecom.ContactPoint.value')) { telecom.value = String(resource.get('Patient.telecom.ContactPoint.value')!.value) }
+        if (resource.has('Patient.telecom.ContactPoint.value')) { telecom.value = String(resource.get('Patient.telecom.ContactPoint.value').value) }
         if (resource.has('Patient.telecom.ContactPoint.use')) {
           const item = resource.get('Patient.telecom.ContactPoint.use')
           if (item.conceptMap) {
@@ -66,7 +66,7 @@ export class Patient implements Generator {
             telecom.use = String(item.value)
           }
         }
-        if (resource.has('Patient.telecom.ContactPoint.rank')) { telecom.rank = Number(resource.get('Patient.telecom.ContactPoint.rank')!.value) }
+        if (resource.has('Patient.telecom.ContactPoint.rank')) { telecom.rank = Number(resource.get('Patient.telecom.ContactPoint.rank').value) }
 
         const _telecom = DataTypeFactory.createContactPoint(telecom).toJSON()
         if (!FHIRUtil.isEmpty(_telecom)) {
@@ -75,7 +75,7 @@ export class Patient implements Generator {
         }
       }
       if (resource.has('Patient.birthDate')) {
-        const item = resource.get('Patient.birthDate')!
+        const item = resource.get('Patient.birthDate')
 
         if (item.sourceType === 'Date') {
           let date = item.value
@@ -89,7 +89,7 @@ export class Patient implements Generator {
         }
       }
       if (resource.has('Patient.deceased[x].dateTime')) {
-        const item = resource.get('Patient.deceased[x].dateTime')!
+        const item = resource.get('Patient.deceased[x].dateTime')
 
         let date = item.value
         if (!(date instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
@@ -119,7 +119,7 @@ export class Patient implements Generator {
 
       }
       if (resource.has('Patient.multipleBirth[x].integer')) {
-        const item = resource.get('Patient.multipleBirth[x].integer')!
+        const item = resource.get('Patient.multipleBirth[x].integer')
 
         patient.multipleBirthInteger = Number(item.value)
       }
@@ -137,11 +137,11 @@ export class Patient implements Generator {
             name.use = String(item.value)
           }
         }
-        if (resource.has('Patient.name.HumanName.text')) { name.text = String(resource.get('Patient.name.HumanName.text')!.value) }
-        if (resource.has('Patient.name.HumanName.family')) { name.family = String(resource.get('Patient.name.HumanName.family')!.value) }
-        if (resource.has('Patient.name.HumanName.given')) { name.given = [String(resource.get('Patient.name.HumanName.given')!.value)] }
-        if (resource.has('Patient.name.HumanName.prefix')) { name.prefix = [String(resource.get('Patient.name.HumanName.prefix')!.value)] }
-        if (resource.has('Patient.name.HumanName.suffix')) { name.suffix = [String(resource.get('Patient.name.HumanName.suffix')!.value)] }
+        if (resource.has('Patient.name.HumanName.text')) { name.text = String(resource.get('Patient.name.HumanName.text').value) }
+        if (resource.has('Patient.name.HumanName.family')) { name.family = String(resource.get('Patient.name.HumanName.family').value) }
+        if (resource.has('Patient.name.HumanName.given')) { name.given = [String(resource.get('Patient.name.HumanName.given').value)] }
+        if (resource.has('Patient.name.HumanName.pref"ix')) { name.prefix = [String(resource.get('Patient.name.HumanName.prefix').value)] }
+        if (resource.has('Patient.name.HumanName.suffix')) { name.suffix = [String(resource.get('Patient.name.HumanName.suffix').value)] }
 
         const _name = DataTypeFactory.createHumanName(name).toJSON()
         if (!FHIRUtil.isEmpty(_name)) {
@@ -153,14 +153,14 @@ export class Patient implements Generator {
       const patientAddress = keys.filter(_ => _.startsWith('Patient.address'))
       if (patientAddress.length) {
         const address: fhir.Address = {}
-        if (resource.has('Patient.address.Address.type')) { address.type = String(resource.get('Patient.address.Address.type')!.value) }
-        if (resource.has('Patient.address.Address.text')) { address.text = String(resource.get('Patient.address.Address.text')!.value) }
-        if (resource.has('Patient.address.Address.line')) { address.line = [String(resource.get('Patient.address.Address.line')!.value)] }
-        if (resource.has('Patient.address.Address.city')) { address.city = String(resource.get('Patient.address.Address.city')!.value) }
-        if (resource.has('Patient.address.Address.district')) { address.district = String(resource.get('Patient.address.Address.district')!.value) }
-        if (resource.has('Patient.address.Address.state')) { address.state = String(resource.get('Patient.address.Address.state')!.value) }
-        if (resource.has('Patient.address.Address.postalCode')) { address.postalCode = String(resource.get('Patient.address.Address.postalCode')!.value) }
-        if (resource.has('Patient.address.Address.country')) { address.country = String(resource.get('Patient.address.Address.country')!.value) }
+        if (resource.has('Patient.address.Address.type')) { address.type = String(resource.get('Patient.address.Address.type').value) }
+        if (resource.has('Patient.address.Address.text')) { address.text = String(resource.get('Patient.address.Address.text').value) }
+        if (resource.has('Patient.address.Address.line')) { address.line = [String(resource.get('Patient.address.Address.line').value)] }
+        if (resource.has('Patient.address.Address.city')) { address.city = String(resource.get('Patient.address.Address.city').value) }
+        if (resource.has('Patient.address.Address.district')) { address.district = String(resource.get('Patient.address.Address.district').value) }
+        if (resource.has('Patient.address.Address.state')) { address.state = String(resource.get('Patient.address.Address.state').value) }
+        if (resource.has('Patient.address.Address.postalCode')) { address.postalCode = String(resource.get('Patient.address.Address.postalCode').value) }
+        if (resource.has('Patient.address.Address.country')) { address.country = String(resource.get('Patient.address.Address.country').value) }
 
         const _address = DataTypeFactory.createAddress(address).toJSON()
         if (!FHIRUtil.isEmpty(_address)) {

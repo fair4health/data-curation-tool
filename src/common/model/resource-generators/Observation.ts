@@ -25,8 +25,8 @@ export class Observation implements Generator {
           observation.status = String(item.value)
         }
       }
-      if (resource.has('Observation.category') || resource.has('Observation.category.CodeableConcept.coding')) {
-        const item = resource.get('Observation.category') || resource.get('Observation.category.CodeableConcept.coding')
+      if (resource.has('Observation.category')) {
+        const item = resource.get('Observation.category')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           observation.category = [targetValue]
@@ -36,8 +36,8 @@ export class Observation implements Generator {
           )]
         }
       }
-      if (resource.has('Observation.code') || resource.has('Observation.code.CodeableConcept.coding')) {
-        const item = resource.get('Observation.code') || resource.get('Observation.code.CodeableConcept.coding')
+      if (resource.has('Observation.code')) {
+        const item = resource.get('Observation.code')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) observation.code = targetValue
@@ -47,14 +47,12 @@ export class Observation implements Generator {
           )
         }
       }
-      if (resource.has('Observation.subject') || resource.has('Observation.subject.Reference.reference')) {
-        const item = resource.get('Observation.subject') || resource.get('Observation.subject.Reference.reference')
-        observation.subject = DataTypeFactory.createReference({reference: `Patient/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('Observation.encounter') || resource.has('Observation.encounter.Reference.reference')) {
-        const item = resource.get('Observation.encounter') || resource.get('Observation.encounter.Reference.reference')
-        observation.encounter = DataTypeFactory.createReference({reference: `Encounter/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
+
+      const subject = FHIRUtil.searchForReference(keys, resource, 'Observation.subject.Reference.')
+      if (subject) observation.subject = subject
+
+      const encounter = FHIRUtil.searchForReference(keys, resource, 'Observation.encounter.Reference.')
+      if (encounter) observation.encounter = encounter
 
       if (resource.has('Observation.effective[x].dateTime')) {
         const item = resource.get('Observation.effective[x].dateTime')!
@@ -220,12 +218,9 @@ export class Observation implements Generator {
           }
         } catch (e) { log.error('Date insertion error.', e) }
       }
-      if (resource.has('Observation.performer') || resource.has('Observation.performer.Reference.reference')) {
-        const item = resource.get('Observation.performer') || resource.get('Observation.performer.Reference.reference')
-        if (!observation.performer?.length) observation.performer = []
 
-        observation.performer.push(DataTypeFactory.createReference({reference: `Practitioner/${FHIRUtil.hash(String(item.value))}`}).toJSON())
-      }
+      const performer = FHIRUtil.searchForReference(keys, resource, 'Observation.performer.Reference.')
+      if (performer) observation.performer = [performer]
 
       if (resource.has('Observation.value[x].string')) {
         observation.valueString = String(resource.get('Observation.value[x].string').value)
@@ -266,8 +261,8 @@ export class Observation implements Generator {
           observation.valuePeriod = _period
         }
       }
-      if (resource.has('Observation.value[x].CodeableConcept.coding')) {
-        const item = resource.get('MedicationRequest.medication[x].CodeableConcept.coding')
+      if (resource.has('Observation.value[x].CodeableConcept')) {
+        const item = resource.get('MedicationRequest.medication[x].CodeableConcept')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) observation.valueCodeableConcept = targetValue
@@ -329,8 +324,8 @@ export class Observation implements Generator {
         }
       }
 
-      if (resource.has('Observation.dataAbsentReason') || resource.has('Observation.dataAbsentReason.CodeableConcept.coding')) {
-        const item = resource.get('Observation.dataAbsentReason') || resource.get('Observation.dataAbsentReason.CodeableConcept.coding')
+      if (resource.has('Observation.dataAbsentReason')) {
+        const item = resource.get('Observation.dataAbsentReason')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) observation.dataAbsentReason = targetValue
@@ -340,8 +335,8 @@ export class Observation implements Generator {
           )
         }
       }
-      if (resource.has('Observation.interpretation') || resource.has('Observation.interpretation.CodeableConcept.coding')) {
-        const item = resource.get('Observation.interpretation') || resource.get('Observation.interpretation.CodeableConcept.coding')
+      if (resource.has('Observation.interpretation')) {
+        const item = resource.get('Observation.interpretation')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) observation.interpretation = [targetValue]
@@ -351,8 +346,8 @@ export class Observation implements Generator {
           )]
         }
       }
-      if (resource.has('Observation.bodySite') || resource.has('Observation.bodySite.CodeableConcept.coding')) {
-        const item = resource.get('Observation.bodySite') || resource.get('Observation.bodySite.CodeableConcept.coding')
+      if (resource.has('Observation.bodySite')) {
+        const item = resource.get('Observation.bodySite')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) observation.bodySite = targetValue
@@ -362,8 +357,8 @@ export class Observation implements Generator {
           )
         }
       }
-      if (resource.has('Observation.method') || resource.has('Observation.method.CodeableConcept.coding')) {
-        const item = resource.get('Observation.method') || resource.get('Observation.method.CodeableConcept.coding')
+      if (resource.has('Observation.method')) {
+        const item = resource.get('Observation.method')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) observation.method = targetValue
@@ -373,14 +368,12 @@ export class Observation implements Generator {
           )
         }
       }
-      if (resource.has('Observation.specimen') || resource.has('Observation.specimen.Reference.reference')) {
-        const item = resource.get('Observation.specimen') || resource.get('Observation.specimen.Reference.reference')
-        observation.specimen = DataTypeFactory.createReference({reference: `Specimen/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('Observation.device') || resource.has('Observation.device.Reference.reference')) {
-        const item = resource.get('Observation.device') || resource.get('Observation.device.Reference.reference')
-        observation.device = DataTypeFactory.createReference({reference: `Device/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
+
+      const specimen = FHIRUtil.searchForReference(keys, resource, 'Observation.specimen.Reference.')
+      if (specimen) observation.specimen = specimen
+
+      const device = FHIRUtil.searchForReference(keys, resource, 'Observation.device.Reference.')
+      if (device) observation.device = device
 
       const observationComponent = keys.filter(_ => _.startsWith('Observation.component'))
       if (observationComponent.length) {

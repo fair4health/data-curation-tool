@@ -28,18 +28,15 @@ export class Device implements Generator {
           device.status = String(item.value)
         }
       }
-      if (resource.has('Device.patient') || resource.has('Device.patient.Reference.reference')) {
-        const item = resource.get('Device.patient') || resource.get('Device.patient.Reference.reference')
-        device.patient = DataTypeFactory.createReference({reference: `Patient/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('Device.owner') || resource.has('Device.owner.Reference.reference')) {
-        const item = resource.get('Device.owner') || resource.get('Device.owner.Reference.reference')
-        device.owner = DataTypeFactory.createReference({reference: `Organization/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('Device.location') || resource.has('Device.location.Reference.reference')) {
-        const item = resource.get('Device.location') || resource.get('Device.location.Reference.reference')
-        device.location = DataTypeFactory.createReference({reference: `Location/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
+      const patient = FHIRUtil.searchForReference(keys, resource, 'Device.patient.Reference.')
+      if (patient) device.patient = patient
+
+      const owner = FHIRUtil.searchForReference(keys, resource, 'Device.owner.Reference.')
+      if (owner) device.owner = owner
+
+      const location = FHIRUtil.searchForReference(keys, resource, 'Device.location.Reference.')
+      if (location) device.location = location
+
       if (resource.has('Device.url')) {
         device.url = String(resource.get('Device.url').value)
       }
@@ -90,8 +87,8 @@ export class Device implements Generator {
       if (resource.has('Device.partNumber')) {
         device.partNumber = String(resource.get('Device.partNumber').value)
       }
-      if (resource.has('Device.type') || resource.get('Device.type.CodeableConcept.coding')) {
-        const item = resource.get('Device.type') || resource.get('Device.type.CodeableConcept.coding')
+      if (resource.has('Device.type')) {
+        const item = resource.get('Device.type')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) device.type = targetValue

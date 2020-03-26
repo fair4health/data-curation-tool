@@ -7,7 +7,7 @@
             <span><q-icon name="fas fa-file" size="xs" color="primary" class="q-mr-xs" /> Source File</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense v-model="currentSource" class="ellipsis" :options="fileSourceList" option-value="path" label="Source File">
+          <q-select outlined dense options-dense v-model="currentSource" class="ellipsis" :options="fileSourceList" option-value="path" label="Source File">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -25,7 +25,7 @@
             <span><q-icon name="far fa-file-alt" size="xs" color="primary" class="q-mr-xs" /> Sheets</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense v-model="currentSheet" class="ellipsis" :options="sheets" label="Sheets" :disable="!sheets.length">
+          <q-select outlined dense options-dense v-model="currentSheet" class="ellipsis" :options="sheets" label="Sheets" :disable="!sheets.length">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>

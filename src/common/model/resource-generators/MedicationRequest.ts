@@ -13,6 +13,8 @@ export class MedicationRequest implements Generator {
 
     return new Promise<fhir.MedicationRequest>((resolve, reject) => {
 
+      const keys: string[] = Array.from(resource.keys())
+
       if (resource.has('MedicationRequest.status')) {
         const item = resource.get('MedicationRequest.status')
         if (item.conceptMap) {
@@ -22,8 +24,8 @@ export class MedicationRequest implements Generator {
           medicationRequest.status = String(item.value)
         }
       }
-      if (resource.has('MedicationRequest.statusReason') || resource.has('MedicationRequest.statusReason.CodeableConcept.coding')) {
-        const item = resource.get('MedicationRequest.statusReason') || resource.get('MedicationRequest.statusReason.CodeableConcept.coding')
+      if (resource.has('MedicationRequest.statusReason')) {
+        const item = resource.get('MedicationRequest.statusReason')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) medicationRequest.statusReason = targetValue
@@ -42,8 +44,8 @@ export class MedicationRequest implements Generator {
           medicationRequest.intent = String(item.value)
         }
       }
-      if (resource.has('MedicationRequest.category') || resource.has('MedicationRequest.category.CodeableConcept.coding')) {
-        const item = resource.get('MedicationRequest.category') || resource.get('MedicationRequest.category.CodeableConcept.coding')
+      if (resource.has('MedicationRequest.category')) {
+        const item = resource.get('MedicationRequest.category')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           medicationRequest.category = [targetValue]
@@ -53,8 +55,8 @@ export class MedicationRequest implements Generator {
           )]
         }
       }
-      if (resource.has('MedicationRequest.medication[x].CodeableConcept.coding')) {
-        const item = resource.get('MedicationRequest.medication[x].CodeableConcept.coding')
+      if (resource.has('MedicationRequest.medication[x].CodeableConcept')) {
+        const item = resource.get('MedicationRequest.medication[x].CodeableConcept')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) medicationRequest.medicationCodeableConcept = targetValue
@@ -64,33 +66,27 @@ export class MedicationRequest implements Generator {
           )
         }
       }
-      if (resource.has('MedicationRequest.medication[x].Reference.reference')) {
-        const item = resource.get('MedicationRequest.medication[x].Reference.reference')
-        medicationRequest.medicationReference = DataTypeFactory.createReference({reference: `Medication/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
 
-      if (resource.has('MedicationRequest.subject') || resource.has('MedicationRequest.subject.Reference.reference')) {
-        const item = resource.get('MedicationRequest.subject') || resource.get('MedicationRequest.subject.Reference.reference')
-        medicationRequest.subject = DataTypeFactory.createReference({reference: `Patient/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('MedicationRequest.encounter') || resource.has('MedicationRequest.encounter.Reference.reference')) {
-        const item = resource.get('MedicationRequest.encounter') || resource.get('MedicationRequest.encounter.Reference.reference')
-        medicationRequest.encounter = DataTypeFactory.createReference({reference: `Encounter/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('MedicationRequest.requester') || resource.has('MedicationRequest.requester.Reference.reference')) {
-        const item = resource.get('MedicationRequest.requester') || resource.get('MedicationRequest.requester.Reference.reference')
-        medicationRequest.requester = DataTypeFactory.createReference({reference: `Practitioner/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('MedicationRequest.performer') || resource.has('MedicationRequest.performer.Reference.reference')) {
-        const item = resource.get('MedicationRequest.performer') || resource.get('MedicationRequest.performer.Reference.reference')
-        medicationRequest.performer = DataTypeFactory.createReference({reference: `Practitioner/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('MedicationRequest.recorder') || resource.has('MedicationRequest.recorder.Reference.reference')) {
-        const item = resource.get('MedicationRequest.recorder') || resource.get('MedicationRequest.recorder.Reference.reference')
-        medicationRequest.recorder = DataTypeFactory.createReference({reference: `Practitioner/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('MedicationRequest.reasonCode') || resource.has('MedicationRequest.reasonCode.CodeableConcept.coding')) {
-        const item = resource.get('MedicationRequest.reasonCode') || resource.get('MedicationRequest.reasonCode.CodeableConcept.coding')
+      const medication = FHIRUtil.searchForReference(keys, resource, 'MedicationRequest.medication[x].Reference.')
+      if (medication) medicationRequest.medicationReference = medication
+
+      const subject = FHIRUtil.searchForReference(keys, resource, 'MedicationRequest.subject.Reference.')
+      if (subject) medicationRequest.subject = subject
+
+      const encounter = FHIRUtil.searchForReference(keys, resource, 'MedicationRequest.encounter.Reference.')
+      if (encounter) medicationRequest.encounter = encounter
+
+      const requester = FHIRUtil.searchForReference(keys, resource, 'MedicationRequest.requester.Reference.')
+      if (requester) medicationRequest.requester = requester
+
+      const performer = FHIRUtil.searchForReference(keys, resource, 'MedicationRequest.performer.Reference.')
+      if (performer) medicationRequest.performer = performer
+
+      const recorder = FHIRUtil.searchForReference(keys, resource, 'MedicationRequest.recorder.Reference.')
+      if (recorder) medicationRequest.recorder = recorder
+
+      if (resource.has('MedicationRequest.reasonCode')) {
+        const item = resource.get('MedicationRequest.reasonCode')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           medicationRequest.reasonCode = [targetValue]

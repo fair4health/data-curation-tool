@@ -2548,7 +2548,6 @@ declare namespace fhir {
     medicationCodeableConcept?: CodeableConcept;
     medicationReference?: Reference;
     subject: Reference;
-    context?: Reference;
     supportingInformation?: Reference[];
     authoredOn?: dateTime;
     requester?: Reference;
@@ -4785,6 +4784,7 @@ declare namespace fhir {
     noTick?: boolean
     children?: ElementTree[]
     lazy?: boolean // To dynamically fetch the structure of data type
+    targetProfile?: string[]
   }
   type Resource = (DomainResource|Account|ActivityDefinition|AllergyIntolerance|Appointment|AppointmentResponse|
     AuditEvent|Basic|Binary|BodySite|Bundle|CarePlan|CareTeam|Claim|ClaimResponse|ClinicalImpression|CodeSystem|

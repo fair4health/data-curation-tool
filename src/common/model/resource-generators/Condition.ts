@@ -16,22 +16,26 @@ export class Condition implements Generator {
 
       const keys: string[] = Array.from(resource.keys())
 
-      if (resource.has('Condition.clinicalStatus') || resource.has('Condition.clinicalStatus.CodeableConcept.coding')) {
-        const item = resource.get('Condition.clinicalStatus') || resource.get('Condition.clinicalStatus.CodeableConcept.coding')
+      if (resource.has('Condition.clinicalStatus')) {
+        const item = resource.get('Condition.clinicalStatus')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) condition.clinicalStatus = targetValue
+        } else {
+          condition.clinicalStatus = DataTypeFactory.createCodeableConcept({system: 'http://terminology.hl7.org/CodeSystem/condition-clinical', code: String(item.value)})
         }
       }
-      if (resource.has('Condition.verificationStatus') || resource.has('Condition.verificationStatus.CodeableConcept.coding')) {
-        const item = resource.get('Condition.verificationStatus') || resource.get('Condition.verificationStatus.CodeableConcept.coding')
+      if (resource.has('Condition.verificationStatus')) {
+        const item = resource.get('Condition.verificationStatus')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) condition.verificationStatus = targetValue
+        } else {
+          condition.verificationStatus = DataTypeFactory.createCodeableConcept({system: 'http://terminology.hl7.org/CodeSystem/condition-ver-status', code: String(item.value)})
         }
       }
-      if (resource.has('Condition.category') || resource.has('Condition.category.CodeableConcept.coding')) {
-        const item = resource.get('Condition.category') || resource.get('Condition.category.CodeableConcept.coding')
+      if (resource.has('Condition.category')) {
+        const item = resource.get('Condition.category')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           condition.category = [targetValue]
@@ -41,15 +45,17 @@ export class Condition implements Generator {
           )]
         }
       }
-      if (resource.has('Condition.severity') || resource.has('Condition.severity.CodeableConcept.coding')) {
-        const item = resource.get('Condition.severity') || resource.get('Condition.severity.CodeableConcept.coding')
+      if (resource.has('Condition.severity')) {
+        const item = resource.get('Condition.severity')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) condition.severity = targetValue
+        } else {
+          condition.severity = DataTypeFactory.createCodeableConcept({system: environment.codesystems.SNOMED, code: String(item.value)})
         }
       }
-      if (resource.has('Condition.code') || resource.has('Condition.code.CodeableConcept.coding')) {
-        const item = resource.get('Condition.code') || resource.get('Condition.code.CodeableConcept.coding')
+      if (resource.has('Condition.code')) {
+        const item = resource.get('Condition.code')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) condition.code = targetValue
@@ -59,8 +65,8 @@ export class Condition implements Generator {
           )
         }
       }
-      if (resource.has('Condition.bodySite') || resource.has('Condition.bodySite.CodeableConcept.coding')) {
-        const item = resource.get('Condition.bodySite') || resource.get('Condition.bodySite.CodeableConcept.coding')
+      if (resource.has('Condition.bodySite')) {
+        const item = resource.get('Condition.bodySite')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
 
@@ -72,14 +78,13 @@ export class Condition implements Generator {
           )]
         }
       }
-      if (resource.has('Condition.subject') || resource.has('Condition.subject.Reference.reference')) {
-        const item = resource.get('Condition.subject') || resource.get('Condition.subject.Reference.reference')
-        condition.subject = DataTypeFactory.createReference({reference: `Patient/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('Condition.encounter') || resource.has('Condition.encounter.Reference.reference')) {
-        const item = resource.get('Condition.encounter') || resource.get('Condition.encounter.Reference.reference')
-        condition.encounter = DataTypeFactory.createReference({reference: `Encounter/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
+
+      const subject = FHIRUtil.searchForReference(keys, resource, 'Condition.subject.Reference.')
+      if (subject) condition.subject = subject
+
+      const encounter = FHIRUtil.searchForReference(keys, resource, 'Condition.encounter.Reference.')
+      if (encounter) condition.encounter = encounter
+
       if (resource.has('Condition.onset[x]') || resource.has('Condition.onset[x].dateTime')) {
         const item = resource.get('Condition.onset[x]') || resource.get('Condition.onset[x].dateTime')
         if (item.sourceType === 'Date') {
@@ -173,14 +178,12 @@ export class Condition implements Generator {
           } catch (e) { log.error('Date insertion error.', e) }
         }
       }
-      if (resource.has('Condition.recorder') || resource.has('Condition.recorder.Reference.reference')) {
-        const item = resource.get('Condition.recorder') || resource.get('Condition.recorder.Reference.reference')
-        condition.recorder = DataTypeFactory.createReference({reference: `Practitioner/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('Condition.asserter') || resource.has('Condition.asserter.Reference.reference')) {
-        const item = resource.get('Condition.asserter') || resource.get('Condition.asserter.Reference.reference')
-        condition.asserter = DataTypeFactory.createReference({reference: `Practitioner/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
+
+      const recorder = FHIRUtil.searchForReference(keys, resource, 'Condition.recorder.Reference.')
+      if (recorder) condition.recorder = recorder
+
+      const asserter = FHIRUtil.searchForReference(keys, resource, 'Condition.asserter.Reference.')
+      if (asserter) condition.asserter = asserter
 
       condition.id = this.generateID(condition)
 

@@ -27,8 +27,8 @@ export class MedicationStatement implements Generator {
           medicationStatement.status = String(item.value)
         }
       }
-      if (resource.has('MedicationStatement.statusReason') || resource.has('MedicationStatement.statusReason.CodeableConcept.coding')) {
-        const item = resource.get('MedicationStatement.statusReason') || resource.get('MedicationStatement.statusReason.CodeableConcept.coding')
+      if (resource.has('MedicationStatement.statusReason')) {
+        const item = resource.get('MedicationStatement.statusReason')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) medicationStatement.statusReason = [targetValue]
@@ -38,8 +38,8 @@ export class MedicationStatement implements Generator {
           )]
         }
       }
-      if (resource.has('MedicationStatement.category') || resource.has('MedicationStatement.category.CodeableConcept.coding')) {
-        const item = resource.get('MedicationStatement.category') || resource.get('MedicationStatement.category.CodeableConcept.coding')
+      if (resource.has('MedicationStatement.category')) {
+        const item = resource.get('MedicationStatement.category')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           medicationStatement.category = targetValue
@@ -49,8 +49,8 @@ export class MedicationStatement implements Generator {
           )
         }
       }
-      if (resource.has('MedicationStatement.medication[x].CodeableConcept.coding')) {
-        const item = resource.get('MedicationStatement.medication[x].CodeableConcept.coding')
+      if (resource.has('MedicationStatement.medication[x].CodeableConcept')) {
+        const item = resource.get('MedicationStatement.medication[x].CodeableConcept')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) medicationStatement.medicationCodeableConcept = targetValue
@@ -60,18 +60,15 @@ export class MedicationStatement implements Generator {
           )
         }
       }
-      if (resource.has('MedicationStatement.medication[x].Reference.reference')) {
-        const item = resource.get('MedicationStatement.medication[x].Reference.reference')
-        medicationStatement.medicationReference = DataTypeFactory.createReference({reference: `Medication/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('MedicationStatement.subject') || resource.has('MedicationStatement.subject.Reference.reference')) {
-        const item = resource.get('MedicationStatement.subject') || resource.get('MedicationStatement.subject.Reference.reference')
-        medicationStatement.subject = DataTypeFactory.createReference({reference: `Patient/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
-      if (resource.has('MedicationStatement.context') || resource.has('MedicationStatement.context.Reference.reference')) {
-        const item = resource.get('MedicationStatement.context') || resource.get('MedicationStatement.context.Reference.reference')
-        medicationStatement.context = DataTypeFactory.createReference({reference: `Encounter/${FHIRUtil.hash(String(item.value))}`}).toJSON()
-      }
+      const medication = FHIRUtil.searchForReference(keys, resource, 'MedicationStatement.medication[x].Reference.')
+      if (medication) medicationStatement.medicationReference = medication
+
+      const subject = FHIRUtil.searchForReference(keys, resource, 'MedicationStatement.subject.Reference.')
+      if (subject) medicationStatement.subject = subject
+
+      const context = FHIRUtil.searchForReference(keys, resource, 'MedicationStatement.context.Reference.')
+      if (context) medicationStatement.context = context
+
       if (resource.has('MedicationStatement.dateAsserted')) {
 
         const item = resource.get('MedicationStatement.dateAsserted')

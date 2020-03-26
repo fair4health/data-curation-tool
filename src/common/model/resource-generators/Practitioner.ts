@@ -49,7 +49,7 @@ export class Practitioner implements Generator {
             telecom.system = String(item.value)
           }
         }
-        if (resource.has('Practitioner.telecom.ContactPoint.value')) { telecom.value = String(resource.get('Practitioner.telecom.ContactPoint.value')!.value) }
+        if (resource.has('Practitioner.telecom.ContactPoint.value')) { telecom.value = String(resource.get('Practitioner.telecom.ContactPoint.value').value) }
         if (resource.has('Practitioner.telecom.ContactPoint.use')) {
           const item = resource.get('Practitioner.telecom.ContactPoint.use')
           if (item.conceptMap) {
@@ -59,7 +59,7 @@ export class Practitioner implements Generator {
             telecom.use = String(item.value)
           }
         }
-        if (resource.has('Practitioner.telecom.ContactPoint.rank')) { telecom.rank = Number(resource.get('Practitioner.telecom.ContactPoint.rank')!.value) }
+        if (resource.has('Practitioner.telecom.ContactPoint.rank')) { telecom.rank = Number(resource.get('Practitioner.telecom.ContactPoint.rank').value) }
 
         const _telecom = DataTypeFactory.createContactPoint(telecom)
 
@@ -67,7 +67,7 @@ export class Practitioner implements Generator {
         else practitioner.telecom = [_telecom]
       }
       if (resource.has('Practitioner.birthDate')) {
-        const item = resource.get('Practitioner.birthDate')!
+        const item = resource.get('Practitioner.birthDate')
 
         if (item.sourceType === 'Date') {
           let date = item.value
@@ -94,11 +94,11 @@ export class Practitioner implements Generator {
             name.use = String(item.value)
           }
         }
-        if (resource.has('Practitioner.name.HumanName.text')) { name.text = String(resource.get('Practitioner.name.HumanName.text')!.value) }
-        if (resource.has('Practitioner.name.HumanName.family')) { name.family = String(resource.get('Practitioner.name.HumanName.family')!.value) }
-        if (resource.has('Practitioner.name.HumanName.given')) { name.given = [String(resource.get('Practitioner.name.HumanName.given')!.value)] }
-        if (resource.has('Practitioner.name.HumanName.prefix')) { name.prefix = [String(resource.get('Practitioner.name.HumanName.prefix')!.value)] }
-        if (resource.has('Practitioner.name.HumanName.suffix')) { name.suffix = [String(resource.get('Practitioner.name.HumanName.suffix')!.value)] }
+        if (resource.has('Practitioner.name.HumanName.text')) { name.text = String(resource.get('Practitioner.name.HumanName.text').value) }
+        if (resource.has('Practitioner.name.HumanName.family')) { name.family = String(resource.get('Practitioner.name.HumanName.family').value) }
+        if (resource.has('Practitioner.name.HumanName.given')) { name.given = [String(resource.get('Practitioner.name.HumanName.given').value)] }
+        if (resource.has('Practitioner.name.HumanName.prefix')) { name.prefix = [String(resource.get('Practitioner.name.HumanName.prefix').value)] }
+        if (resource.has('Practitioner.name.HumanName.suffix')) { name.suffix = [String(resource.get('Practitioner.name.HumanName.suffix').value)] }
 
         const _name = DataTypeFactory.createHumanName(name)
 
@@ -109,14 +109,14 @@ export class Practitioner implements Generator {
       const practitionerAddress = keys.filter(_ => _.startsWith('Practitioner.address'))
       if (practitionerAddress.length) {
         const address: fhir.Address = {}
-        if (resource.has('Practitioner.address.Address.type')) { address.type = String(resource.get('Practitioner.address.Address.type')!.value) }
-        if (resource.has('Practitioner.address.Address.text')) { address.text = String(resource.get('Practitioner.address.Address.text')!.value) }
-        if (resource.has('Practitioner.address.Address.line')) { address.line = [String(resource.get('Practitioner.address.Address.line')!.value)] }
-        if (resource.has('Practitioner.address.Address.city')) { address.city = String(resource.get('Practitioner.address.Address.city')!.value) }
-        if (resource.has('Practitioner.address.Address.district')) { address.district = String(resource.get('Practitioner.address.Address.district')!.value) }
-        if (resource.has('Practitioner.address.Address.state')) { address.state = String(resource.get('Practitioner.address.Address.state')!.value) }
-        if (resource.has('Practitioner.address.Address.postalCode')) { address.postalCode = String(resource.get('Practitioner.address.Address.postalCode')!.value) }
-        if (resource.has('Practitioner.address.Address.country')) { address.country = String(resource.get('Practitioner.address.Address.country')!.value) }
+        if (resource.has('Practitioner.address.Address.type')) { address.type = String(resource.get('Practitioner.address.Address.type').value) }
+        if (resource.has('Practitioner.address.Address.text')) { address.text = String(resource.get('Practitioner.address.Address.text').value) }
+        if (resource.has('Practitioner.address.Address.line')) { address.line = [String(resource.get('Practitioner.address.Address.line').value)] }
+        if (resource.has('Practitioner.address.Address.city')) { address.city = String(resource.get('Practitioner.address.Address.city').value) }
+        if (resource.has('Practitioner.address.Address.district')) { address.district = String(resource.get('Practitioner.address.Address.district').value) }
+        if (resource.has('Practitioner.address.Address.state')) { address.state = String(resource.get('Practitioner.address.Address.state').value) }
+        if (resource.has('Practitioner.address.Address.postalCode')) { address.postalCode = String(resource.get('Practitioner.address.Address.postalCode').value) }
+        if (resource.has('Practitioner.address.Address.country')) { address.country = String(resource.get('Practitioner.address.Address.country').value) }
 
         const _address = DataTypeFactory.createAddress(address)
 
