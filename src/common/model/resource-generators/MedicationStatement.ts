@@ -88,7 +88,7 @@ export class MedicationStatement implements Generator {
         } catch (e) { log.error('Date insertion error.', e) }
       }
 
-      const effectivePeriod = keys.filter(_ => _.startsWith(''))
+      const effectivePeriod = keys.filter(_ => _.startsWith('MedicationStatement.effective[x].Period'))
       if (effectivePeriod.length) {
         const period: fhir.Period = {}
         if (resource.has('MedicationStatement.effective[x].Period.start')) {

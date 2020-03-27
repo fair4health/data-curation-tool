@@ -262,7 +262,7 @@ export class Observation implements Generator {
         }
       }
       if (resource.has('Observation.value[x].CodeableConcept')) {
-        const item = resource.get('MedicationRequest.medication[x].CodeableConcept')
+        const item = resource.get('Observation.value[x].CodeableConcept')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) observation.valueCodeableConcept = targetValue

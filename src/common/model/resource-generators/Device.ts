@@ -19,8 +19,8 @@ export class Device implements Generator {
 
       const keys: string[] = Array.from(resource.keys())
 
-      if (resource.has('Observation.status')) {
-        const item = resource.get('Observation.status')
+      if (resource.has('Device.status')) {
+        const item = resource.get('Device.status')
         if (item.conceptMap) {
           const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
           if (targetValue) device.status = targetValue
