@@ -99,6 +99,7 @@
                                        && prop.node.type.length
                                        && prop.node.type.length > 1 || (env.datatypes[prop.node.type[0].value]
                                        && prop.node.type[0].value !== 'CodeableConcept'
+                                       && prop.node.type[0].value !== 'Coding'
                                        && prop.node.type[0].value !== 'Extension')"
                                  class="full-width">
                               <q-list dense class="q-ma-sm" style="font-size: 13px">
@@ -118,14 +119,15 @@
                                                    && propType.node.type.length
                                                    && propType.node.type.length > 1 || (env.datatypes[propType.node.type[0].value]
                                                    && propType.node.type[0].value !== 'CodeableConcept'
+                                                   && propType.node.type[0].value !== 'Coding'
                                                    && propType.node.type[0].value !== 'Reference')
                                                  "
                                           >
-                                            <span class="text-grey-8 text-weight-bold q-pl-md">{{ propType.node.label }}</span>
+                                            <span class="text-grey-8 text-weight-bold">{{ propType.node.label }}</span>
                                           </template>
                                           <template v-else>
                                             <div class="row items-center">
-                                              <div v-if="propType.node.type[0].value !== 'Reference'">
+                                              <div v-if="propType.node.type[0].value !== 'Reference' && (!propType.node.children || !propType.node.children.length)">
                                                 <q-radio dense v-model="prop.node.selectedType" class="text-grey-8 text-weight-medium full-width" :val="propType.node.value"
                                                          :label="propType.node.label" size="xs" @input="$store.commit('fhir/setElementList', fhirElementList)"
                                                 />

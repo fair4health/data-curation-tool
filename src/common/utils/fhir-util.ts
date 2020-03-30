@@ -89,7 +89,7 @@ export class FHIRUtil {
                           max: element?.max,
                           type: element.type.map(_ => {
                             const elementType: fhir.ElementTree = {value: _.code, label: _.code, type: [{value: _.code, label: _.code}], targetProfile: _.targetProfile}
-                            if (_.code !== 'CodeableConcept' && _.code !== 'Reference' && environment.datatypes[_.code])
+                            if (_.code !== 'CodeableConcept' && _.code !== 'Coding' && _.code !== 'Reference' && environment.datatypes[_.code])
                               elementType.lazy = true
                             return FHIRUtil.cleanJSON(elementType)
                           }),
@@ -140,15 +140,39 @@ export class FHIRUtil {
    * @param sourceCode
    */
   static getConceptMapTargetAsCodeable (conceptMap: fhir.ConceptMap, sourceCode: string): fhir.CodeableConcept | null {
+    const coding: fhir.Coding = FHIRUtil.getConceptMapTargetAsCoding(conceptMap, sourceCode)
+    if (coding) {
+      return DataTypeFactory.createCodeableConcept(coding).toJSON()
+    }
+    return null
+    // if (conceptMap.group?.length && conceptMap.group[0].element.length) {
+    //   const conceptMapGroupElement = conceptMap.group[0].element.find(element => element.code === sourceCode)
+    //   if (conceptMapGroupElement?.target?.length) {
+    //     const conceptMapGroupElementTarget = conceptMapGroupElement.target[0]
+    //     return DataTypeFactory.createCodeableConcept({
+    //       code: conceptMapGroupElementTarget.code,
+    //       display: conceptMapGroupElementTarget.display,
+    //       system: conceptMap.group[0].target
+    //     }) as fhir.CodeableConcept
+    //   } else return null
+    // } else return null
+  }
+
+  /**
+   * Returns the target group element matching the source code as Coding
+   * @param conceptMap
+   * @param sourceCode
+   */
+  static getConceptMapTargetAsCoding (conceptMap: fhir.ConceptMap, sourceCode: string): fhir.Coding | null {
     if (conceptMap.group?.length && conceptMap.group[0].element.length) {
       const conceptMapGroupElement = conceptMap.group[0].element.find(element => element.code === sourceCode)
       if (conceptMapGroupElement?.target?.length) {
         const conceptMapGroupElementTarget = conceptMapGroupElement.target[0]
-        return DataTypeFactory.createCodeableConcept({
+        return DataTypeFactory.createCoding({
           code: conceptMapGroupElementTarget.code,
           display: conceptMapGroupElementTarget.display,
           system: conceptMap.group[0].target
-        }) as fhir.CodeableConcept
+        }).toJSON()
       } else return null
     } else return null
   }

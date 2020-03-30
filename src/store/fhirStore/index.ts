@@ -172,7 +172,7 @@ const fhirStore = {
                           max: element.max,
                           type: element.type.map(_ => {
                             const elementType: fhir.ElementTree = {value: _.code, label: _.code, type: [{value: _.code, label: _.code}], targetProfile: _.targetProfile}
-                            if (_.code !== 'CodeableConcept' && _.code !== 'Reference' && environment.datatypes[_.code])
+                            if (_.code !== 'CodeableConcept' && _.code !== 'Coding' && _.code !== 'Reference' && environment.datatypes[_.code])
                               elementType.lazy = true
                             return FHIRUtil.cleanJSON(elementType)
                           }),
@@ -180,6 +180,7 @@ const fhirStore = {
                         }
                         if (item.type?.length && item.type.length > 1 || (environment.datatypes[item.type[0].value]
                           && item.type[0].value !== 'CodeableConcept'
+                          && item.type[0].value !== 'Coding'
                           && item.type[0].value !== 'Reference')) {
                           item.lazy = true
                         }
