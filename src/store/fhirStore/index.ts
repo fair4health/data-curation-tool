@@ -116,11 +116,22 @@ const fhirStore = {
           .catch(err => reject(err))
       })
     },
-    searchResource ({ commit, state }, resourceType: string): Promise<any> {
+    verifyFhir ({ state }): Promise<any> {
       return new Promise((resolve, reject) => {
-        state.fhirService.search(resourceType, {}, true)
-          .then(res => resolve(res))
-          .catch(err => reject(err))
+        state.fhirService.search('metadata', {}, true)
+          .then(res => {
+            const metadata: fhir.CapabilityStatement = res.data
+            if (metadata.fhirVersion) {
+              if (environment.server.compatibleFhirVersions.includes(metadata.fhirVersion)) {
+                resolve(res)
+              } else {
+                reject(`FHIR version (${metadata.fhirVersion}) is not supported. FHIR version must be R4.`)
+              }
+            } else {
+              throw Error()
+            }
+          })
+          .catch(err => reject('Given url is not verified.'))
       })
     },
     getConceptMaps ({ commit, state }, noCache?: boolean): Promise<any> {

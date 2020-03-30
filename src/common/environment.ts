@@ -11,7 +11,8 @@ export let environment = {
         'Accept': 'application/fhir+json;charset=UTF-8',
         'Content-Type': 'application/fhir+json;charset=UTF-8'
       }
-    }
+    },
+    compatibleFhirVersions: ['4.0.0', '4.0.1']
   },
   hl7: hl7Base,
   codesystems: {

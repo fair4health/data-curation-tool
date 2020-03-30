@@ -32,6 +32,7 @@
     "no-namespace": false,
     "variable-name": {
       "options": ["allow-leading-underscore", "allow-pascal-case"]
-    }
+    },
+    "no-shadowed-variable": false
   }
 }
