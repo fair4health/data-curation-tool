@@ -1565,15 +1565,18 @@ declare namespace fhir {
     class?: Coding;
     classHistory?: EncounterClassHistory[];
     type?: CodeableConcept[];
+    serviceType?: CodeableConcept;
     priority?: CodeableConcept;
     subject?: Reference;
     episodeOfCare?: Reference[];
+    basedOn?: Reference[];
     incomingReferral?: Reference[];
     participant?: EncounterParticipant[];
-    appointment?: Reference;
+    appointment?: Reference[];
     period?: Period;
     length?: Duration;
-    reason?: CodeableConcept[];
+    reasonCode?: CodeableConcept[];
+    reasonReference?: Reference[];
     diagnosis?: EncounterDiagnosis[];
     account?: Reference[];
     hospitalization?: EncounterHospitalization;
@@ -1596,8 +1599,8 @@ declare namespace fhir {
   }
   interface EncounterDiagnosis extends Element {
     condition: Reference;
-    role?: CodeableConcept;
-    rank: positiveInt;
+    use?: CodeableConcept;
+    rank?: positiveInt;
   }
   interface EncounterHospitalization extends Element {
     preAdmissionIdentifier?: Identifier;
@@ -1613,6 +1616,7 @@ declare namespace fhir {
   interface EncounterLocation extends Element {
     location: Reference;
     status?: code;
+    physicalType?: CodeableConcept;
     period?: Period;
   }
   interface Endpoint extends DomainResource {
