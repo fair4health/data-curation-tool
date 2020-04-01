@@ -76,7 +76,7 @@
                           default-expand-all
                   >
                     <template v-slot:default-header="prop">
-                      <div class="row full-width bg-grey-1 q-pa-xs">
+                      <div class="row full-width q-pa-xs" :class="{'bg-grey-1': !prop.node.error,'bg-red-1': prop.node.error}">
                         <div class="col">
                           <div class="row items-center">
                             <q-icon :name="prop.node.children && prop.node.children.length ? 'account_tree' : 'lens'"
@@ -148,7 +148,6 @@
                                                           @filter="filterFn"
                                                           option-label="name"
                                                           option-value="id"
-                                                          menu-self="bottom left"
                                                           style="width: 280px; font-size: 12px"
                                                           @input="prop.node.selectedReference ? prop.node.selectedType = propType.node.value + '.' + prop.node.selectedReference : undefined;
                                                                   $store.commit('fhir/setElementList', fhirElementList);
@@ -293,7 +292,7 @@
         })
         .catch(err => {
           this.loadingResources = false
-          this.$q.notify({message: 'Something went wrong while fetching resources'})
+          this.$q.notify({type: 'negative', message: 'Something went wrong while fetching resources'})
         })
       if (this.currentFHIRRes) this.onFHIRResourceChanged()
     }
@@ -312,7 +311,7 @@
                 .then(() => this.loadingFhir = false )
                 .catch(() => {
                   this.loadingFhir = false
-                  this.$q.notify({message: 'Resource elements couldn\'t be loaded', color: 'red'})
+                  this.$q.notify({type: 'negative', message: 'Resource elements couldn\'t be loaded'})
                 })
             } else this.loadingFhir = false
           }
@@ -334,7 +333,7 @@
           })
           .catch(() => {
             this.loadingFhir = false
-            this.$q.notify({message: 'Resource elements couldn\'t be loaded', color: 'red'})
+            this.$q.notify({type: 'negative', message: 'Resource elements couldn\'t be loaded'})
           })
       }
     }

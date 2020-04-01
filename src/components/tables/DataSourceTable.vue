@@ -104,7 +104,9 @@
             <q-td :props="props">
               <q-select v-if="props.row.target"
                         dense
+                        options-dense
                         clearable
+                        class="ellipsis"
                         :outlined="!!props.row.conceptMap"
                         :standout="!props.row.conceptMap ? 'bg-primary text-white' : ''"
                         :label="!props.row.conceptMap ? 'No mapping' : 'Concept Map'"
@@ -113,8 +115,7 @@
                         :options="conceptMapList"
                         option-label="name"
                         option-value="id"
-                        menu-self="bottom left"
-                        style="font-size: 13px"
+                        style="width: 280px; font-size: 13px"
                         @clear="removeConceptMap(props.row); $refs[props.row.value].blur()"
                         @input="bufferSheetHeaders = [...bufferSheetHeaders]"
               />
@@ -183,10 +184,7 @@
           .then(() => this.$q.loading.hide())
           .catch(() => {
             this.$q.loading.hide()
-            this.$q.notify({
-              message: 'Something went wrong while fetching Concept Maps',
-              color: 'red'
-            })
+            this.$q.notify({type: 'negative', message: 'Something went wrong while fetching Concept Maps'})
           })
       }, 10)
     }
@@ -238,7 +236,7 @@
       ipcRenderer.send('get-sheet-headers', {path: this.currentSource?.path, sheet: this.currentSheet?.value, noCache})
       ipcRenderer.on('ready-sheet-headers', (event, headers) => {
         if (!headers.length) {
-          this.$q.notify({message: 'Headers couldn\'t be detected'})
+          this.$q.notify({type: 'negative', message: 'Headers couldn\'t be detected'})
         }
         // this.bufferSheetHeaders = headers.map(_ => ({type: _.type, value: _.value}))
         this.$store.commit('file/setSheetHeaders', headers)

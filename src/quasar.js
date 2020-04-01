@@ -72,10 +72,9 @@ Vue.use(Quasar, {
       spinnerSize: '65px'
     },
     notify: {
+      progress: true,
       textColor: 'white',
-      timeout: 1500,
       position: 'top',
-      color: 'grey-8',
       actions: [ { icon: 'clear', color: 'white' } ]
     }
   },

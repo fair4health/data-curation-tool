@@ -29,7 +29,7 @@
         <q-card-section class="row">
           <q-space />
           <div class="q-gutter-sm">
-            <q-btn unelevated label="Verify" icon="verified_user" color="blue-1" text-color="primary"
+            <q-btn unelevated label="Verify" icon="verified_user" color="grey-2" text-color="primary"
                    :disable="!onfhirBaseUrl" @click="verifyFhir" no-caps>
               <span class="q-ml-sm">
                 <q-spinner class="q-ml-sm" size="xs" v-show="fhirBaseVerificationStatus==='in-progress'" />

@@ -248,7 +248,7 @@
       const filePathList = Object.keys(FHIRUtil.groupBy(this.mappingList, 'file'))
 
       if (!filePathList.length) {
-        this.$q.notify({message: 'No mapping available', color: 'red-8'})
+        this.$q.notify({type: 'negative', message: 'No mapping available'})
         this.validationStatus = 'pending'
         return
       }
@@ -387,7 +387,7 @@
       ipcRenderer.send('export-file', JSON.stringify(resources))
       ipcRenderer.on('export-done', (event, result) => {
         if (result) {
-          this.$q.notify({message: 'File is successfully exported', color: 'green-6'})
+          this.$q.notify({type: 'positive', message: 'File is successfully exported'})
         }
         this.$q.loading.hide()
         ipcRenderer.removeAllListeners('export-done')
@@ -401,7 +401,7 @@
         this.$store.commit('setTransformStatus', 'pending')
         this.$store.commit('incrementStep')
       } catch (e) {
-        this.$q.notify({ message: 'Cannot load created resources. Try again.', color: 'red' })
+        this.$q.notify({type: 'negative', message: 'Cannot load created resources. Try again'})
       }
     }
 

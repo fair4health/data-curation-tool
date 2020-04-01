@@ -4789,6 +4789,7 @@ declare namespace fhir {
     children?: ElementTree[]
     lazy?: boolean // To dynamically fetch the structure of data type
     targetProfile?: string[]
+    error?: boolean
   }
   type Resource = (DomainResource|Account|ActivityDefinition|AllergyIntolerance|Appointment|AppointmentResponse|
     AuditEvent|Basic|Binary|BodySite|Bundle|CarePlan|CareTeam|Claim|ClaimResponse|ClinicalImpression|CodeSystem|

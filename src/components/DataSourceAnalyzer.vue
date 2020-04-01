@@ -21,9 +21,9 @@
               <q-card-section>
                 <template v-if="!fileSourceList.length">
                   <div class="text-center">
-                    <q-icon name="save_alt" color="blue-2" size="72px" />
+                    <q-icon name="save_alt" color="primary" size="72px" />
                     <p class="text-grey-9">Drag your files here</p>
-                    <q-btn unelevated label="Browse" color="blue-1" text-color="primary" @click="browseFile" no-caps />
+                    <q-btn unelevated label="Browse" color="grey-2" text-color="primary" @click="browseFile" no-caps />
                   </div>
                 </template>
                 <template v-else>
@@ -205,18 +205,18 @@
           .then(() => this.$q.loading.hide())
           .catch(() => this.$q.loading.hide())
       } else {
-        this.$q.notify({message: 'Empty mapping sheet.'})
+        this.$q.notify({type: 'negative', message: 'Empty mapping sheet'})
       }
     }
 
     deleteSavedMapping (index: number) {
       this.$q.dialog({
-        title: '<i class="fas fa-info text-primary"> Delete</i>',
-        message: `${this.mappingStore[index].name}`,
+        title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Delete</span>',
+        message: `Are you sure to delete mapping <span class="text-weight-bold">${this.mappingStore[index].name}</span>?`,
         class: 'text-grey-9',
         cancel: true,
-        persistent: true,
-        html: true
+        html: true,
+        ok: 'Delete'
       }).onOk(() => {
         this.mappingStore.splice(index, 1)
         localStorage.setItem('store-fileSourceList', JSON.stringify(this.mappingStore))
@@ -233,7 +233,7 @@
               // this.$log.info('Import Mapping', `Found ${this.fileSourceList.length} mapped file(s)`)
             })
             .catch(() => {
-              this.$q.notify({message: 'Data could\'t be imported', color: 'red-6'})
+              this.$q.notify({type: 'negative', message: 'Data could\'t be imported'})
               // this.$log.error('Import Mapping', 'Data could\'t be imported')
             })
         }
