@@ -228,10 +228,10 @@
         ipcRenderer.removeAllListeners('delete-resource-result')
         if (result) {
           this.$q.loading.hide()
-          this.$q.notify({type: 'positive', message: `${resourceType} Resources removed successfully`})
+          this.$notify.success(`${resourceType} Resources removed successfully`)
         } else {
           this.$q.loading.hide()
-          this.$q.notify({type: 'negative', message: 'Something went wrong'})
+          this.$notify.error('Something went wrong')
         }
       })
     }

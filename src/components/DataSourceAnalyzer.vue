@@ -205,7 +205,7 @@
           .then(() => this.$q.loading.hide())
           .catch(() => this.$q.loading.hide())
       } else {
-        this.$q.notify({type: 'negative', message: 'Empty mapping sheet'})
+        this.$notify.error('Empty mapping sheet')
       }
     }
 
@@ -233,7 +233,7 @@
               // this.$log.info('Import Mapping', `Found ${this.fileSourceList.length} mapped file(s)`)
             })
             .catch(() => {
-              this.$q.notify({type: 'negative', message: 'Data could\'t be imported'})
+              this.$notify.error('Data could\'t be imported')
               // this.$log.error('Import Mapping', 'Data could\'t be imported')
             })
         }

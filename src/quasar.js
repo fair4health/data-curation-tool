@@ -75,6 +75,7 @@ Vue.use(Quasar, {
       progress: true,
       textColor: 'white',
       position: 'top',
+      timeout: 2000,
       actions: [ { icon: 'clear', color: 'white' } ]
     }
   },

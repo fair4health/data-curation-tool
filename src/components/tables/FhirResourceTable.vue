@@ -292,7 +292,7 @@
         })
         .catch(err => {
           this.loadingResources = false
-          this.$q.notify({type: 'negative', message: 'Something went wrong while fetching resources'})
+          this.$notify.error('Something went wrong while fetching resources')
         })
       if (this.currentFHIRRes) this.onFHIRResourceChanged()
     }
@@ -311,7 +311,7 @@
                 .then(() => this.loadingFhir = false )
                 .catch(() => {
                   this.loadingFhir = false
-                  this.$q.notify({type: 'negative', message: 'Resource elements couldn\'t be loaded'})
+                  this.$notify.error('Resource elements couldn\'t be loaded')
                 })
             } else this.loadingFhir = false
           }
@@ -333,7 +333,7 @@
           })
           .catch(() => {
             this.loadingFhir = false
-            this.$q.notify({type: 'negative', message: 'Resource elements couldn\'t be loaded'})
+            this.$notify.error('Resource elements couldn\'t be loaded')
           })
       }
     }

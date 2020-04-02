@@ -184,7 +184,7 @@
           .then(() => this.$q.loading.hide())
           .catch(() => {
             this.$q.loading.hide()
-            this.$q.notify({type: 'negative', message: 'Something went wrong while fetching Concept Maps'})
+            this.$notify.error('Something went wrong while fetching Concept Maps')
           })
       }, 10)
     }
@@ -236,7 +236,7 @@
       ipcRenderer.send('get-sheet-headers', {path: this.currentSource?.path, sheet: this.currentSheet?.value, noCache})
       ipcRenderer.on('ready-sheet-headers', (event, headers) => {
         if (!headers.length) {
-          this.$q.notify({type: 'negative', message: 'Headers couldn\'t be detected'})
+          this.$notify.error('Headers couldn\'t be detected')
         }
         // this.bufferSheetHeaders = headers.map(_ => ({type: _.type, value: _.value}))
         this.$store.commit('file/setSheetHeaders', headers)

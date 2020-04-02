@@ -277,7 +277,7 @@
           this.$store.commit('file/setSavedRecords', this.savedRecords)
         })
       })
-        .catch(err => this.$q.notify({type: 'negative', message: 'Cannot get saved mappings'}))
+        .catch(err => this.$notify.error('Cannot get saved mappings'))
     }
 
     getMappings (): Promise<any> {
@@ -326,7 +326,7 @@
       )
       ipcRenderer.on('export-done', (event, result) => {
         if (result) {
-          this.$q.notify({type: 'positive', message: 'File is successfully exported'})
+          this.$notify.success('File is exported successfully')
         }
         this.$q.loading.hide()
         ipcRenderer.removeAllListeners('export-done')
@@ -352,7 +352,7 @@
           fileStore = [{date: new Date(), name: mappingName, data: this.$store.state.file}]
         }
         localStorage.setItem('store-fileSourceList', JSON.stringify(fileStore))
-        this.$q.notify({type: 'positive', message: 'Saved'})
+        this.$notify.success('Saved')
       })
     }
 
@@ -410,9 +410,9 @@
         }
 
         ([this.selectedAttr, this.tickedFHIRAttr] = [[], []])
-        this.$q.notify({type: 'positive', message: 'Target value is matched successfully'})
+        this.$notify.success('Target value is matched successfully')
       } else {
-        this.$q.notify({type: 'negative', message: 'Choose a type for selected items'})
+        this.$notify.error('Choose a type for selected items')
       }
     }
 
@@ -448,12 +448,12 @@
           })).then(_ => {
             this.editRecordId = ''
             this.$store.commit('file/setupBufferSheetHeaders')
-            this.$q.notify({type: 'positive', message: 'Mapping is added successfully'})
+            this.$notify.success('Mapping is added successfully')
             this.loadSavedRecords()
           })
         }
       } else {
-        this.$q.notify({type: 'negative', message: 'Something went wrong during saving the record'})
+        this.$notify.error('Something went wrong during saving the record')
       }
     }
 
@@ -490,7 +490,7 @@
           }
         } else {
           this.$q.loading.hide()
-          this.$q.notify({type: 'negative', message: 'Something went wrong.'})
+          this.$notify.error('Something went wrong.')
         }
         this.$q.loading.hide()
       })
@@ -526,12 +526,12 @@
             .then(() => this.$q.loading.hide())
             .catch(() => {
               this.$q.loading.hide()
-              this.$q.notify({type: 'negative', message: 'Something went wrong.'})
+              this.$notify.error('Something went wrong.')
             })
         } else this.$q.loading.hide()
       } else {
         this.$q.loading.hide()
-        this.$q.notify({type: 'negative', message: 'Something went wrong.'})
+        this.$notify.error('Something went wrong.')
       }
     }
 
@@ -560,7 +560,7 @@
         }
       } else {
         this.$q.loading.hide()
-        this.$q.notify({type: 'negative', message: 'Something went wrong during deletion.'})
+        this.$notify.error('Something went wrong during deletion.')
       }
     }
 
