@@ -30,7 +30,7 @@
     "es6-promise": "^4.2.8",
     "isomorphic-fetch": "^2.2.1",
     "ng-fhir": "^2.3.0",
-    "quasar": "^1.8.3",
+    "quasar": "^1.9.12",
     "vue": "^2.6.10",
     "vue-property-decorator": "^8.3.0",
     "vue-router": "^3.1.3",

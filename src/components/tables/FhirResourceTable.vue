@@ -7,8 +7,8 @@
             <span><q-icon name="fas fa-fire" size="xs" color="primary" class="q-mr-xs" /> FHIR Resource</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense v-model="currentFHIRRes" class="ellipsis" :options="fhirResourceOptions" label="FHIR Resource"
-                    @filter="filterFn" use-input input-debounce="0">
+          <q-select outlined dense options-dense v-model="currentFHIRRes" class="ellipsis" :options="fhirResourceOptions" label="FHIR Resource"
+                    @filter="filterFn" use-input input-debounce="0" :loading="loadingResources">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -26,22 +26,23 @@
             <span><q-icon name="far fa-file-alt" size="xs" color="primary" class="q-mr-xs" /> Profiles</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense v-model="currentFHIRProf" class="ellipsis" :options="fhirProfileList" label="Profiles" :disable="!fhirProfileList.length">
+          <q-select outlined dense options-dense v-model="currentFHIRProf" class="ellipsis" :options="fhirProfileList"
+                     :option-label="item => item.split('/').pop()" label="Profiles" :disable="!fhirProfileList.length">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
                   <q-icon name="fas fa-file-alt" size="xs" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label v-html="scope.opt" />
+                  <q-item-label v-html="scope.opt.split('/').pop()" />
                 </q-item-section>
               </q-item>
             </template>
           </q-select>
         </div>
       </q-card-section>
-      <div class="q-px-sm bg-grey-2" style="margin-top: -10px; margin-bottom: -10px">
-        <q-toggle v-model="showMustFields" checked-icon="star" size="xs" color="red" label="Only must fields" class="text-grey-8" unchecked-icon="clear" />
+      <div class="q-px-sm bg-grey-2">
+        <q-toggle v-model="showMustFields" checked-icon="star" size="xs" color="red" label="Show mandatory fields only" class="text-grey-8" unchecked-icon="clear" />
       </div>
       <q-card-section>
         <div>
@@ -75,7 +76,7 @@
                           default-expand-all
                   >
                     <template v-slot:default-header="prop">
-                      <div class="row items-center full-width bg-grey-1 q-pa-xs">
+                      <div class="row full-width q-pa-xs" :class="{'bg-grey-1': !prop.node.error,'bg-red-1': prop.node.error}">
                         <div class="col">
                           <div class="row items-center">
                             <q-icon :name="prop.node.children && prop.node.children.length ? 'account_tree' : 'lens'"
@@ -90,34 +91,79 @@
                             </div>
                             <q-chip v-if="prop.node.selectedType" :label="prop.node.selectedType" size="sm"
                                     :removable="prop.node.type && prop.node.type.length > 0"
-                                    @remove="prop.node.selectedType=''; $store.commit('fhir/setElementList', fhirElementList)"
+                                    @remove="prop.node.selectedType = ''; $store.commit('fhir/setElementList', fhirElementList)"
                             />
                           </div>
                           <div class="row">
-                            <div v-if="prop.node.type && prop.node.type.length && (prop.node.type.length > 1 || env.datatypes[prop.node.type[0].value])"
+                            <div v-if="prop.node.type
+                                       && prop.node.type.length
+                                       && prop.node.type.length > 1 || (env.datatypes[prop.node.type[0].value]
+                                       && prop.node.type[0].value !== 'CodeableConcept'
+                                       && prop.node.type[0].value !== 'Coding'
+                                       && prop.node.type[0].value !== 'Extension')"
                                  class="full-width">
                               <q-list dense class="q-ma-sm" style="font-size: 13px">
                                 <q-tree :nodes="prop.node.type"
                                         node-key="value"
+                                        label-key="label"
+                                        @lazy-load="getDataType"
                                         accordion
                                 >
-                                  <template v-slot:default-header="prop2">
-                                    <template v-if="prop2.node.children && prop2.node.children.length > 0">
-                                      <span class="text-grey-8 text-weight-bold q-pl-md">{{ prop2.node.value }}</span>
-                                    </template>
-                                    <template v-else>
+                                  <template v-slot:default-header="propType">
+                                    <div class="row full-width">
                                       <div class="row full-width items-center">
                                         <div>
-                                          <q-radio dense v-model="prop.node.selectedType" class="text-grey-8 text-weight-medium full-width" :val="prop2.node.value"
-                                                   :label="prop2.node.value" size="xs" @input="$store.commit('fhir/setElementList', fhirElementList)"
-                                          />
+                                          <template
+                                            v-if="
+                                                   propType.node.type
+                                                   && propType.node.type.length
+                                                   && propType.node.type.length > 1 || (env.datatypes[propType.node.type[0].value]
+                                                   && propType.node.type[0].value !== 'CodeableConcept'
+                                                   && propType.node.type[0].value !== 'Coding'
+                                                   && propType.node.type[0].value !== 'Reference')
+                                                 "
+                                          >
+                                            <span class="text-grey-8 text-weight-bold">{{ propType.node.label }}</span>
+                                          </template>
+                                          <template v-else>
+                                            <div class="row items-center">
+                                              <div v-if="propType.node.type[0].value !== 'Reference' && (!propType.node.children || !propType.node.children.length)">
+                                                <q-radio dense v-model="prop.node.selectedType" class="text-grey-8 text-weight-medium full-width" :val="propType.node.value"
+                                                         :label="propType.node.label" size="xs" @input="$store.commit('fhir/setElementList', fhirElementList)"
+                                                />
+                                              </div>
+                                              <div class="text-grey-8 text-weight-medium" v-else>
+                                                {{ propType.node.label }}
+                                              </div>
+                                              <q-space />
+                                              <div v-if="propType.node.type[0].value === 'Reference'" class="select-reference">
+                                                <q-select dense class="q-pl-xs ellipsis"
+                                                          clearable
+                                                          options-dense
+                                                          standout="bg-primary text-white"
+                                                          :label="!prop.node.selectedReference ? 'Resource Type' : 'Resource'"
+                                                          :ref="prop.node.value"
+                                                          v-model="prop.node.selectedReference"
+                                                          :options="fhirResourceOptions"
+                                                          @filter="filterFn"
+                                                          option-label="name"
+                                                          option-value="id"
+                                                          style="width: 280px; font-size: 12px"
+                                                          @input="prop.node.selectedReference ? prop.node.selectedType = propType.node.value + '.' + prop.node.selectedReference : undefined;
+                                                                  $store.commit('fhir/setElementList', fhirElementList);
+                                                                  $refs[prop.node.value].blur();"
+                                                          @clear="prop.node.selectedReference = ''; $refs[prop.node.value].blur(); $store.commit('fhir/setElementList', fhirElementList)"
+                                                />
+                                              </div>
+                                            </div>
+                                          </template>
                                         </div>
                                         <q-space />
                                         <div>
-                                          <span v-if="prop2.node.type" class="text-caption text-primary">{{ prop2.node.type.map(_ => _.value).join(', ') }}</span>
+                                          <span v-if="propType.node.type" class="text-caption text-primary">{{ propType.node.type.map(_ => _.label).join(', ') }}</span>
                                         </div>
                                       </div>
-                                    </template>
+                                    </div>
                                   </template>
                                 </q-tree>
                               </q-list>
@@ -209,15 +255,16 @@
     private fhirResourceOptions: string[] = []
     private showMustFields: boolean = false
     private env = environment
+    private loadingResources: boolean = false
 
     get fhirResourceList (): string[] { return this.$store.getters['fhir/resourceList'] }
-    get fhirProfileList (): string[] { return this.$store.getters['fhir/profileList'].map(r => r.id) }
+    get fhirProfileList (): any[] { return this.$store.getters['fhir/profileList'].map(_ => _.url) }
     set fhirProfileList (value) { this.$store.commit('fhir/setProfileList', value) }
 
     get currentFHIRRes (): string { return this.$store.getters['fhir/currentResource'] }
     set currentFHIRRes (value) { this.$store.commit('fhir/setCurrentResource', value) }
 
-    get currentFHIRProf (): string { return this.$store.getters['fhir/currentProfile'] }
+    get currentFHIRProf (): any { return this.$store.getters['fhir/currentProfile'] }
     set currentFHIRProf (value) { this.$store.commit('fhir/setCurrentProfile', value) }
 
     get filteredFhirElementList (): fhir.ElementTree[] {
@@ -237,9 +284,16 @@
     set tickedFHIRAttr (value) { this.$store.commit('fhir/setSelectedElements', value) }
 
     created () {
+      this.loadingResources = true
       this.$store.dispatch('fhir/getResources')
-        .then(res => { if (res) this.fhirElementList = [] })
-        .catch(err => { throw err })
+        .then(res => {
+          this.loadingResources = false
+          if (res) this.fhirElementList = []
+        })
+        .catch(err => {
+          this.loadingResources = false
+          this.$notify.error('Something went wrong while fetching resources')
+        })
       if (this.currentFHIRRes) this.onFHIRResourceChanged()
     }
 
@@ -253,11 +307,11 @@
             this.currentFHIRProf = this.fhirProfileList.length ? this.fhirProfileList[0] : ''
             // Fetch elements of base resources
             if (!this.currentFHIRProf) {
-              this.$store.dispatch('fhir/getElements', this.currentFHIRRes)
+              this.$store.dispatch('fhir/getElements', {parameterName: '_id', profile: this.currentFHIRRes})
                 .then(() => this.loadingFhir = false )
                 .catch(() => {
                   this.loadingFhir = false
-                  this.$q.notify({message: 'Resource elements couldn\'t be loaded', color: 'red'})
+                  this.$notify.error('Resource elements couldn\'t be loaded')
                 })
             } else this.loadingFhir = false
           }
@@ -273,13 +327,13 @@
       if (newVal) {
         ([this.tickedFHIRAttr, this.selectedElem, this.expanded, this.fhirElementList] = [[], null, [this.currentFHIRRes], []])
         this.loadingFhir = true
-        this.$store.dispatch('fhir/getElements', this.currentFHIRProf)
+        this.$store.dispatch('fhir/getElements', {parameterName: 'url', profile: this.currentFHIRProf})
           .then(() => {
             this.loadingFhir = false
           })
           .catch(() => {
             this.loadingFhir = false
-            this.$q.notify({message: 'Resource elements couldn\'t be loaded', color: 'red'})
+            this.$notify.error('Resource elements couldn\'t be loaded')
           })
       }
     }
@@ -304,10 +358,50 @@
       this.selectedElem = filtered.length ? filtered[0] : null
     }
 
+    getDataType ({ node, key, done, fail }) {
+      if (node.type?.length) {
+        if (node.type.length > 1) {
+
+          // If the node has more than one data type, add the types as children so that you can select one of them
+          done(node.type.map((_: fhir.ElementTree) => {
+
+            // If the type is CodeableConcept or Reference, delete lazy option to deactivate expandable root
+            if (_.type?.length && (_.type[0].value === 'CodeableConcept' || _.type[0].value === 'Reference'))
+              delete _.lazy
+            _.value = key + '.' + _.value
+            return _
+
+          }))
+        } else {
+
+          // If there exists only one data type, fetch and display its content
+          this.$store.dispatch('fhir/getDataTypes', environment.datatypes[node.type?.length && node.type[0].value])
+            .then((elementTreeList: fhir.ElementTree[]) => {
+              if (elementTreeList.length) {
+                done(elementTreeList[0].children.map(_ => {
+                  _.value = key + '.' + _.value.split('.').slice(1).join('.')
+                  return _
+                }))
+              } else {
+                fail([])
+              }
+            })
+            .catch(err => fail([]))
+        }
+
+      } else {
+
+        fail([])
+
+      }
+    }
+
   }
 </script>
 
 <style lang="stylus">
   .fhir-element-text:hover
     text-decoration underline
+  .q-menu
+    max-height 450px
 </style>

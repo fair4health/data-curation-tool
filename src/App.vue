@@ -8,5 +8,5 @@
   html
     font-size 88%
   body
-    overflow hidden !important
+    overflow hidden
 </style>

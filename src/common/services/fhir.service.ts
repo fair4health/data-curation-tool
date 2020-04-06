@@ -133,9 +133,16 @@ export class FhirService {
       entry: []
     }
     for (const resource of resources) {
+      let url
+
+      if (resource.meta?.profile?.length && resource.meta.profile[0])
+        url = resource.resourceType + '/$validate?profile=' + resource.meta.profile[0]
+      else
+        url = resource.resourceType + '/$validate'
+
       const request: fhir.BundleEntryRequest = {
         method: 'POST',
-        url: `${resource.resourceType}/$validate?profile=${resource.meta?.profile![0]}`
+        url
       }
       transactionResource.entry?.push({
         resource,

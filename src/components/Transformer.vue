@@ -116,7 +116,7 @@
         </div>
       </q-card-section>
     </q-card>
-    <div class="row q-ma-md">
+    <div class="row q-pa-sm">
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
     </div>
   </div>
@@ -130,8 +130,6 @@
 
   @Component
   export default class Transformer extends Vue {
-    private resources: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
-    private transformList: TransformListItem[] = []
     private pagination = { page: 1, rowsPerPage: 0 }
     private columns = [
       { name: 'status', label: 'Status', field: 'status', align: 'center', icon: 'fas fa-info-circle',
@@ -140,14 +138,20 @@
         classes: 'bg-grey-1', headerClasses: 'bg-grey-4 text-grey-10 col-1' },
       { name: 'count', label: 'Count', field: 'count', align: 'center', sortable: true }
     ]
-    private transformStatus: status = 'pending'
-    private transformOutcomeDetails: OutcomeDetail[] = []
 
     get fhirBase (): string { return this.$store.getters['fhir/fhirBase'] }
 
-    mounted () {
-      this.onInit()
-    }
+    get transformStatus (): status { return this.$store.getters['transformStatus'] }
+    set transformStatus (value) { this.$store.commit('setTransformStatus', value) }
+
+    get resources (): Map<string, fhir.Resource[]> { return this.$store.getters['resources'] }
+    set resources (value) { this.$store.commit('setResources', value) }
+
+    get transformList (): TransformListItem[] { return this.$store.getters['transformList'] }
+    set transformList (value) { this.$store.commit('setTransformList', value) }
+
+    get transformOutcomeDetails (): OutcomeDetail[] { return this.$store.getters['transformOutcomeDetails'] }
+    set transformOutcomeDetails (value) { this.$store.commit('setTransformOutcomeDetails', value) }
 
     onInit () {
       this.resources = new Map(Object.entries(electronStore.get('resources') || {}))
@@ -158,14 +162,13 @@
       if (this.transformList.length) {
         ipcRenderer.send('transform', this.fhirBase)
         this.transformStatus = 'in-progress'
+        ipcRenderer.on('transform-result', (event, result: OutcomeDetail) => {
+          ipcRenderer.removeAllListeners(`transform-result`)
+          this.transformStatus = result.status
+          this.transformOutcomeDetails = result.outcomeDetails || []
+        })
         this.transformList.map((item: TransformListItem) => {
 
-          ipcRenderer.on('transform-result', (event, result: OutcomeDetail) => {
-            ipcRenderer.removeAllListeners(`transform-${item.resourceType}`)
-            // TODO: Check emitters - can be merged
-            this.transformStatus = result.status
-            this.transformOutcomeDetails = result.outcomeDetails || []
-          })
           ipcRenderer.on(`transform-${item.resourceType}`, (event, result: OutcomeDetail) => {
             if (result.status === 'in-progress') {
 
@@ -194,7 +197,7 @@
 
     previousStep () {
       this.$q.dialog({
-        title: '<i class="fas fa-info text-primary"> Previous Step </i>',
+        title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Previous Step</span>',
         message: 'If you go back and make any change, the changes you have made in this section will be lost.',
         class: 'text-grey-9',
         cancel: true,
@@ -225,10 +228,10 @@
         ipcRenderer.removeAllListeners('delete-resource-result')
         if (result) {
           this.$q.loading.hide()
-          this.$q.notify({message: `${resourceType} Resources removed successfully`, color: 'grey-8'})
+          this.$notify.success(`${resourceType} Resources removed successfully`)
         } else {
           this.$q.loading.hide()
-          this.$q.notify({message: 'Something went wrong', color: 'grey-8'})
+          this.$notify.error('Something went wrong')
         }
       })
     }

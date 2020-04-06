@@ -7,7 +7,7 @@
             <span><q-icon name="fas fa-file" size="xs" color="primary" class="q-mr-xs" /> Source File</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense v-model="currentSource" class="ellipsis" :options="fileSourceList" label="Source File">
+          <q-select outlined dense options-dense v-model="currentSource" class="ellipsis" :options="fileSourceList" option-value="path" label="Source File">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -25,7 +25,7 @@
             <span><q-icon name="far fa-file-alt" size="xs" color="primary" class="q-mr-xs" /> Sheets</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense v-model="currentSheet" class="ellipsis" :options="sheets" label="Sheets" :disable="!sheets.length">
+          <q-select outlined dense options-dense v-model="currentSheet" class="ellipsis" :options="sheets" label="Sheets" :disable="!sheets.length">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -39,8 +39,11 @@
           </q-select>
         </div>
       </q-card-section>
+      <div class="q-px-sm bg-grey-2">
+        <q-toggle v-model="showMappedFields" checked-icon="star" size="xs" color="green" label="Show mapped fields only" class="text-grey-8" unchecked-icon="clear" />
+      </div>
       <q-card-section>
-        <q-table flat class="sticky-header-table q-mb-lg" title="Data Source" :data="bufferSheetHeaders" binary-state-sort
+        <q-table flat class="sticky-header-table q-mb-lg" title="Data Source" :data="filteredBufferSheetHeaders" binary-state-sort
                  :columns="dataSourceColumns" row-key="value" selection="multiple" :selected.sync="selectedAttr"
                  :loading="loadingAttr" :grid="$q.screen.lt.sm" :rows-per-page-options="[10, 20, 0]" :pagination.sync="pagination"
                  color="primary" table-style="max-height: 46vh" :filter="filter" :filter-method="filterTable" style="margin-top: -10px"
@@ -50,6 +53,7 @@
               <div class="row items-center q-gutter-xs">
                 <q-item-label class="text-h5 text-grey-10">Data Source</q-item-label>
                 <q-space />
+                <q-btn v-if="currentSheet" unelevated rounded label="Reload File" icon="sync" color="grey-1" text-color="grey-8" @click="fetchHeaders(true)" no-caps />
                 <q-input dense rounded standout="bg-grey-3" v-model.lazy.trim="filter" class="cursor-pointer"
                          input-class="text-grey-8" placeholder="Search..." @keydown.esc="filter = ''"
                 >
@@ -87,10 +91,34 @@
           <template v-slot:body-cell-target="props">
             <q-td :props="props">
               <div v-for="(target, index) in props.row.target" :key="index">
-                <q-chip dense removable @remove="removeTarget(props.row.value, index)" :color="'orange-'+(index%3*2+6)" text-color="white">
+                <q-chip dense removable @remove="removeTarget(props.row.value, index)" color="orange" text-color="white">
                   <span class="q-mx-xs" style="font-size: 12px">{{ target.value }}</span>
                 </q-chip>
+                <q-chip v-if="!!target.type" dense color="grey-2" text-color="grey-8" style="font-size: 11px">
+                  {{ target.type }}
+                </q-chip>
               </div>
+            </q-td>
+          </template>
+          <template v-slot:body-cell-conceptMap="props">
+            <q-td :props="props">
+              <q-select v-if="props.row.target"
+                        dense
+                        options-dense
+                        clearable
+                        class="ellipsis"
+                        :outlined="!!props.row.conceptMap"
+                        :standout="!props.row.conceptMap ? 'bg-primary text-white' : ''"
+                        :label="!props.row.conceptMap ? 'No mapping' : 'Concept Map'"
+                        :ref="props.row.value"
+                        v-model="props.row.conceptMap"
+                        :options="conceptMapList"
+                        option-label="name"
+                        option-value="id"
+                        style="width: 280px; font-size: 13px"
+                        @clear="removeConceptMap(props.row); $refs[props.row.value].blur()"
+                        @input="bufferSheetHeaders = [...bufferSheetHeaders]"
+              />
             </q-td>
           </template>
           <template v-slot:no-data="{ icon, message, filter }">
@@ -114,6 +142,7 @@
     private sheetHeaders: SourceDataElement[] = []
     private pagination = { page: 1, rowsPerPage: 10 }
     private filter: string = ''
+    private showMappedFields: boolean = false
 
     get dataSourceColumns (): object[] { return sourceDataTableHeaders }
     get fieldTypes (): string[] { return Object.values(cellType) }
@@ -136,9 +165,28 @@
     get bufferSheetHeaders (): BufferElement[] { return this.$store.getters['file/bufferSheetHeaders'] }
     set bufferSheetHeaders (value) { this.$store.commit('file/setBufferSheetHeaders', value) }
 
+    get conceptMapList (): Array<Array<{id: string, name: string}>> {
+      return this.$store.getters['fhir/conceptMapList'].map((_: fhir.ConceptMap) => ({id: _.id, name: _.name}))
+    }
+    set conceptMapList (value) { this.$store.commit('fhir/setConceptMapList', value) }
+
+    get filteredBufferSheetHeaders (): BufferElement[] {
+      return this.bufferSheetHeaders.filter(_ => !this.showMappedFields || _.target)
+    }
+
     created () {
-      if (!this.currentSource) this.currentSource = this.fileSourceList[0]
-      if (this.currentSheet) this.onSheetChanged()
+      this.$q.loading.show({message: 'Fetching Concept Maps...', spinner: undefined})
+      setTimeout(() => {
+        this.bufferSheetHeaders = []
+        if (!this.currentSource) this.currentSource = this.fileSourceList[0]
+        if (this.currentSheet) this.onSheetChanged()
+        this.$store.dispatch('fhir/getConceptMaps', true)
+          .then(() => this.$q.loading.hide())
+          .catch(() => {
+            this.$q.loading.hide()
+            this.$notify.error('Something went wrong while fetching Concept Maps')
+          })
+      }, 10)
     }
 
     @Watch('currentSource')
@@ -147,17 +195,19 @@
         this.fetchSheets()
       }
     }
+
     @Watch('currentSheet')
     onSheetChanged (): void {
       ([this.sheetHeaders, this.selectedAttr, this.bufferSheetHeaders] = [[], [], []])
       if (this.currentSheet) {
         // If headers have been already fetched, load from cache; else fetch headers from file
-        if (this.currentSheet.headers && this.currentSheet.headers.length)
+        if (this.currentSheet?.headers?.length)
           this.bufferSheetHeaders = this.currentSheet.headers.map(_ => ({type: _.type, value: _.value}))
         else
           this.fetchHeaders()
       }
     }
+
     filterTable (rows, terms) {
       terms = terms.toLowerCase()
       return rows.filter(row => (
@@ -171,7 +221,7 @@
       this.loadingAttr = true
       this.$q.loadingBar.start()
       this.sheetHeaders = []
-      ipcRenderer.send('read-file', this.currentSource.value)
+      ipcRenderer.send('read-file', this.currentSource.path)
       ipcRenderer.on('worksheets-ready', (event, worksheets) => {
         this.sheets = worksheets || []
         // this.currentSheet = null
@@ -181,12 +231,12 @@
       })
     }
 
-    fetchHeaders (): void {
+    fetchHeaders (noCache?: boolean): void {
       this.loadingAttr = true
-      ipcRenderer.send('get-sheet-headers', {path: this.currentSource?.value, sheet: this.currentSheet?.value})
+      ipcRenderer.send('get-sheet-headers', {path: this.currentSource?.path, sheet: this.currentSheet?.value, noCache})
       ipcRenderer.on('ready-sheet-headers', (event, headers) => {
         if (!headers.length) {
-          this.$log.warning('No Sheet Headers', 'Headers couldn\'t be detected')
+          this.$notify.error('Headers couldn\'t be detected')
         }
         // this.bufferSheetHeaders = headers.map(_ => ({type: _.type, value: _.value}))
         this.$store.commit('file/setSheetHeaders', headers)
@@ -207,6 +257,12 @@
         if (!filtered[0].target?.length) Vue.delete(filtered[0], 'target')
         this.bufferSheetHeaders = this.bufferSheetHeaders.slice()
       }
+    }
+
+    removeConceptMap (row: BufferElement) {
+      row.conceptMap = undefined
+      delete row.conceptMap
+      this.bufferSheetHeaders = this.bufferSheetHeaders.slice()
     }
 
   }

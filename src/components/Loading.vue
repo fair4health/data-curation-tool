@@ -1,5 +1,5 @@
 <template>
-  <div class="q-ma-md">
+  <div class="q-pa-md">
     <div class="spinner-comp flex flex-center"></div>
   </div>
 </template>

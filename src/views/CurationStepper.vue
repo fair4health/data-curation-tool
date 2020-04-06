@@ -1,7 +1,7 @@
 <template>
   <div>
 
-    <!--Starts-->
+    <!--Start point - FHIR URL Verification-->
     <template v-if="step === 1">
       <OnFHIRConfig />
     </template>

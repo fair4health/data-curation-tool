@@ -47,9 +47,17 @@
                   </div>
                 </template>
                 <template v-else-if="props.row.validation.status === 'warning'">
-                  <q-icon name="warning" color="orange-6" @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)">
-                    <q-tooltip content-class="bg-white text-orange-6">{{ props.row.validation.description }}</q-tooltip>
-                  </q-icon>
+                  <div class="row items-center">
+                    <div class="col-6">
+                      <q-icon name="warning" color="orange-6">
+                        <q-tooltip content-class="bg-white text-orange-6">Warning</q-tooltip>
+                      </q-icon>
+                    </div>
+                    <div class="col-6 bg-grey-3">
+                      <q-btn flat dense icon="feedback" color="grey-8" label="Details" size="sm"
+                             @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)" no-caps />
+                    </div>
+                  </div>
                 </template>
                 <template v-else-if="props.row.validation.status === 'error'">
                   <q-icon name="error_outline" color="red" class="cursor-pointer"
@@ -99,21 +107,47 @@
                       <div v-for="(record, index) in computedSavedRecord(props.row.file, props.row.sheet)" :key="index"
                            class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
                         <q-card class="q-ma-xs" bordered flat>
-                          <q-card-section class="text-caption bg-grey-3 text-weight-bold text-italic fa-border">
+                          <q-card-section class="text-caption bg-grey-3 text-weight-bold q-pa-xs">
                             <div class="row items-center">
-                              <q-chip class="text-grey-8" color="white" style="font-size: 12px">#{{record.recordId}}</q-chip>
+                              <q-chip class="text-white" color="blue-grey-4" style="font-size: 12px">#{{record.recordId}}</q-chip>
+                            </div>
+                            <div class="row ellipsis no-wrap">
+                              <div class="text-grey-8 ellipsis no-wrap text-weight-regular">
+                                <div class="row no-wrap">
+                                  <q-chip class="text-grey-8 cursor-pointer" color="white" style="font-size: 11px">
+                                    <span class="text-weight-bold ellipsis"> {{ record.resource }}</span>
+                                    <q-tooltip content-class="bg-grey-2 text-primary">{{record.resource}}</q-tooltip>
+                                  </q-chip>
+                                  <q-chip class="text-grey-8 ellipsis cursor-pointer" color="white" style="font-size: 11px">
+                                    <span class="ellipsis">{{ record.profile || '-' }}</span>
+                                    <q-tooltip content-class="bg-grey-2 text-primary">{{record.profile}}</q-tooltip>
+                                  </q-chip>
+                                </div>
+                              </div>
                             </div>
                           </q-card-section>
                           <q-card-section>
                             <q-list separator>
                               <q-item v-for="(column, index) in record.data" :key="index">
-                                <q-item-section style="font-size: 12px">{{column.value}}</q-item-section>
+                                <div class="col-3 ellipsis items-center" style="font-size: 12px">{{ column.value }}</div>
                                 <div class="row col">
                                   <q-chip dense v-for="(target, targetI) in column.target" :key="targetI"
                                           color="primary" text-color="white" class="cursor-pointer">
-                                    <span class="q-mx-xs ellipsis" style="font-size: 12px">{{target.value}}</span>
-                                    <q-tooltip>{{target.value}}</q-tooltip>
+                                    <div class="q-mx-xs ellipsis" style="font-size: 12px">{{ target.value }}</div>
+                                    <q-tooltip>{{ target.value }}</q-tooltip>
                                   </q-chip>
+                                </div>
+                                <div class="row col q-pl-xs">
+                                  <div v-for="(target, targetI) in column.target" :key="targetI" class="full-width">
+                                    <q-chip dense v-if="!!target.type"
+                                            color="grey-2" text-color="grey-8" class="cursor-pointer">
+                                      <div class="q-mx-xs ellipsis" style="font-size: 11px">{{ target.type }}</div>
+                                      <q-tooltip>{{ target.type }}</q-tooltip>
+                                    </q-chip>
+                                    <q-chip v-else dense color="white" text-color="grey-8">
+                                      <div class="q-mx-xs ellipsis" style="font-size: 12px">-</div>
+                                    </q-chip>
+                                  </div>
                                 </div>
                               </q-item>
                             </q-list>
@@ -132,22 +166,25 @@
         </q-table>
         <div class="row content-end q-gutter-sm">
           <q-space />
-          <q-btn outline label="Validate" icon="verified_user" color="green-7"
+          <q-btn v-if="validationStatus==='success'" label="Export Resources" color="green" icon="publish"
+                 class="q-mt-lg" @click="exportResources" no-caps />
+          <q-btn outline label="Validate" icon="verified_user" :color="validationStatus==='in-progress' ? 'grey-7' : 'green-7'"
                  :disable="validationStatus === 'in-progress'" @click="validate" class="q-mt-lg" no-caps>
               <span class="q-ml-sm">
                 <q-spinner class="q-ml-sm" size="xs" v-show="validationStatus==='in-progress'" />
                 <q-icon name="check" size="xs" color="green" v-show="validationStatus==='success'" />
                 <q-icon name="error_outline" size="xs" color="red" v-show="validationStatus==='error'" />
+                <q-icon name="warning" size="xs" color="orange-6" v-show="validationStatus==='warning'" />
               </span>
           </q-btn>
         </div>
       </q-card-section>
     </q-card>
-    <div class="row q-ma-md">
+    <div class="row q-pa-sm">
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
       <q-space />
       <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="validationStatus !== 'success'"
-             @click="$store.commit('incrementStep')" no-caps />
+             @click="nextStep" no-caps />
     </div>
   </div>
 </template>
@@ -180,6 +217,12 @@
     get validationStatus (): status { return this.$store.getters['validationStatus'] }
     set validationStatus (value) { this.$store.commit('setValidationStatus', value) }
 
+    get resources (): Map<string, fhir.Resource[]> { return this.$store.getters['resources'] }
+    set resources (value) { this.$store.commit('setResources', value) }
+
+    get transformList (): TransformListItem[] { return this.$store.getters['transformList'] }
+    set transformList (value) { this.$store.commit('setTransformList', value) }
+
     mounted () {
       this.loading = true
       this.getMappings()
@@ -205,7 +248,7 @@
       const filePathList = Object.keys(FHIRUtil.groupBy(this.mappingList, 'file'))
 
       if (!filePathList.length) {
-        this.$q.notify({message: 'No mapping available', color: 'red-8'})
+        this.$notify.error('No mapping available')
         this.validationStatus = 'pending'
         return
       }
@@ -222,7 +265,9 @@
             }
             return _
           })
-          const sheets = this.mappingObj[filePath]
+          // const sheets = this.mappingObj[filePath]
+          const sheets = this.savedRecords.find((files: store.SavedRecord) => files.fileName === filePath)!.sheets
+
           ipcRenderer.send('validate', this.fhirBase, {filePath, sheets})
 
           ipcRenderer.on(`validate-read-file-${filePath}`, (event, result) => {
@@ -272,11 +317,13 @@
                   return _
                 })
                 if (result && result.status === 'done') {
-                  this.$log.success('Validation', `Validation is completed ${sheet} in ${filePath}`)
+                  // this.$log.success('Validation', `Validation is completed ${sheet} in ${filePath}`)
                   resolveSheet()
                 } else {
-                  this.$log.error('Validation', `${result.description}. Validation error for ${sheet} in ${filePath}. For more details see logs`)
-                  rejectSheet()
+                  // this.$log.error('Validation', `${result.description}. Validation error for ${sheet} in ${filePath}. For more details see logs`)
+                  // Reject even if a resource has error
+                  resolveSheet()
+                  // rejectSheet()
                 }
               })
             })
@@ -315,7 +362,7 @@
 
     previousStep () {
       this.$q.dialog({
-        title: '<i class="fas fa-info text-primary"> Previous Step </i>',
+        title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Previous Step</span>',
         message: 'If you go back and make any change, the changes you have made in this section will be lost.',
         class: 'text-grey-9',
         cancel: true,
@@ -331,6 +378,31 @@
         component: OutcomeCard,
         parent: this
       })
+    }
+
+    exportResources () {
+      const resources: any = electronStore.get('resources')
+      this.$q.loading.show({spinner: undefined})
+
+      ipcRenderer.send('export-file', JSON.stringify(resources))
+      ipcRenderer.on('export-done', (event, result) => {
+        if (result) {
+          this.$notify.success('File is successfully exported')
+        }
+        this.$q.loading.hide()
+        ipcRenderer.removeAllListeners('export-done')
+      })
+    }
+
+    nextStep () {
+      try {
+        this.resources = new Map(Object.entries(electronStore.get('resources') || {}))
+        this.transformList = Array.from(this.resources.entries()).map(resource => ({resourceType: resource[0], count: resource[1].length, status: 'pending'}))
+        this.$store.commit('setTransformStatus', 'pending')
+        this.$store.commit('incrementStep')
+      } catch (e) {
+        this.$notify.error('Cannot load created resources. Try again')
+      }
     }
 
   }

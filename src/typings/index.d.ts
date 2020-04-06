@@ -912,15 +912,17 @@ declare namespace fhir {
   }
   interface ConceptMapGroupElementTarget extends Element {
     code?: code;
+    display?: string
     equivalence?: code;
-    comments?: string;
+    comment?: string;
     dependsOn?: ConceptMapGroupElementTargetDependsOn[];
     product?: ConceptMapGroupElementTargetDependsOn[];
   }
   interface ConceptMapGroupElementTargetDependsOn extends Element {
     property: uri;
     system?: uri;
-    code: string;
+    value: string;
+    display?: string;
   }
   interface Condition extends DomainResource {
     identifier?: Identifier[];
@@ -945,9 +947,12 @@ declare namespace fhir {
     abatementString?: string;
     assertedDate?: date;
     asserter?: Reference;
+    recorder?: Reference;
+    recordedDate?: dateTime;
     stage?: ConditionStage;
     evidence?: ConditionEvidence[];
     note?: Annotation[];
+    encounter?: Reference;
   }
   interface ConditionStage extends Element {
     summary?: CodeableConcept;
@@ -1017,7 +1022,8 @@ declare namespace fhir {
   }
   interface CapabilityStatementRestResource extends Element {
     type: code;
-    profile?: Reference;
+    profile?: uri;
+    supportedProfile?: uri[];
     documentation?: markdown;
     interaction: CapabilityStatementRestResourceInteraction[];
     versioning?: code;
@@ -1273,10 +1279,13 @@ declare namespace fhir {
     status?: code;
     type?: CodeableConcept;
     lotNumber?: string;
+    serialNumber?: string;
     manufacturer?: string;
     manufactureDate?: dateTime;
     expirationDate?: dateTime;
-    model?: string;
+    modelNumber?: string;
+    partNumber?: string;
+    deviceName?: DeviceName[];
     version?: string;
     patient?: Reference;
     owner?: Reference;
@@ -1286,14 +1295,18 @@ declare namespace fhir {
     note?: Annotation[];
     safety: CodeableConcept[];
   }
+  interface DeviceName extends Element {
+    name?: string;
+    type?: code;
+  }
   interface DeviceUdi extends Element {
-    deviceIdentifier: string;
-    name: string;
-    jurisdiction: uri;
-    carrierHRF:	string;
-    carrierAIDC: base64Binary;
-    issuer: uri;
-    entryType: code;
+    deviceIdentifier?: string;
+    name?: string;
+    jurisdiction?: uri;
+    carrierHRF?:	string;
+    carrierAIDC?: base64Binary;
+    issuer?: uri;
+    entryType?: code;
   }
   interface DeviceComponent extends DomainResource {
     type: CodeableConcept;
@@ -1360,6 +1373,7 @@ declare namespace fhir {
     onBehalfOf?: Reference;
   }
   interface DeviceUseStatement extends DomainResource {
+    status: string;
     bodySite?: CodeableConcept;
     whenUsed?: Period;
     device: Reference;
@@ -1368,6 +1382,7 @@ declare namespace fhir {
     notes?: string[];
     recordedOn?: dateTime;
     subject: Reference;
+    source?: Reference;
     timingTiming?: Timing;
     timingPeriod?: Period;
     timingDateTime?: dateTime;
@@ -1550,15 +1565,18 @@ declare namespace fhir {
     class?: Coding;
     classHistory?: EncounterClassHistory[];
     type?: CodeableConcept[];
+    serviceType?: CodeableConcept;
     priority?: CodeableConcept;
     subject?: Reference;
     episodeOfCare?: Reference[];
+    basedOn?: Reference[];
     incomingReferral?: Reference[];
     participant?: EncounterParticipant[];
-    appointment?: Reference;
+    appointment?: Reference[];
     period?: Period;
     length?: Duration;
-    reason?: CodeableConcept[];
+    reasonCode?: CodeableConcept[];
+    reasonReference?: Reference[];
     diagnosis?: EncounterDiagnosis[];
     account?: Reference[];
     hospitalization?: EncounterHospitalization;
@@ -1581,8 +1599,8 @@ declare namespace fhir {
   }
   interface EncounterDiagnosis extends Element {
     condition: Reference;
-    role?: CodeableConcept;
-    rank: positiveInt;
+    use?: CodeableConcept;
+    rank?: positiveInt;
   }
   interface EncounterHospitalization extends Element {
     preAdmissionIdentifier?: Identifier;
@@ -1598,6 +1616,7 @@ declare namespace fhir {
   interface EncounterLocation extends Element {
     location: Reference;
     status?: code;
+    physicalType?: CodeableConcept;
     period?: Period;
   }
   interface Endpoint extends DomainResource {
@@ -2435,6 +2454,7 @@ declare namespace fhir {
   interface Medication extends DomainResource {
     identifier?: Identifier;
     code?: CodeableConcept;
+    status?: code;
     manufacturer?: Reference;
     ingredient?: MedicationProductIngredient[];
     batch?: MedicationProductBatch[];
@@ -2527,28 +2547,27 @@ declare namespace fhir {
     basedOn?: Reference[];
     requisition?: Identifier;
     status?: code;
+    statusReason?: CodeableConcept;
     intent: code;
     medicationCodeableConcept?: CodeableConcept;
     medicationReference?: Reference;
     subject: Reference;
-    context?: Reference;
     supportingInformation?: Reference[];
     authoredOn?: dateTime;
-    requester?: MedicationRequestRequester;
+    requester?: Reference;
+    performer?: Reference;
+    recorder?: Reference;
     reasonCode?: CodeableConcept[];
     reasonReference?: Reference[];
     note?: Annotation[];
-    category?: CodeableConcept;
+    category?: CodeableConcept[];
     priority?: code;
     dosageInstruction?: DosageInstruction[];
     dispenseRequest?: MedicationRequestDispenseRequest;
     substitution?: MedicationRequestSubstitution;
     priorPrescription?: Reference;
     eventHistory?: Reference[];
-  }
-  interface MedicationRequestRequester extends Element {
-    agent?: Reference;
-    onBehalfOf?: Reference;
+    encounter?: Reference;
   }
   interface MedicationRequestDispenseRequest extends Element {
     validityPeriod?: Period;
@@ -2567,6 +2586,7 @@ declare namespace fhir {
     partOf?: Reference[];
     context?: Reference;
     status: code;
+    statusReason?: CodeableConcept[];
     category?: CodeableConcept;
     medicationCodeableConcept?: CodeableConcept;
     medicationReference?: Reference;
@@ -2733,6 +2753,8 @@ declare namespace fhir {
     context?: Reference;
     effectiveDateTime?: dateTime;
     effectivePeriod?: Period;
+    effectiveInstant?: instant;
+    effectiveTiming?: Timing;
     issued?: instant;
     performer?: Reference[];
     valueQuantity?: Quantity;
@@ -2747,7 +2769,7 @@ declare namespace fhir {
     valueDateTime?: dateTime;
     valuePeriod?: Period;
     dataAbsentReason?: CodeableConcept;
-    interpretation?: CodeableConcept;
+    interpretation?: CodeableConcept[];
     comment?: string;
     bodySite?: CodeableConcept;
     method?: CodeableConcept;
@@ -2756,6 +2778,7 @@ declare namespace fhir {
     referenceRange?: ObservationReferenceRange[];
     related?: ObservationRelated[];
     component?: ObservationComponent[];
+    encounter?: Reference;
   }
   interface ObservationReferenceRange extends Element {
     low?: Quantity;
@@ -2781,7 +2804,7 @@ declare namespace fhir {
     valueDateTime?: dateTime;
     valuePeriod?: Period;
     dataAbsentReason?: CodeableConcept;
-    interpretation?: CodeableConcept;
+    interpretation?: CodeableConcept[];
     referenceRange?: ObservationReferenceRange[];
   }
   interface OperationDefinition extends DomainResource {
@@ -4650,8 +4673,8 @@ declare namespace fhir {
   }
   interface ElementDefinitionType extends Element {
     code: uri;
-    profile?: uri;
-    targetProfile?: uri;
+    profile?: uri[];
+    targetProfile?: uri[];
     aggregation?: code[];
     versioning?: code;
   }
@@ -4730,12 +4753,16 @@ declare namespace fhir {
     site?: CodeableConcept;
     route?: CodeableConcept;
     method?: CodeableConcept;
-    doseRange?: Range;
-    doseQuantity?: Quantity;
+    doseAndRate: DoseAndRateElement[];
     maxDosePerPeriod?: Ratio;
     maxDosePerAdministration?: Quantity;
     maxDosePerLifetime?: Quantity;
     rateRatio?: Ratio;
+  }
+  interface DoseAndRateElement extends Element {
+    type?: CodeableConcept;
+    doseRange?: Range;
+    doseQuantity?: Quantity;
     rateRange?: Range;
     rateQuantity?: Quantity;
   }
@@ -4758,7 +4785,11 @@ declare namespace fhir {
     max?: string
     type?: ElementTree[]
     selectedType?: string
+    noTick?: boolean
     children?: ElementTree[]
+    lazy?: boolean // To dynamically fetch the structure of data type
+    targetProfile?: string[]
+    error?: boolean
   }
   type Resource = (DomainResource|Account|ActivityDefinition|AllergyIntolerance|Appointment|AppointmentResponse|
     AuditEvent|Basic|Binary|BodySite|Bundle|CarePlan|CareTeam|Claim|ClaimResponse|ClinicalImpression|CodeSystem|
@@ -4780,10 +4811,6 @@ declare namespace fhir {
 
 interface Date {
   toISODateString (): string;
-}
-
-interface String {
-  linkify (options?: any): string;
 }
 
 declare namespace ResourceGenerator {
@@ -4812,17 +4839,21 @@ declare namespace store {
   }
   interface Record {
     recordId: string
+    resource: string
+    profile: string
     data: SourceTargetGroup[]
   }
   interface SourceTargetGroup {
     type: string
     value: string
-    target: Target[]
+    target: Target[],
+    conceptMap?: {id: string, name: string}
   }
   interface Target {
-    profile: string
     resource: string
+    profile: string
     value: string
+    type?: string
   }
 }
 
@@ -4840,4 +4871,17 @@ declare interface TransformListItem {
   resourceType: string
   count: number
   createdCount?: number
+}
+
+declare interface BufferResource {
+  value: any
+  sourceType: string
+  targetType: string | undefined
+  conceptMap?: fhir.ConceptMap
+}
+
+declare interface StepItem {
+  title: string,
+  icon: string,
+  stepId: any
 }

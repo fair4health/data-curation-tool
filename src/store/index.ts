@@ -12,32 +12,60 @@ export default new Vuex.Store({
     fhir
   },
   state: {
+    drawerOpen: true,
+    drawerMiniState: true,
     curationStep: 1,
-    log: '',
     mappingList: [],
-    validationStatus: ''
+    validationStatus: '',
+    resources: new Map<string, fhir.Resource[]>(),
+    transformList: [] as TransformListItem[],
+    transformStatus: '',
+    transformOutcomeDetails: [] as OutcomeDetail[]
   },
   getters: {
+    drawerOpen: state => state.drawerOpen,
+    drawerMiniState: state => state.drawerMiniState,
     curationStep: state => state.curationStep,
-    log: state => state.log,
     mappingList: state => state.mappingList || [],
-    validationStatus: state => state.validationStatus
+    validationStatus: state => state.validationStatus,
+    resources: state => state.resources || new Map<string, fhir.Resource[]>(),
+    transformList: state => state.transformList || [],
+    transformStatus: state => state.transformStatus,
+    transformOutcomeDetails: state => state.transformOutcomeDetails || []
   },
   mutations: {
+    setDrawerOpen (state, value: boolean) {
+      state.drawerOpen = value
+    },
+    setDrawerMiniState (state, value: boolean) {
+      state.drawerMiniState = value
+    },
     incrementStep (state) {
       state.curationStep += 1
     },
     decrementStep (state) {
       state.curationStep -= 1
     },
-    updateLog (state, message) {
-      state.log += message + '<br/>'
+    setStep (state, value: number) {
+      state.curationStep = value
     },
     setMappingList (state, list: any) {
       state.mappingList = list
     },
     setValidationStatus (state, status: status) {
       state.validationStatus = status
+    },
+    setResources (state, resources: Map<string, fhir.Resource[]>) {
+      state.resources = resources
+    },
+    setTransformList (state, list: TransformListItem[]) {
+      state.transformList = list
+    },
+    setTransformStatus (state, status: status) {
+      state.transformStatus = status
+    },
+    setTransformOutcomeDetails (state, details: OutcomeDetail[]) {
+      state.transformOutcomeDetails = details
     }
   },
   actions: {}

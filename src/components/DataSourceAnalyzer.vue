@@ -21,12 +21,9 @@
               <q-card-section>
                 <template v-if="!fileSourceList.length">
                   <div class="text-center">
-                    <q-icon name="save_alt" color="blue-2" size="72px" />
+                    <q-icon name="save_alt" color="primary" size="72px" />
                     <p class="text-grey-9">Drag your files here</p>
-                    <q-btn unelevated label="Browse" color="blue-1" text-color="primary" @click="browseFile" no-caps />
-                    <div class="q-my-xs text-weight-bold text-grey-9">OR</div>
-                    <q-btn unelevated label="Import saved mapping (json)" color="blue-1" text-color="primary"
-                           @click="importSavedMapping" icon="fas fa-file-import" no-caps />
+                    <q-btn unelevated label="Browse" color="grey-2" text-color="primary" @click="browseFile" no-caps />
                   </div>
                 </template>
                 <template v-else>
@@ -46,7 +43,7 @@
                       </q-item-section>
                       <q-item-section>
                         <q-item-label>{{ file.label }}</q-item-label>
-                        <q-item-label caption>{{ file.value }}</q-item-label>
+                        <q-item-label caption>{{ file.path }}</q-item-label>
                       </q-item-section>
                       <q-item-section side>
                         <q-btn flat round icon="delete" @click="fileSourceList.splice(Number(index),1)" />
@@ -82,12 +79,27 @@
     </div>
     <q-expansion-item
       default-opened
-      class="overflow-hidden q-ma-md col-12"
+      class="overflow-hidden q-ma-sm col-12"
       icon="save"
       label="Saved Mappings"
       header-class="bg-primary text-white"
       expand-icon-class="text-white"
+      :expand-icon-toggle="true"
     >
+      <template v-slot:header>
+        <q-item-section avatar>
+          <q-avatar icon="save" color="primary" text-color="white" />
+        </q-item-section>
+
+        <q-item-section>
+          Saved Mappings
+        </q-item-section>
+
+        <q-item-section side>
+          <q-btn unelevated label="Import" color="white" text-color="primary"
+                 @click="importSavedMapping" icon="fas fa-file-import" no-caps />
+        </q-item-section>
+      </template>
       <q-card flat>
         <q-card-section class="bg-white text-white text-subtitle1">
           <div v-if="savedMappings.length" class="row q-mb-sm q-gutter-sm">
@@ -105,7 +117,7 @@
                   </div>
                 </q-item-section>
                 <q-item-section side>
-                  <q-btn icon="more_vert" unelevated round color="grey-3" text-color="grey" no-caps>
+                  <q-btn icon="more_vert" flat round color="grey" no-caps>
                     <q-menu>
                       <q-list separator style="min-width: 200px">
                         <q-item clickable class="text-grey-9" @click="loadFromStorage(mapping)" v-close-popup>
@@ -129,7 +141,7 @@
         </q-card-section>
       </q-card>
     </q-expansion-item>
-    <div class="row q-ma-md">
+    <div class="row q-pa-sm">
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="$store.commit('decrementStep')" no-caps />
       <q-space />
       <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!fileSourceList.length"
@@ -153,9 +165,9 @@
     get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
     set fileSourceList (value) { this.$store.commit('file/updateSourceList', value) }
 
-    get files (): string[] { return this.fileSourceList.map(f => f.value) }
+    get files (): string[] { return this.fileSourceList.map(f => f.path) }
     get savedMappings (): store.MappingObject[] {
-      const savedMappings = localStorage.getItem('f4h-store-fileSourceList')
+      const savedMappings = localStorage.getItem('store-fileSourceList')
       this.mappingStore = savedMappings ? JSON.parse(savedMappings) : []
       return this.mappingStore
     }
@@ -193,40 +205,39 @@
           .then(() => this.$q.loading.hide())
           .catch(() => this.$q.loading.hide())
       } else {
-        this.$q.notify({message: 'Empty mapping sheet.'})
+        this.$notify.error('Empty mapping sheet')
       }
     }
 
     deleteSavedMapping (index: number) {
       this.$q.dialog({
-        title: '<i class="fas fa-info text-primary"> Delete</i>',
-        message: `${this.mappingStore[index].name}`,
+        title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Delete</span>',
+        message: `Are you sure to delete mapping <span class="text-weight-bold">${this.mappingStore[index].name}</span>?`,
         class: 'text-grey-9',
         cancel: true,
-        persistent: true,
-        html: true
+        html: true,
+        ok: 'Delete'
       }).onOk(() => {
         this.mappingStore.splice(index, 1)
-        localStorage.setItem('f4h-store-fileSourceList', JSON.stringify(this.mappingStore))
+        localStorage.setItem('store-fileSourceList', JSON.stringify(this.mappingStore))
       })
     }
 
     importSavedMapping (): void {
+      this.$q.loading.show({spinner: undefined})
       ipcRenderer.send('browse-mapping')
       ipcRenderer.on('selected-mapping', (event, data) => {
         if (data) {
           this.$store.dispatch('file/initializeStore', data)
             .then(() => {
-              this.$log.info('Import Mapping', `Found ${this.fileSourceList.length} mapped file(s)`)
+              // this.$log.info('Import Mapping', `Found ${this.fileSourceList.length} mapped file(s)`)
             })
             .catch(() => {
-              this.$q.notify({message: 'Data could\'t be imported', color: 'red-6'})
-              this.$log.error('Import Mapping', 'Data could\'t be imported')
+              this.$notify.error('Data could\'t be imported')
+              // this.$log.error('Import Mapping', 'Data could\'t be imported')
             })
-        } else {
-          this.$q.notify({message: 'Data could\'t be imported', color: 'red-6'})
-          this.$log.error('Import Mapping', 'Data could\'t be imported')
         }
+        this.$q.loading.hide()
         ipcRenderer.removeAllListeners('selected-mapping')
       })
     }
@@ -236,13 +247,15 @@
     }
 
     browseFile (): void {
+      this.$q.loading.show({spinner: undefined})
       ipcRenderer.send('browse-file')
       ipcRenderer.on('selected-directory', (event, data) => {
-        data.map(file => {
-          this.$store.commit('file/addFile', file)
-        })
-        this.$log.info('Import Data Source',
-          `${this.fileSourceList.length ? this.fileSourceList.length : 'No'} source(s) imported`)
+        if (data) {
+          data.map(file => {
+            this.$store.commit('file/addFile', file)
+          })
+        }
+        this.$q.loading.hide()
         ipcRenderer.removeAllListeners('selected-directory')
       })
     }

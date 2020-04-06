@@ -15,8 +15,10 @@ const fhirStore = {
     currentProfile: '',
     selectedElements: [],
     fhirBase: '',
+    fhirBaseVerificationStatus: '',
     fhirService: new FhirService(),
-    outcomeDetails: []
+    outcomeDetails: [],
+    conceptMapList: []
   },
   getters: {
     resourceList: state => state.resourceList || [],
@@ -28,7 +30,9 @@ const fhirStore = {
     selectedElements: state => state.selectedElements || [],
     fhirBase: state => state.fhirBase,
     fhirService: state => state.fhirService,
-    outcomeDetails: state => state.outcomeDetails || []
+    outcomeDetails: state => state.outcomeDetails || [],
+    fhirBaseVerificationStatus: state => state.fhirBaseVerificationStatus,
+    conceptMapList: state => state.conceptMapList
   },
   mutations: {
     setResourceList (state, list) {
@@ -38,8 +42,8 @@ const fhirStore = {
       state.profileList = list
     },
     setElementList (state, list) {
-      state.elementList = list
-      state.elementListFlat = list?.length ? FHIRUtil.flatten(list) : []
+      state.elementList = [...list]
+      state.elementListFlat = list?.length ? FHIRUtil.flatten([...list]) : []
     },
     setSelectedElements (state, list) {
       state.selectedElements = list
@@ -53,22 +57,34 @@ const fhirStore = {
     updateFhirBase (state, baseUrl: string) {
       state.fhirBase = baseUrl
       state.fhirService = new FhirService(baseUrl)
-      electronStore.set('fhirBase', baseUrl)
+      localStorage.setItem('fhirBaseUrl', baseUrl)
     },
     setOutcomeDetails (state, outcomeDetails: OutcomeDetail[]) {
       state.outcomeDetails = outcomeDetails
+    },
+    setFhirBaseVerificationStatus (state, status: status) {
+      state.fhirBaseVerificationStatus = status
+    },
+    setConceptMapList (state, conceptMapList: fhir.ConceptMap[]) {
+      state.conceptMapList = conceptMapList
     }
   },
   actions: {
     getResources ({ commit, state }): Promise<boolean> {
       return new Promise((resolve, reject) => {
-        state.fhirService.search('CapabilityStatement', null)
+        state.fhirService.search('metadata', null)
           .then(res => {
-            const bundle = res.data as fhir.Bundle
-            const resource = bundle.entry?.length ? bundle.entry[0].resource as fhir.CapabilityStatement : null
+            const resource = res.data as fhir.CapabilityStatement
+            let resources: fhir.CapabilityStatementRestResource[] = []
             if (resource && resource.rest?.length && resource.rest[0].resource?.length) {
-              commit('setResourceList', resource.rest[0].resource.map(r => r.type) || [])
+              resources = resource.rest[0].resource
             }
+            commit('setResourceList', resources.map(r => r.type) || [])
+            const profileMap: Map<string, string> = new Map<string, string>()
+            resources.flatMap(r => r.supportedProfile).filter(_ => !!_).map(_ => {
+              const id = _!.split('/').pop()
+              if (id) profileMap.set(id, _!)
+            })
             resolve(true)
           })
           .catch(err => reject(err) )
@@ -82,35 +98,119 @@ const fhirStore = {
             const bundle = res.data as fhir.Bundle
             commit('setProfileList', bundle.entry?.map(e => {
               const structure = e.resource as fhir.StructureDefinition
-              return {id: structure.id, title: structure.title}
+              return {id: structure.id, title: structure.title, url: structure.url}
             }) || [])
             resolve(true)
           })
           .catch(err => reject(err) )
       })
     },
-    getElements ({ commit, state }, profileId: string): Promise<boolean> {
+    getElements ({ commit, state }, { parameterName, profile }): Promise<boolean> {
       return new Promise((resolve, reject) => {
-        const cached = electronStore.get(`StructureDefinition-${profileId}`)
-        if (cached) {
-          commit('setElementList', cached)
+        FHIRUtil.parseElementDefinitions(parameterName, profile)
+          .then(res => {
+            const elementList = res[0]?.children || []
+            commit('setElementList', elementList)
+            resolve(true)
+          })
+          .catch(err => reject(err))
+      })
+    },
+    verifyFhir ({ state }): Promise<any> {
+      return new Promise((resolve, reject) => {
+        state.fhirService.search('metadata', {}, true)
+          .then(res => {
+            const metadata: fhir.CapabilityStatement = res.data
+            if (metadata.fhirVersion) {
+              if (environment.server.compatibleFhirVersions.includes(metadata.fhirVersion)) {
+                resolve(res)
+              } else {
+                reject(`FHIR version (${metadata.fhirVersion}) is not supported. FHIR version must be R4.`)
+              }
+            } else {
+              throw Error()
+            }
+          })
+          .catch(err => reject('Given url is not verified.'))
+      })
+    },
+    getConceptMaps ({ commit, state }, noCache?: boolean): Promise<any> {
+      return new Promise((resolve, reject) => {
+        // const cached = JSON.parse(localStorage.getItem(`${state.fhirBase}-ConceptMapList`) || '{}')
+        const cached = electronStore.get(`${state.fhirBase}-ConceptMapList`)
+        if (!noCache && cached && !FHIRUtil.isEmpty(cached)) {
+          commit('setConceptMapList', cached)
           resolve(true)
         } else {
-          FHIRUtil.parseElementDefinitions('_id', profileId)
+          state.fhirService.search('ConceptMap', {}, true)
             .then(res => {
-              commit('setElementList', res[0]?.children || [])
-              electronStore.set(`StructureDefinition-${profileId}`, res[0]?.children || [])
+              const bundle = res.data as fhir.Bundle
+              if (bundle.entry?.length) {
+                const conceptMapList: fhir.ConceptMap[] = bundle.entry.map((bundleEntry: fhir.BundleEntry) => bundleEntry.resource) as fhir.ConceptMap[]
+                commit('setConceptMapList', conceptMapList)
+                electronStore.set(`${state.fhirBase}-ConceptMapList`, conceptMapList)
+              }
               resolve(true)
             })
             .catch(err => reject(err))
         }
       })
     },
-    searchResource ({ commit, state }, resourceType: string): Promise<any> {
+    getDataTypes ({ state }, url: string): Promise<any> {
       return new Promise((resolve, reject) => {
-        state.fhirService.search(resourceType, {}, true)
-          .then(res => resolve(res))
-          .catch(err => reject(err))
+        state.fhirService.search('StructureDefinition', {url}, true)
+          .then(res => {
+            const bundle = res.data as fhir.Bundle
+            if (bundle.entry?.length) {
+              const resource = bundle.entry[0].resource as fhir.StructureDefinition
+              const list: fhir.ElementTree[] = []
+              Promise.all(resource?.snapshot?.element.map((element: fhir.ElementDefinition) => {
+                return new Promise(resolveElement => {
+                  const parts = element.id?.split('.') || []
+                  let tmpList = list
+                  Promise.all(parts.map(part => {
+                    return new Promise((resolveElementPart => {
+                      let match = tmpList.findIndex(_ => _.label === part)
+                      if (match === -1) {
+                        match = 0
+                        const item: fhir.ElementTree = {
+                          value: element.id,
+                          label: part,
+                          definition: element.definition,
+                          comment: element.comment,
+                          short: element.short,
+                          min: element.min,
+                          max: element.max,
+                          type: element.type.map(_ => {
+                            const elementType: fhir.ElementTree = {value: _.code, label: _.code, type: [{value: _.code, label: _.code}], targetProfile: _.targetProfile}
+                            if (_.code !== 'CodeableConcept' && _.code !== 'Coding' && _.code !== 'Reference' && environment.datatypes[_.code])
+                              elementType.lazy = true
+                            return FHIRUtil.cleanJSON(elementType)
+                          }),
+                          children: []
+                        }
+                        if (item.type?.length && item.type.length > 1 || (environment.datatypes[item.type[0].value]
+                          && item.type[0].value !== 'CodeableConcept'
+                          && item.type[0].value !== 'Coding'
+                          && item.type[0].value !== 'Reference')) {
+                          item.lazy = true
+                        }
+                        tmpList.push(item)
+                        resolveElementPart()
+                      }
+                      tmpList = tmpList[match].children as fhir.ElementTree[]
+                      resolveElementPart()
+                    }))
+                  })).then(() => resolveElement()).catch(() => resolveElement())
+                })
+              }) || [])
+                .then(() => {
+                  resolve(list)
+                })
+                .catch(() => reject([]))
+            } else { resolve([]) }
+          })
+          .catch(() => reject([]))
       })
     }
   }

@@ -39,13 +39,19 @@ const fileSource = {
       }
     },
     setSheetHeaders (state, headers: SourceDataElement[]) {
-      if (state.currentFile) {
-        state.currentFile.currentSheet.headers = headers
-      }
-    },
-    updateSheetHeaders (state, headers: any) {
-      if (state.currentFile) {
-        state.currentFile.currentSheet.headers = headers
+      if (state.currentFile?.currentSheet) {
+        if (state.currentFile.currentSheet.headers) {
+          const currentSheet = state.currentFile.currentSheet
+          state.currentFile.currentSheet.headers = headers.map((header: SourceDataElement) => {
+            const existingHeader = currentSheet.headers.find(_ => _.value === header.value)
+            if (existingHeader) {
+              header = existingHeader
+            }
+            return header
+          })
+        } else {
+          state.currentFile.currentSheet.headers = headers
+        }
       }
     },
     setCurrentSheet (state, sheet: Sheet | null) {
