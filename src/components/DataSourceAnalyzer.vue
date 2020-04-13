@@ -225,7 +225,7 @@
 
     importSavedMapping (): void {
       this.$q.loading.show({spinner: undefined})
-      ipcRenderer.send('browse-mapping')
+      ipcRenderer.send('to-background', 'browse-mapping')
       ipcRenderer.on('selected-mapping', (event, data) => {
         if (data) {
           this.$store.dispatch('file/initializeStore', data)
@@ -248,15 +248,15 @@
 
     browseFile (): void {
       this.$q.loading.show({spinner: undefined})
-      ipcRenderer.send('browse-file')
-      ipcRenderer.on('selected-directory', (event, data) => {
+      ipcRenderer.send('to-background', 'browse-file')
+      ipcRenderer.on('selected-files', (event, data) => {
         if (data) {
           data.map(file => {
             this.$store.commit('file/addFile', file)
           })
         }
         this.$q.loading.hide()
-        ipcRenderer.removeAllListeners('selected-directory')
+        ipcRenderer.removeAllListeners('selected-files')
       })
     }
 

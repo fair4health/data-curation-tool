@@ -311,7 +311,7 @@
       const mappingState: FileSource[] = this.$store.getters['file/sourceList']
       this.$q.loading.show({spinner: undefined})
 
-      ipcRenderer.send('export-file', JSON.stringify(
+      ipcRenderer.send('to-background', 'export-file', JSON.stringify(
         {
           fileSourceList: mappingState.map(_ =>
             ({

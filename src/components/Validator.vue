@@ -209,7 +209,6 @@
     get columns (): object[] { return mappingDataTableHeaders }
     get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
     get savedRecords (): store.SavedRecord[] { return this.$store.getters['file/savedRecords'] }
-    get fhirBase (): string { return this.$store.getters['fhir/fhirBase'] }
 
     get mappingList (): any[] { return this.$store.getters['mappingList'] }
     set mappingList (value) { this.$store.commit('setMappingList', value) }
@@ -254,8 +253,8 @@
       }
 
       // Submit each file to create resources and validate them
-      filePathList.reduce((promise: Promise<any>, filePath: string) =>
-        promise.finally(() => new Promise((resolveFile, rejectFile) => {
+      Promise.all(filePathList.map((filePath: string) => {
+        return new Promise((resolveFile, rejectFile) => {
           this.$q.loading.show({
             message: `Loading ${filePath.split('\\').pop()}...`
           })
@@ -268,7 +267,7 @@
           // const sheets = this.mappingObj[filePath]
           const sheets = this.savedRecords.find((files: store.SavedRecord) => files.fileName === filePath)!.sheets
 
-          ipcRenderer.send('validate', this.fhirBase, {filePath, sheets})
+          ipcRenderer.send('to-background', 'validate', {filePath, sheets})
 
           ipcRenderer.on(`validate-read-file-${filePath}`, (event, result) => {
             this.$q.loading.hide()
@@ -330,8 +329,8 @@
           }))
             .then(() => resolveFile())
             .catch(() => rejectFile())
-        }))
-        , Promise.resolve())
+        })
+      }))
         .then(_ => this.validationStatus = 'success')
         .catch(_ => this.validationStatus = 'error')
     }
@@ -384,7 +383,7 @@
       const resources: any = electronStore.get('resources')
       this.$q.loading.show({spinner: undefined})
 
-      ipcRenderer.send('export-file', JSON.stringify(resources))
+      ipcRenderer.send('to-background', 'export-file', JSON.stringify(resources))
       ipcRenderer.on('export-done', (event, result) => {
         if (result) {
           this.$notify.success('File is successfully exported')

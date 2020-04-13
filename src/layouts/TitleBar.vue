@@ -76,7 +76,7 @@
       else this.currentWindow.maximize()
     }
     minimizeApp () { this.currentWindow.minimize() }
-    closeApp () { this.currentWindow.close() }
+    closeApp () { this.currentWindow.destroy() }
     toggleDevTools () { remote.getCurrentWebContents().toggleDevTools() }
   }
 </script>
