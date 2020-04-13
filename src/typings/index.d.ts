@@ -4885,3 +4885,11 @@ declare interface StepItem {
   icon: string,
   stepId: any
 }
+
+declare interface MenuItem {
+  label: string
+  submenu?: MenuItem[]
+  separate?: boolean
+  icon?: string
+  action? (): void
+}
