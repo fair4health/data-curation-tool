@@ -138,6 +138,12 @@ export default class BackgroundEngine extends Vue {
           // workbook = Excel.readFile(path, {type: 'binary', sheetRows: 1})
           const stream = fs.createReadStream(path)
           const buffers = []
+          stream.on('error', () => {
+            log.error(`Cannot read file ${path}`)
+            ipcRenderer.send('to-renderer', 'worksheets-ready', undefined)
+            this.ready()
+            return
+          })
           stream.on('data', (data) => { buffers.push(data) })
           stream.on('end', () => {
             const buffer = Buffer.concat(buffers)
@@ -148,7 +154,7 @@ export default class BackgroundEngine extends Vue {
             log.info('Read file ' + path)
             ipcRenderer.send('to-renderer', 'worksheets-ready', workbook.SheetNames)
           })
-        } catch (e) {
+        } catch (err) {
           log.error(`Cannot read file ${path}`)
           ipcRenderer.send('to-renderer', 'worksheets-ready', undefined)
           this.ready()
@@ -269,12 +275,10 @@ export default class BackgroundEngine extends Vue {
       const filePath = data.filePath
 
       const getWorkbooks = new Promise<Excel.WorkBook>(((resolve, reject) => {
-        if (workbookMap.has(filePath) && 0) {
-          ipcRenderer.send('to-renderer', `validate-read-file-${filePath}`, [])
-          resolve(workbookMap.get(filePath))
-        } else {
+        try {
           const stream = fs.createReadStream(filePath)
           const buffers = []
+          stream.on('error', (err) => { reject(err) })
           stream.on('data', (data) => { buffers.push(data) })
           stream.on('end', () => {
             const buffer = Buffer.concat(buffers)
@@ -286,6 +290,8 @@ export default class BackgroundEngine extends Vue {
             ipcRenderer.send('to-renderer', `validate-read-file-${filePath}`, [])
             resolve(workbook)
           })
+        } catch (err) {
+          reject(err)
         }
       }))
       getWorkbooks.then(workbook => {
@@ -380,6 +386,7 @@ export default class BackgroundEngine extends Vue {
                 })
               }))
                 .then(() => { // End of sheet
+                  ipcRenderer.send('to-renderer', `generated-resources-${filePath}-${sheet.sheetName}`, {status: 'validating'})
                   if (entries.length) {
 
                     Promise.all(Array.from(resources.keys()).map(resourceType => {

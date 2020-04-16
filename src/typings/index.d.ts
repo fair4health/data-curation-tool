@@ -4857,7 +4857,7 @@ declare namespace store {
   }
 }
 
-declare type status = 'success' | 'warning' | 'error' | 'in-progress' | 'pending'
+declare type status = 'success' | 'warning' | 'error' | 'in-progress' | 'pending' | 'validating' | 'transforming'
 
 declare interface OutcomeDetail {
   status: status
