@@ -83,7 +83,7 @@ function createWindow () {
 
 }
 
-function createBgWindow (): BrowserWindow {
+function createBgWindow (id: number): BrowserWindow {
   let background = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true } })
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
@@ -104,6 +104,10 @@ function createBgWindow (): BrowserWindow {
     dialog.showMessageBox(options, (index) => {
       if (index === 0) background?.destroy()
     })
+  })
+
+  background.webContents.on('did-finish-load', () => {
+    background.setTitle(`bg-${id}`)
   })
 
   background.on('closed', () => {
@@ -155,7 +159,7 @@ app.on('ready', async () => {
 
   // Create background threads
   for (let i = 0; i < 2; i++) {
-    backgroundWindows.push(createBgWindow())
+    backgroundWindows.push(createBgWindow(i))
   }
 
   // Windows can talk to each other via main
