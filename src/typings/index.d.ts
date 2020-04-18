@@ -4857,7 +4857,7 @@ declare namespace store {
   }
 }
 
-declare type status = 'success' | 'warning' | 'error' | 'in-progress' | 'pending'
+declare type status = 'success' | 'warning' | 'error' | 'in-progress' | 'pending' | 'validating' | 'transforming'
 
 declare interface OutcomeDetail {
   status: status
@@ -4884,4 +4884,12 @@ declare interface StepItem {
   title: string,
   icon: string,
   stepId: any
+}
+
+declare interface MenuItem {
+  label: string
+  submenu?: MenuItem[]
+  separate?: boolean
+  icon?: string
+  action? (): void
 }

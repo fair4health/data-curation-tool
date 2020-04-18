@@ -18,51 +18,52 @@
               </template>
             </q-input>
           </template>
-          <template v-slot:header-cell="props">
-            <q-th :props="props" class="bg-primary text-white" style="font-size: 13px">
-              <q-icon v-if="props.col.icon" :name="props.col.icon" />
-              <span class="vertical-middle q-ml-xs">{{ props.col.label }}</span>
-            </q-th>
-          </template>
+            <template v-slot:header="props">
+              <q-tr :props="props">
+                <q-th
+                  v-for="col in props.cols"
+                  :key="col.name"
+                  :props="props"
+                  class="bg-primary text-white"
+                >
+                  <q-icon v-if="col.icon" :name="col.icon" />
+                  <span class="vertical-middle q-ml-xs">{{ col.label }}</span>
+                </q-th>
+                <q-th class="bg-primary text-white" auto-width>
+                  Details
+                </q-th>
+              </q-tr>
+            </template>
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td key="status" class="no-padding" :props="props">
                 <template v-if="props.row.validation.status === 'in-progress'">
                   <span>
                     <q-spinner color="grey-9" />
+                    <q-tooltip content-class="bg-white text-grey-8">Generating resources...</q-tooltip>
+                  </span>
+                </template>
+                <template v-else-if="props.row.validation.status === 'validating'">
+                  <span>
+                    <q-spinner color="grey-9" />
                     <q-tooltip content-class="bg-white text-grey-8">Validating...</q-tooltip>
                   </span>
                 </template>
                 <template v-else-if="props.row.validation.status === 'done'">
-                  <div class="row items-center">
-                    <div class="col-6">
-                      <q-icon name="check" color="green">
-                        <q-tooltip content-class="bg-white text-green">Completed</q-tooltip>
-                      </q-icon>
-                    </div>
-                    <div class="col-6 bg-grey-3">
-                      <q-btn flat dense icon="feedback" color="grey-8" label="Details" size="sm"
-                             @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)" no-caps />
-                    </div>
-                  </div>
+                  <q-icon name="check" color="positive">
+                    <q-tooltip content-class="bg-white text-green">Completed</q-tooltip>
+                  </q-icon>
                 </template>
                 <template v-else-if="props.row.validation.status === 'warning'">
-                  <div class="row items-center">
-                    <div class="col-6">
-                      <q-icon name="warning" color="orange-6">
-                        <q-tooltip content-class="bg-white text-orange-6">Warning</q-tooltip>
-                      </q-icon>
-                    </div>
-                    <div class="col-6 bg-grey-3">
-                      <q-btn flat dense icon="feedback" color="grey-8" label="Details" size="sm"
-                             @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)" no-caps />
-                    </div>
-                  </div>
+                  <q-icon name="warning" color="orange-6">
+                    <q-tooltip content-class="bg-white text-orange-6">Warning</q-tooltip>
+                  </q-icon>
                 </template>
                 <template v-else-if="props.row.validation.status === 'error'">
-                  <q-icon name="error_outline" color="red" class="cursor-pointer"
-                          @click="openOutcomeDetailCard([{status: 'error', message: props.row.validation.description, resourceType: 'OperationOutcome'}])">
-                    <q-tooltip content-class="error-tooltip bg-white text-red-7" class="ellipsis-3-lines">{{ props.row.validation.description }}</q-tooltip>
+                  <q-icon name="error_outline" color="negative">
+                    <q-tooltip content-class="error-tooltip bg-white text-red-7" class="ellipsis-3-lines">
+                      {{ props.row.validation.description }}
+                    </q-tooltip>
                   </q-icon>
                 </template>
                 <template v-else>
@@ -80,6 +81,25 @@
               </q-td>
               <q-td key="targets" :props="props" class="text-weight-bold">
                 {{ computedSavedRecord(props.row.file, props.row.sheet).length }}
+              </q-td>
+              <q-td>
+                <template v-if="props.row.validation.status === 'in-progress'">
+                  <span class="text-grey-8 q-pl-sm" style="font-size: 11px">Creating...</span>
+                </template>
+                <template v-else-if="props.row.validation.status === 'validating'">
+                  <span class="text-grey-8 q-pl-sm" style="font-size: 11px">Validating...</span>
+                </template>
+                <q-btn v-else-if="props.row.validation.status === 'done' || props.row.validation.status === 'warning'" flat rounded icon="receipt"
+                       color="primary" label="Details" size="sm" class="text-center"
+                       @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)" no-caps
+                />
+                <q-btn v-else-if="props.row.validation.status === 'error'" flat rounded icon="error" color="negative"
+                       label="Details" size="sm" class="text-center" no-caps
+                       @click="openOutcomeDetailCard([{status: 'error', message: props.row.validation.description, resourceType: 'OperationOutcome'}])"
+                />
+                <template v-else>
+                  <span class="text-grey-8 q-pl-sm" style="font-size: 11px">Pending</span>
+                </template>
               </q-td>
             </q-tr>
             <q-tr v-show="props.expand" :props="props">
@@ -209,7 +229,6 @@
     get columns (): object[] { return mappingDataTableHeaders }
     get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
     get savedRecords (): store.SavedRecord[] { return this.$store.getters['file/savedRecords'] }
-    get fhirBase (): string { return this.$store.getters['fhir/fhirBase'] }
 
     get mappingList (): any[] { return this.$store.getters['mappingList'] }
     set mappingList (value) { this.$store.commit('setMappingList', value) }
@@ -254,8 +273,8 @@
       }
 
       // Submit each file to create resources and validate them
-      filePathList.reduce((promise: Promise<any>, filePath: string) =>
-        promise.finally(() => new Promise((resolveFile, rejectFile) => {
+      Promise.all(filePathList.map((filePath: string) => {
+        return new Promise((resolveFile, rejectFile) => {
           this.$q.loading.show({
             message: `Loading ${filePath.split('\\').pop()}...`
           })
@@ -268,7 +287,7 @@
           // const sheets = this.mappingObj[filePath]
           const sheets = this.savedRecords.find((files: store.SavedRecord) => files.fileName === filePath)!.sheets
 
-          ipcRenderer.send('validate', this.fhirBase, {filePath, sheets})
+          ipcRenderer.send('to-background', 'validate', {filePath, sheets})
 
           ipcRenderer.on(`validate-read-file-${filePath}`, (event, result) => {
             this.$q.loading.hide()
@@ -306,6 +325,17 @@
                 // TODO:
                 ipcRenderer.removeAllListeners(`info-${filePath}-${sheet}`)
               })
+              ipcRenderer.on(`generated-resources-${filePath}-${sheet}`, (event, result) => {
+                ipcRenderer.removeAllListeners(`generated-resources-${filePath}-${sheet}`)
+
+                // Update status of mapping entries
+                this.mappingList = this.mappingList.map(_ => {
+                  if (_.file === filePath && _.sheet === sheet) {
+                    _.validation = result
+                  }
+                  return _
+                })
+              })
               ipcRenderer.on(`validate-${filePath}-${sheet}`, (event, result) => {
                 ipcRenderer.removeAllListeners(`validate-${filePath}-${sheet}`)
 
@@ -330,8 +360,8 @@
           }))
             .then(() => resolveFile())
             .catch(() => rejectFile())
-        }))
-        , Promise.resolve())
+        })
+      }))
         .then(_ => this.validationStatus = 'success')
         .catch(_ => this.validationStatus = 'error')
     }
@@ -384,7 +414,7 @@
       const resources: any = electronStore.get('resources')
       this.$q.loading.show({spinner: undefined})
 
-      ipcRenderer.send('export-file', JSON.stringify(resources))
+      ipcRenderer.send('to-background', 'export-file', JSON.stringify(resources))
       ipcRenderer.on('export-done', (event, result) => {
         if (result) {
           this.$notify.success('File is successfully exported')

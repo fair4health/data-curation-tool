@@ -160,7 +160,7 @@
 
     transform () {
       if (this.transformList.length) {
-        ipcRenderer.send('transform', this.fhirBase)
+        ipcRenderer.send('to-background', 'transform')
         this.transformStatus = 'in-progress'
         ipcRenderer.on('transform-result', (event, result: OutcomeDetail) => {
           ipcRenderer.removeAllListeners(`transform-result`)
@@ -223,7 +223,7 @@
     removeResourceFromFHIR (resourceType: string) {
       this.$q.loading.show()
       const fhirBase: string = this.$store.getters['fhir/fhirBase']
-      ipcRenderer.send('delete-resource', fhirBase, resourceType)
+      ipcRenderer.send('to-background', 'delete-resource', {resourceType})
       ipcRenderer.on('delete-resource-result', (event, result) => {
         ipcRenderer.removeAllListeners('delete-resource-result')
         if (result) {

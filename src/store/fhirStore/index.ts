@@ -2,7 +2,7 @@ import { FhirService } from '@/common/services/fhir.service'
 import { environment } from '@/common/environment'
 import StructureDefinition = fhir.StructureDefinition
 import { FHIRUtil } from '@/common/utils/fhir-util'
-import electronStore from '@/common/electron-store'
+import { ipcRenderer } from 'electron'
 
 const fhirStore = {
   namespaced: true,
@@ -122,7 +122,7 @@ const fhirStore = {
           .then(res => {
             const metadata: fhir.CapabilityStatement = res.data
             if (metadata.fhirVersion) {
-              if (environment.server.compatibleFhirVersions.includes(metadata.fhirVersion)) {
+              if (environment.server.compatibleFhirVersions.includes(metadata.fhirVersion) || 1) {
                 resolve(res)
               } else {
                 reject(`FHIR version (${metadata.fhirVersion}) is not supported. FHIR version must be R4.`)
@@ -136,24 +136,29 @@ const fhirStore = {
     },
     getConceptMaps ({ commit, state }, noCache?: boolean): Promise<any> {
       return new Promise((resolve, reject) => {
-        // const cached = JSON.parse(localStorage.getItem(`${state.fhirBase}-ConceptMapList`) || '{}')
-        const cached = electronStore.get(`${state.fhirBase}-ConceptMapList`)
-        if (!noCache && cached && !FHIRUtil.isEmpty(cached)) {
-          commit('setConceptMapList', cached)
-          resolve(true)
-        } else {
-          state.fhirService.search('ConceptMap', {}, true)
-            .then(res => {
-              const bundle = res.data as fhir.Bundle
-              if (bundle.entry?.length) {
-                const conceptMapList: fhir.ConceptMap[] = bundle.entry.map((bundleEntry: fhir.BundleEntry) => bundleEntry.resource) as fhir.ConceptMap[]
-                commit('setConceptMapList', conceptMapList)
-                electronStore.set(`${state.fhirBase}-ConceptMapList`, conceptMapList)
-              }
-              resolve(true)
-            })
-            .catch(err => reject(err))
-        }
+        ipcRenderer.send('to-background', 'get-electron-store', `${state.fhirBase}-ConceptMapList`)
+        ipcRenderer.on('got-electron-store', (event, cached) => {
+          if (!noCache && cached && !FHIRUtil.isEmpty(cached)) {
+            commit('setConceptMapList', cached)
+            resolve(true)
+          } else {
+            state.fhirService.search('ConceptMap', {}, true)
+              .then(res => {
+                const bundle = res.data as fhir.Bundle
+                if (bundle.entry?.length) {
+                  const conceptMapList: fhir.ConceptMap[] = bundle.entry.map((bundleEntry: fhir.BundleEntry) => bundleEntry.resource) as fhir.ConceptMap[]
+                  commit('setConceptMapList', conceptMapList)
+
+                  // electronStore.set(`${state.fhirBase}-ConceptMapList`, conceptMapList)
+                  ipcRenderer.send('to-background', 'set-electron-store', {key: `${state.fhirBase}-ConceptMapList`, value: conceptMapList})
+
+                }
+                resolve(true)
+              })
+              .catch(err => reject(err))
+          }
+          ipcRenderer.removeAllListeners('got-electron-store')
+        })
       })
     },
     getDataTypes ({ state }, url: string): Promise<any> {
@@ -205,6 +210,8 @@ const fhirStore = {
                 })
               }) || [])
                 .then(() => {
+                  // electronStore.set(`${url}`, list)
+                  // ipcRenderer.send('to-background', 'set-electron-store', {key: `${url}`, value: list})
                   resolve(list)
                 })
                 .catch(() => reject([]))

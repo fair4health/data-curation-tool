@@ -24,6 +24,11 @@ const routes = [
         component: () => import('@/views/About.vue')
       }
     ]
+  },
+  {
+    path: '/background-engine',
+    name: 'background-engine',
+    component: () => import('@/components/BackgroundEngine.ts')
   }
 ]
 

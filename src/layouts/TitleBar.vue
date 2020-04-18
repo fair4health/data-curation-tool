@@ -13,39 +13,10 @@
         <q-btn flat icon="close" class="title-bar-btn btn-close" @click="closeApp" />
       </div>
     </q-bar>
-    <div class="bg-grey-10 q-pa-sm q-pl-md row items-center">
-      <div class="cursor-pointer non-selectable">
-        File
-        <q-menu>
-          <q-list dense style="min-width: 150px">
-            <q-item clickable v-close-popup @click="closeApp">
-              <q-item-section>Close</q-item-section>
-            </q-item>
-          </q-list>
-        </q-menu>
-      </div>
-      <div class="q-ml-md cursor-pointer non-selectable">
-        View
-        <q-menu auto-close>
-          <q-list dense style="min-width: 150px">
-            <q-item clickable @click="toggleFullScreen">
-              <q-item-section>Toggle Full Screen</q-item-section>
-            </q-item>
-          </q-list>
-        </q-menu>
-      </div>
-      <div class="q-ml-md cursor-pointer non-selectable">
-        Tool
-        <q-menu auto-close>
-          <q-list dense style="min-width: 150px">
-            <q-item clickable @click="toggleDevTools">
-              <q-item-section>Toggle Developer Tools</q-item-section>
-            </q-item>
-          </q-list>
-        </q-menu>
-      </div>
-      <div class="q-ml-md cursor-pointer non-selectable">
-        Help
+    <div class="bg-grey-10 q-pa-sm q-pl-md row q-gutter-x-sm items-center">
+      <div v-for="menuItem in menu" class="q-px-xs cursor-pointer non-selectable">
+        {{ menuItem.label }}
+        <menu-tree :menu="menuItem.submenu" :offset="[0, 8]" />
       </div>
     </div>
   </div>
@@ -53,12 +24,58 @@
 
 <script lang="ts">
   import { Component, Vue, Watch } from 'vue-property-decorator'
-  import { remote } from 'electron'
+  import { remote, shell } from 'electron'
+  import MenuTree from '@/layouts/MenuTree.vue'
 
-  @Component
+  @Component({
+    components: {
+      MenuTree
+    }
+  })
   export default class TitleBar extends Vue {
     private currentWindow = remote.getCurrentWindow()
     private isMaximized = this.currentWindow.isMaximized()
+    private menu: MenuItem[] = [
+      {
+        label: 'File',
+        submenu: [
+          {
+            label: 'Exit',
+            action: () => this.closeApp()
+          }
+        ]
+      },
+      {
+        label: 'View',
+        submenu: [
+          {
+            label: 'Toggle Full Screen',
+            action: () => this.toggleFullScreen()
+          }
+        ]
+      },
+      {
+        label: 'Tool',
+        submenu: [
+          {
+            label: 'Toggle Developer Tools',
+            action: () => this.toggleDevTools()
+          }
+        ]
+      },
+      {
+        label: 'Help',
+        submenu: [
+          {
+            label: 'Help',
+            icon: 'fas fa-question',
+            action: () => this.openExternal(this.projectHomePage)
+          }
+        ]
+      }
+    ]
+
+    get projectHomePage (): string { return window.process.env.ELECTRON_WEBPACK_APP_F4H_HOMEPAGE }
 
     get drawerOpen (): boolean { return this.$store.getters.drawerOpen }
     set drawerOpen (value) { this.$store.commit('setDrawerOpen', value) }
@@ -76,8 +93,9 @@
       else this.currentWindow.maximize()
     }
     minimizeApp () { this.currentWindow.minimize() }
-    closeApp () { this.currentWindow.close() }
+    closeApp () { this.currentWindow.destroy() }
     toggleDevTools () { remote.getCurrentWebContents().toggleDevTools() }
+    openExternal (url: string) { shell.openExternal(url) }
   }
 </script>
 

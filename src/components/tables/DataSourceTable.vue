@@ -92,7 +92,7 @@
             <q-td :props="props">
               <div v-for="(target, index) in props.row.target" :key="index">
                 <q-chip dense removable @remove="removeTarget(props.row.value, index)" color="orange" text-color="white">
-                  <span class="q-mx-xs" style="font-size: 12px">{{ target.value }}</span>
+                  <span class="q-mx-xs" style="font-size: 11px">{{ target.value }}</span>
                 </q-chip>
                 <q-chip v-if="!!target.type" dense color="grey-2" text-color="grey-8" style="font-size: 11px">
                   {{ target.type }}
@@ -119,6 +119,7 @@
                         @clear="removeConceptMap(props.row); $refs[props.row.value].blur()"
                         @input="bufferSheetHeaders = [...bufferSheetHeaders]"
               />
+
             </q-td>
           </template>
           <template v-slot:no-data="{ icon, message, filter }">
@@ -135,6 +136,7 @@
   import { ipcRenderer } from 'electron'
   import { SourceDataElement, FileSource, Sheet, BufferElement } from '@/common/model/file-source'
   import { sourceDataTableHeaders, cellType } from '@/common/model/data-table'
+  import electronStore from '@/common/electron-store'
 
   @Component
   export default class DataSourceTable extends Vue {
@@ -221,7 +223,7 @@
       this.loadingAttr = true
       this.$q.loadingBar.start()
       this.sheetHeaders = []
-      ipcRenderer.send('read-file', this.currentSource.path)
+      ipcRenderer.send('to-background', 'read-file', this.currentSource.path)
       ipcRenderer.on('worksheets-ready', (event, worksheets) => {
         this.sheets = worksheets || []
         // this.currentSheet = null
@@ -233,8 +235,8 @@
 
     fetchHeaders (noCache?: boolean): void {
       this.loadingAttr = true
-      ipcRenderer.send('get-sheet-headers', {path: this.currentSource?.path, sheet: this.currentSheet?.value, noCache})
-      ipcRenderer.on('ready-sheet-headers', (event, headers) => {
+      ipcRenderer.send('to-background', 'get-table-headers', {path: this.currentSource?.path, sheet: this.currentSheet?.value, noCache})
+      ipcRenderer.on('ready-table-headers', (event, headers) => {
         if (!headers.length) {
           this.$notify.error('Headers couldn\'t be detected')
         }
@@ -242,7 +244,7 @@
         this.$store.commit('file/setSheetHeaders', headers)
         this.$store.commit('file/setupBufferSheetHeaders')
         this.loadingAttr = false
-        ipcRenderer.removeAllListeners('ready-sheet-headers')
+        ipcRenderer.removeAllListeners('ready-table-headers')
       })
     }
 

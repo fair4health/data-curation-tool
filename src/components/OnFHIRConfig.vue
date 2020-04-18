@@ -30,7 +30,7 @@
           <q-space />
           <div class="q-gutter-sm">
             <q-btn unelevated label="Verify" icon="verified_user" color="grey-2" text-color="primary"
-                   :disable="!onfhirBaseUrl" @click="verifyFhir" no-caps>
+                   :disable="!onfhirBaseUrl || fhirBaseVerificationStatus==='in-progress'" @click="verifyFhir" no-caps>
               <span class="q-ml-sm">
                 <q-spinner class="q-ml-sm" size="xs" v-show="fhirBaseVerificationStatus==='in-progress'" />
                 <q-icon name="check" size="xs" color="green" v-show="fhirBaseVerificationStatus==='success'" />
@@ -48,6 +48,7 @@
 
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
+  import { ipcRenderer } from 'electron'
 
   @Component
   export default class OnFHIRConfig extends Vue {
@@ -72,6 +73,7 @@
           .then(() => {
             this.statusDetail = 'FHIR Repository URL is verified.'
             this.fhirBaseVerificationStatus = 'success'
+            ipcRenderer.send('to-all-background', 'set-fhir-base', this.onfhirBaseUrl)
           })
           .catch(err => {
             this.statusDetail = err
