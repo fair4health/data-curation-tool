@@ -11,7 +11,7 @@ export const sourceDataTableHeaders = [
   { name: 'attr', required: true, label: 'Attribute', align: 'left', field: 'value', icon: 'fas fa-bars', sortable: true },
   { name: 'type', required: true, label: 'Type', align: 'left', field: 'type', icon: 'fas fa-spell-check' },
   { name: 'target', label: 'Target', align: 'left', field: 'target' },
-  { name: 'conceptMap', label: 'Concept Map', align: 'right', field: 'conceptMap', style: 'width: 250px' }
+  { name: 'conceptMap', label: 'Concept Map', align: 'right', field: 'conceptMap' }
 ]
 export const mappingDataTableHeaders = [
   { name: 'status', align: 'center', label: 'Status', field: 'status', icon: 'fas fa-info-circle', classes: 'bg-grey-2', headerClasses: 'bg-primary text-white' },

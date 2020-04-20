@@ -1,6 +1,6 @@
 <template>
   <q-dialog ref="dialog" @hide="onDialogHide" :full-width="fullscreen" :full-height="fullscreen">
-    <q-card style="width: 900px; max-width: 80vw;">
+    <q-card class="dialog-card">
       <q-card-section>
         <div class="text-h6 row items-center">
           <div>
@@ -57,9 +57,9 @@
             />
           </div>
         </div>
-        <q-table flat binary-state-sort :data="filteredOutcomeDetails" :columns="columns" row-key="name"
+        <q-table flat binary-state-sort :data="filteredOutcomeDetails" :columns="columns" row-key="name" color="primary"
                  :rows-per-page-options="[10, 20, 50]" :pagination.sync="pagination" class="sticky-header-table"
-                 table-style="max-height: 50vh" color="primary"
+                 table-class="outcome-table"
         >
           <template v-slot:body="props">
             <q-tr :props="props">
@@ -102,9 +102,9 @@
   export default class OutcomeCard extends Vue {
     private columns = [
       { name: 'status', label: 'Status', field: 'status', align: 'center', icon: 'fas fa-info-circle',
-        classes: 'bg-grey-2', headerClasses: 'bg-primary text-white col-1', style: 'width: 50px' },
+        classes: 'bg-grey-2', headerClasses: 'bg-primary text-white col-1 outcome-table-column' },
       { name: 'resourceType', label: 'Resource', field: 'resourceType', align: 'center', sortable: true,
-        classes: 'bg-grey-1', headerClasses: 'bg-grey-4 text-grey-10 col-1', style: 'width: 50px' },
+        classes: 'bg-grey-1', headerClasses: 'bg-grey-4 text-grey-10 col-1 outcome-table-column' },
       { name: 'message', label: 'Detail', field: 'message', align: 'left', sortable: true }
     ]
     private pagination = { page: 1, rowsPerPage: 10 }
@@ -150,9 +150,16 @@
 </script>
 
 <style lang="stylus">
+  .dialog-card
+    width 900px !important
+    max-width 80vw !important
   .message-details-class
     font-size 0.85em
     max-width 70vw
     white-space normal
     margin-top 4px
+  .outcome-table
+    max-height 50vh
+  .outcome-table-column
+    width 50px
 </style>

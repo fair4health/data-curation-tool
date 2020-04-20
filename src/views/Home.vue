@@ -93,10 +93,3 @@
   }
 
 </script>
-
-<style lang="stylus">
-  .top-fix-column
-    position sticky
-    top 0
-    z-index 2
-</style>

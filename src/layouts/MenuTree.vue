@@ -1,12 +1,12 @@
 <template>
   <q-menu square :anchor="anchorPosition" :self="selfPosition" :offset="offset">
-    <q-list dense style="min-width: 150px" class="q-my-xs">
+    <q-list dense class="menu-list q-my-xs">
       <template v-for="menuItem in menu">
         <q-item clickable dense class="no-padding" v-close-popup="!!menuItem.action" v-on="menuItem.action ? {click: menuItem.action} : {}">
           <q-item-section class="row">
             <span>
               <q-icon :name="menuItem.icon" class="q-mx-md" />
-              <span style="font-size: 13px;">{{ menuItem.label }}</span>
+              <span class="text-size-lg">{{ menuItem.label }}</span>
             </span>
           </q-item-section>
           <q-item-section side class="q-ml-md">

@@ -57,11 +57,11 @@
             </q-input>
           </q-item-section>
           <q-separator />
-          <div style="overflow-y: auto">
+          <div class="overflow-auto">
             <q-splitter v-model="splitterModel" :limits="[50, 98]">
               <!--Fhir Element Tree Part-->
               <template v-slot:before>
-                <q-scroll-area style="height: 50vh">
+                <q-scroll-area class="fhir-table-height">
                   <q-tree :nodes="filteredFhirElementList"
                           ref="fhirTree"
                           node-key="value"
@@ -102,7 +102,7 @@
                                        && prop.node.type[0].value !== 'Coding'
                                        && prop.node.type[0].value !== 'Extension')"
                                  class="full-width">
-                              <q-list dense class="q-ma-sm" style="font-size: 13px">
+                              <q-list dense class="q-ma-sm text-size-lg">
                                 <q-tree :nodes="prop.node.type"
                                         node-key="value"
                                         label-key="label"
@@ -137,7 +137,7 @@
                                               </div>
                                               <q-space />
                                               <div v-if="propType.node.type[0].value === 'Reference'" class="select-reference">
-                                                <q-select dense class="q-pl-xs ellipsis"
+                                                <q-select dense class="q-pl-xs ellipsis text-size-md select-input"
                                                           clearable
                                                           options-dense
                                                           standout="bg-primary text-white"
@@ -148,7 +148,6 @@
                                                           @filter="filterFn"
                                                           option-label="name"
                                                           option-value="id"
-                                                          style="width: 280px; font-size: 12px"
                                                           @input="prop.node.selectedReference ? prop.node.selectedType = propType.node.value + '.' + prop.node.selectedReference : undefined;
                                                                   $store.commit('fhir/setElementList', fhirElementList);
                                                                   $refs[prop.node.value].blur();"
@@ -182,7 +181,7 @@
 
               <!--Elements Definition Part-->
               <template v-slot:after>
-                <q-scroll-area style="height: 50vh" v-if="selectedElem">
+                <q-scroll-area v-if="selectedElem" class="fhir-table-height">
                   <div>
                     <q-toolbar class="bg-grey-2">
                       <q-item-label class="text-weight-bold text-grey-7 ellipsis">
@@ -399,9 +398,9 @@
   }
 </script>
 
-<style lang="stylus">
+<style lang="stylus" scoped>
+  .fhir-table-height
+    height 50vh
   .fhir-element-text:hover
     text-decoration underline
-  .q-menu
-    max-height 450px
 </style>

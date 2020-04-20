@@ -9,7 +9,7 @@
       <q-card-section>
         <q-item-label class="text-h5 q-ma-md">Transform</q-item-label>
         <q-list separator class="rounded-borders">
-          <q-item class="q-py-md text-white bg-primary" style="font-size: 13px">
+          <q-item class="q-py-md text-white bg-primary text-size-lg">
             <q-item-section top avatar>Status</q-item-section>
             <q-item-section top class="col-1 gt-sm" />
             <q-item-section top class="col-7">Resource Type</q-item-section>
@@ -57,7 +57,7 @@
 
               <q-item-section class="col-7">
                 <q-item-label lines="2">
-                  <span class="text-weight-medium text-grey-7" style="font-size: 15px">{{ resource.resourceType }}</span>
+                  <span class="text-weight-medium text-grey-7 text-size-xxl">{{ resource.resourceType }}</span>
                 </q-item-label>
               </q-item-section>
 
@@ -81,9 +81,9 @@
                   <q-btn size="12px" flat dense round icon="more_vert" :disable="transformStatus === 'in-progress'">
                     <q-tooltip content-class="bg-white text-grey-9">More</q-tooltip>
                     <q-menu transition-show="jump-down" transition-hide="jump-up" auto-close>
-                      <q-list style="min-width: 150px">
+                      <q-list class="menu-list">
                         <q-item clickable @click="removeResourceFromFHIR(resource.resourceType)">
-                          <q-item-section style="font-size: 12px">Remove from FHIR</q-item-section>
+                          <q-item-section class="text-size-md">Remove from FHIR</q-item-section>
                         </q-item>
                       </q-list>
                     </q-menu>
@@ -95,7 +95,7 @@
           <template v-else>
             <div class="text-grey-9 q-ma-md">
               <q-icon name="warning" size="sm" />
-              <span class="q-pl-sm" style="font-size: 13px">No data available</span>
+              <span class="q-pl-sm text-size-lg">No data available</span>
             </div>
           </template>
           <q-separator />
@@ -197,7 +197,7 @@
 
     previousStep () {
       this.$q.dialog({
-        title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Previous Step</span>',
+        title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Previous Step</span>',
         message: 'If you go back and make any change, the changes you have made in this section will be lost.',
         class: 'text-grey-9',
         cancel: true,

@@ -43,10 +43,10 @@
         <q-toggle v-model="showMappedFields" checked-icon="star" size="xs" color="green" label="Show mapped fields only" class="text-grey-8" unchecked-icon="clear" />
       </div>
       <q-card-section>
-        <q-table flat class="sticky-header-table q-mb-lg" title="Data Source" :data="filteredBufferSheetHeaders" binary-state-sort
+        <q-table flat class="sticky-header-table q-mb-lg table-card-section" title="Data Source" :data="filteredBufferSheetHeaders" binary-state-sort
                  :columns="dataSourceColumns" row-key="value" selection="multiple" :selected.sync="selectedAttr"
                  :loading="loadingAttr" :grid="$q.screen.lt.sm" :rows-per-page-options="[10, 20, 0]" :pagination.sync="pagination"
-                 color="primary" table-style="max-height: 46vh" :filter="filter" :filter-method="filterTable" style="margin-top: -10px"
+                 color="primary" table-class="data-source-table" :filter="filter" :filter-method="filterTable"
         >
           <template v-slot:top="props">
             <q-card flat class="full-width">
@@ -78,12 +78,12 @@
           </template>
           <template v-slot:body-cell-type="props">
             <q-td :props="props">
-              <div style="cursor: pointer">
+              <div class="cursor-pointer">
                 <q-badge color="green" :label="props.row.type" />
                 <q-popup-edit v-model="props.row.type" buttons @save="onSaveFieldType">
                   <q-item-label class="text-weight-bold">Type</q-item-label>
                   <q-separator spaced />
-                  <q-select filled dense v-model="props.row.type" :options="fieldTypes" style="min-width: 200px" />
+                  <q-select filled dense v-model="props.row.type" :options="fieldTypes" class="select-input" />
                 </q-popup-edit>
               </div>
             </q-td>
@@ -92,9 +92,9 @@
             <q-td :props="props">
               <div v-for="(target, index) in props.row.target" :key="index">
                 <q-chip dense removable @remove="removeTarget(props.row.value, index)" color="orange" text-color="white">
-                  <span class="q-mx-xs" style="font-size: 11px">{{ target.value }}</span>
+                  <span class="q-mx-xs text-size-sm">{{ target.value }}</span>
                 </q-chip>
-                <q-chip v-if="!!target.type" dense color="grey-2" text-color="grey-8" style="font-size: 11px">
+                <q-chip v-if="!!target.type" dense class="text-size-sm" color="grey-2" text-color="grey-8">
                   {{ target.type }}
                 </q-chip>
               </div>
@@ -106,7 +106,7 @@
                         dense
                         options-dense
                         clearable
-                        class="ellipsis"
+                        class="ellipsis text-size-lg select-input"
                         :outlined="!!props.row.conceptMap"
                         :standout="!props.row.conceptMap ? 'bg-primary text-white' : ''"
                         :label="!props.row.conceptMap ? 'No mapping' : 'Concept Map'"
@@ -115,7 +115,6 @@
                         :options="conceptMapList"
                         option-label="name"
                         option-value="id"
-                        style="width: 280px; font-size: 13px"
                         @clear="removeConceptMap(props.row); $refs[props.row.value].blur()"
                         @input="bufferSheetHeaders = [...bufferSheetHeaders]"
               />
@@ -136,7 +135,6 @@
   import { ipcRenderer } from 'electron'
   import { SourceDataElement, FileSource, Sheet, BufferElement } from '@/common/model/file-source'
   import { sourceDataTableHeaders, cellType } from '@/common/model/data-table'
-  import electronStore from '@/common/electron-store'
 
   @Component
   export default class DataSourceTable extends Vue {
@@ -269,3 +267,10 @@
 
   }
 </script>
+
+<style lang="stylus">
+  .data-source-table
+    max-height 46vh
+  .table-card-section
+    margin-top -10px
+</style>

@@ -25,8 +25,8 @@
           </q-item-section>
         </template>
         <q-card bordered class="bg-white">
-          <q-splitter v-model="splitPercentage" :limits="[20, 80]" separator-class="bg-grey-4"
-                      separator-style="width: 12px" :horizontal="$q.screen.lt.sm" class="row">
+          <q-splitter v-model="splitPercentage" :limits="[20, 80]" separator-class="bg-grey-4 separator-style"
+                      :horizontal="$q.screen.lt.sm" class="row">
 
             <!--Data Source Part-->
             <template v-slot:before>
@@ -101,7 +101,7 @@
                       <q-card class="q-ma-xs" bordered flat>
                         <q-card-section class="text-caption bg-grey-3 text-weight-bold q-pa-xs">
                           <div class="row items-center">
-                            <q-chip class="text-white" color="blue-grey-4" style="font-size: 12px">#{{ record.recordId }}</q-chip>
+                            <q-chip class="text-white text-size-md" color="blue-grey-4">#{{ record.recordId }}</q-chip>
                             <q-space />
                             <div class="q-gutter-xs">
                               <q-btn flat round dense size="sm" icon="edit" color="grey-9"
@@ -113,11 +113,11 @@
                           <div class="row ellipsis no-wrap">
                             <div class="text-grey-8 ellipsis no-wrap text-weight-regular">
                               <div class="row no-wrap">
-                                <q-chip class="text-grey-8 cursor-pointer" color="white" style="font-size: 11px">
+                                <q-chip class="text-grey-8 cursor-pointer text-size-sm" color="white">
                                   <span class="text-weight-bold ellipsis"> {{ record.resource }}</span>
                                   <q-tooltip content-class="bg-grey-2 text-primary">{{record.resource}}</q-tooltip>
                                 </q-chip>
-                                <q-chip class="text-grey-8 ellipsis cursor-pointer" color="white" style="font-size: 11px">
+                                <q-chip class="text-grey-8 ellipsis cursor-pointer text-size-sm" color="white">
                                   <span class="ellipsis">{{ record.profile || '-' }}</span>
                                   <q-tooltip content-class="bg-grey-2 text-primary">{{record.profile}}</q-tooltip>
                                 </q-chip>
@@ -128,12 +128,12 @@
                         <q-card-section>
                           <q-list separator>
                             <q-item v-for="(column, index) in record.data" :key="index">
-                              <div class="col-3 ellipsis items-center" style="font-size: 12px">{{ column.value }}</div>
+                              <div class="col-3 ellipsis items-center text-size-md">{{ column.value }}</div>
                               <div class="row col">
                                 <q-chip dense removable v-for="(target, targetI) in column.target" :key="targetI"
                                         color="orange" text-color="white" class="cursor-pointer"
                                         @remove="removeMatching(file.fileName, sheet.sheetName, record.recordId, column.value, target.value, target.type)">
-                                  <div class="q-mx-xs ellipsis" style="font-size: 12px">{{ target.value }}</div>
+                                  <div class="q-mx-xs ellipsis text-size-md">{{ target.value }}</div>
                                   <q-tooltip>{{ target.value }}</q-tooltip>
                                 </q-chip>
                               </div>
@@ -141,11 +141,11 @@
                                 <div v-for="(target, targetI) in column.target" :key="targetI" class="full-width">
                                   <q-chip dense v-if="!!target.type"
                                           color="grey-2" text-color="grey-8" class="cursor-pointer">
-                                    <div class="q-mx-xs ellipsis" style="font-size: 11px">{{ target.type }}</div>
+                                    <div class="q-mx-xs ellipsis text-size-sm">{{ target.type }}</div>
                                     <q-tooltip>{{ target.type }}</q-tooltip>
                                   </q-chip>
                                   <q-chip v-else dense color="white" text-color="grey-8">
-                                    <div class="q-mx-xs ellipsis" style="font-size: 12px">-</div>
+                                    <div class="q-mx-xs ellipsis text-size-md">-</div>
                                   </q-chip>
                                 </div>
                               </div>
@@ -182,7 +182,7 @@
   import Loading from '@/components/Loading.vue'
   import { v4 as uuid } from 'uuid'
   import { FHIRUtil } from '@/common/utils/fhir-util'
-  import {environment} from '@/common/environment'
+  import { environment } from '@/common/environment'
 
   @Component({
     components: {
@@ -358,7 +358,7 @@
 
     previousStep () {
       this.$q.dialog({
-        title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Previous Step</span>',
+        title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Previous Step</span>',
         message: 'If you go back and make any change, the changes you have made in this section will be lost.',
         class: 'text-grey-9',
         cancel: true,
@@ -498,7 +498,7 @@
 
     removeRecordPopup (fileName: string, sheetName: string, recordId: string) {
       this.$q.dialog({
-        title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Delete Record</span>',
+        title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Delete Record</span>',
         message: `Delete record with id <span class="text-weight-bolder">#${recordId}</span>.`,
         class: 'text-grey-9',
         cancel: true,
@@ -586,17 +586,6 @@
 </script>
 
 <style lang="stylus">
-  .disabledArea
-    pointer-events none
-    opacity 0.4
-  .sticky-header-table
-    .q-table__top,
-    .q-table__bottom,
-    thead tr:first-child th
-      background-color #fff
-    thead th
-      position sticky
-      top 0
-      opacity 1
-      z-index 1
+  .separator-style
+    width 12px !important
 </style>

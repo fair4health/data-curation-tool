@@ -5,7 +5,7 @@
              @click="$q.screen.lt.lg || !drawerOpen ? (drawerOpen = !drawerOpen) : (drawerMiniState = !drawerMiniState)"
       />
       <img class="flex flex-center" src="../assets/FAIR4Health-logo.png" width="80px">
-      <div class="text-weight-bold" style="font-size: 14px">Data Curation Tool</div>
+      <div class="text-weight-bold text-size-xl">Data Curation Tool</div>
       <q-space />
       <div class="q-mx-none q-px-none">
         <q-btn flat square icon="remove" class="title-bar-btn" @click="minimizeApp" />
@@ -99,6 +99,9 @@
   }
 </script>
 
-<style scoped>
-
+<style lang="stylus" scoped>
+  .title-bar-btn
+    border-radius 0 0
+  .btn-close:hover
+    background red
 </style>

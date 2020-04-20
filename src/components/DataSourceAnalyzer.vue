@@ -17,7 +17,7 @@
         <q-card>
           <q-card-section>
             <q-card id="drag-file" flat bordered v-bind:class="{'flex flex-center': !fileSourceList.length, 'bg-grey-2': isHovering}"
-                    style="min-height: 30vh; border-style: dashed">
+                    class="drag-drop-card">
               <q-card-section>
                 <template v-if="!fileSourceList.length">
                   <div class="text-center">
@@ -119,7 +119,7 @@
                 <q-item-section side>
                   <q-btn icon="more_vert" flat round color="grey" no-caps>
                     <q-menu>
-                      <q-list separator style="min-width: 200px">
+                      <q-list separator class="menu-list">
                         <q-item clickable class="text-grey-9" @click="loadFromStorage(mapping)" v-close-popup>
                           <q-item-section avatar><q-icon name="fas fa-file-download" /></q-item-section>
                           <q-item-section>Load</q-item-section>
@@ -211,7 +211,7 @@
 
     deleteSavedMapping (index: number) {
       this.$q.dialog({
-        title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Delete</span>',
+        title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Delete</span>',
         message: `Are you sure to delete mapping <span class="text-weight-bold">${this.mappingStore[index].name}</span>?`,
         class: 'text-grey-9',
         cancel: true,
@@ -262,3 +262,9 @@
 
   }
 </script>
+
+<style lang="stylus" scoped>
+  .drag-drop-card
+    min-height 30vh
+    border-style dashed
+</style>

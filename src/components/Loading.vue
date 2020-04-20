@@ -4,7 +4,7 @@
   </div>
 </template>
 
-<style lang="stylus">
+<style lang="stylus" scoped>
   .spinner-comp
     height 50px
     opacity 1

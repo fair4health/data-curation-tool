@@ -9,7 +9,7 @@
       <q-card-section>
         <q-table flat binary-state-sort title="Validate" :data="mappingList" :columns="columns" row-key="name"
                  :rows-per-page-options="[0]" :pagination.sync="pagination" :filter="filter" class="sticky-header-table"
-                 table-style="max-height: 60vh" :loading="loading" color="primary"
+                 table-class="validator-table" :loading="loading" color="primary"
         >
           <template v-slot:top-right>
             <q-input borderless dense v-model="filter" placeholder="Search">
@@ -84,10 +84,10 @@
               </q-td>
               <q-td>
                 <template v-if="props.row.validation.status === 'in-progress'">
-                  <span class="text-grey-8 q-pl-sm" style="font-size: 11px">Creating...</span>
+                  <span class="text-grey-8 q-pl-sm text-size-sm">Creating...</span>
                 </template>
                 <template v-else-if="props.row.validation.status === 'validating'">
-                  <span class="text-grey-8 q-pl-sm" style="font-size: 11px">Validating...</span>
+                  <span class="text-grey-8 q-pl-sm text-size-sm">Validating...</span>
                 </template>
                 <q-btn v-else-if="props.row.validation.status === 'done' || props.row.validation.status === 'warning'" flat rounded icon="receipt"
                        color="primary" label="Details" size="sm" class="text-center"
@@ -98,7 +98,7 @@
                        @click="openOutcomeDetailCard([{status: 'error', message: props.row.validation.description, resourceType: 'OperationOutcome'}])"
                 />
                 <template v-else>
-                  <span class="text-grey-8 q-pl-sm" style="font-size: 11px">Pending</span>
+                  <span class="text-grey-8 q-pl-sm text-size-sm">Pending</span>
                 </template>
               </q-td>
             </q-tr>
@@ -129,16 +129,16 @@
                         <q-card class="q-ma-xs" bordered flat>
                           <q-card-section class="text-caption bg-grey-3 text-weight-bold q-pa-xs">
                             <div class="row items-center">
-                              <q-chip class="text-white" color="blue-grey-4" style="font-size: 12px">#{{record.recordId}}</q-chip>
+                              <q-chip class="text-white text-size-md" color="blue-grey-4">#{{record.recordId}}</q-chip>
                             </div>
                             <div class="row ellipsis no-wrap">
                               <div class="text-grey-8 ellipsis no-wrap text-weight-regular">
                                 <div class="row no-wrap">
-                                  <q-chip class="text-grey-8 cursor-pointer" color="white" style="font-size: 11px">
+                                  <q-chip class="text-grey-8 cursor-pointer text-size-sm" color="white">
                                     <span class="text-weight-bold ellipsis"> {{ record.resource }}</span>
                                     <q-tooltip content-class="bg-grey-2 text-primary">{{record.resource}}</q-tooltip>
                                   </q-chip>
-                                  <q-chip class="text-grey-8 ellipsis cursor-pointer" color="white" style="font-size: 11px">
+                                  <q-chip class="text-grey-8 ellipsis cursor-pointer text-size-sm" color="white">
                                     <span class="ellipsis">{{ record.profile || '-' }}</span>
                                     <q-tooltip content-class="bg-grey-2 text-primary">{{record.profile}}</q-tooltip>
                                   </q-chip>
@@ -149,11 +149,11 @@
                           <q-card-section>
                             <q-list separator>
                               <q-item v-for="(column, index) in record.data" :key="index">
-                                <div class="col-3 ellipsis items-center" style="font-size: 12px">{{ column.value }}</div>
+                                <div class="col-3 ellipsis items-center text-size-sm">{{ column.value }}</div>
                                 <div class="row col">
                                   <q-chip dense v-for="(target, targetI) in column.target" :key="targetI"
                                           color="primary" text-color="white" class="cursor-pointer">
-                                    <div class="q-mx-xs ellipsis" style="font-size: 12px">{{ target.value }}</div>
+                                    <div class="q-mx-xs ellipsis text-size-sm">{{ target.value }}</div>
                                     <q-tooltip>{{ target.value }}</q-tooltip>
                                   </q-chip>
                                 </div>
@@ -161,11 +161,11 @@
                                   <div v-for="(target, targetI) in column.target" :key="targetI" class="full-width">
                                     <q-chip dense v-if="!!target.type"
                                             color="grey-2" text-color="grey-8" class="cursor-pointer">
-                                      <div class="q-mx-xs ellipsis" style="font-size: 11px">{{ target.type }}</div>
+                                      <div class="q-mx-xs ellipsis text-size-sm">{{ target.type }}</div>
                                       <q-tooltip>{{ target.type }}</q-tooltip>
                                     </q-chip>
                                     <q-chip v-else dense color="white" text-color="grey-8">
-                                      <div class="q-mx-xs ellipsis" style="font-size: 12px">-</div>
+                                      <div class="q-mx-xs ellipsis text-size-sm">-</div>
                                     </q-chip>
                                   </div>
                                 </div>
@@ -392,7 +392,7 @@
 
     previousStep () {
       this.$q.dialog({
-        title: '<span class="text-primary"><i class="fas fa-info-circle" style="padding-right: 5px"></i>Previous Step</span>',
+        title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Previous Step</span>',
         message: 'If you go back and make any change, the changes you have made in this section will be lost.',
         class: 'text-grey-9',
         cancel: true,
@@ -441,4 +441,6 @@
 <style lang="stylus">
   .error-tooltip
     width 250px
+  .validator-table
+    max-height 60vh
 </style>
