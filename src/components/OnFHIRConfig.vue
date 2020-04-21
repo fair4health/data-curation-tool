@@ -49,6 +49,7 @@
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
+  import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
 
   @Component
   export default class OnFHIRConfig extends Vue {
@@ -73,7 +74,7 @@
           .then(() => {
             this.statusDetail = 'FHIR Repository URL is verified.'
             this.fhirBaseVerificationStatus = 'success'
-            ipcRenderer.send('to-all-background', 'set-fhir-base', this.onfhirBaseUrl)
+            ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.Fhir.SET_FHIR_BASE, this.onfhirBaseUrl)
           })
           .catch(err => {
             this.statusDetail = err

@@ -3,6 +3,7 @@
 import { app, protocol, BrowserWindow, dialog, ipcMain, webContents } from 'electron'
 import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib'
 import log from 'electron-log'
+import { IpcChannelUtil as ipcChannels } from './common/utils/ipc-channel-util'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -163,24 +164,24 @@ app.on('ready', async () => {
   }
 
   // Windows can talk to each other via main
-  ipcMain.on('to-renderer', (event, channel, arg) => {
+  ipcMain.on(ipcChannels.TO_RENDERER, (event, channel, arg) => {
     win.webContents.send(channel, arg)
   })
 
   // Heavy processing done in the background threads
   // So UI and main threads remain responsive
-  ipcMain.on('to-background', (event, channel, arg) => {
+  ipcMain.on(ipcChannels.TO_BACKGROUND, (event, channel, arg) => {
     taskQueue.push([channel, arg])
     doWork()
   })
 
-  ipcMain.on('to-all-background', (event, channel, arg) => {
+  ipcMain.on(ipcChannels.TO_ALL_BACKGROUND, (event, channel, arg) => {
     backgroundWindows.map((bg: BrowserWindow) => {
       bg.webContents.send(channel, arg)
     })
   })
 
-  ipcMain.on('ready', (event, arg) => {
+  ipcMain.on(ipcChannels.READY, (event, arg) => {
     availableThreads.push(event.sender)
     doWork()
   })

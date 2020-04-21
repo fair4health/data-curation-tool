@@ -135,6 +135,7 @@
   import { ipcRenderer } from 'electron'
   import { SourceDataElement, FileSource, Sheet, BufferElement } from '@/common/model/file-source'
   import { sourceDataTableHeaders, cellType } from '@/common/model/data-table'
+  import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
 
   @Component
   export default class DataSourceTable extends Vue {
@@ -221,20 +222,20 @@
       this.loadingAttr = true
       this.$q.loadingBar.start()
       this.sheetHeaders = []
-      ipcRenderer.send('to-background', 'read-file', this.currentSource.path)
-      ipcRenderer.on('worksheets-ready', (event, worksheets) => {
+      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.READ_FILE, this.currentSource.path)
+      ipcRenderer.on(ipcChannels.File.READ_DONE, (event, worksheets) => {
         this.sheets = worksheets || []
         // this.currentSheet = null
         this.loadingAttr = false
         this.$q.loadingBar.stop()
-        ipcRenderer.removeAllListeners('worksheets-ready')
+        ipcRenderer.removeAllListeners(ipcChannels.File.READ_DONE)
       })
     }
 
     fetchHeaders (noCache?: boolean): void {
       this.loadingAttr = true
-      ipcRenderer.send('to-background', 'get-table-headers', {path: this.currentSource?.path, sheet: this.currentSheet?.value, noCache})
-      ipcRenderer.on('ready-table-headers', (event, headers) => {
+      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.GET_TABLE_HEADERS, {path: this.currentSource?.path, sheet: this.currentSheet?.value, noCache})
+      ipcRenderer.on(ipcChannels.File.READY_TABLE_HEADERS, (event, headers) => {
         if (!headers.length) {
           this.$notify.error('Headers couldn\'t be detected')
         }
@@ -242,7 +243,7 @@
         this.$store.commit('file/setSheetHeaders', headers)
         this.$store.commit('file/setupBufferSheetHeaders')
         this.loadingAttr = false
-        ipcRenderer.removeAllListeners('ready-table-headers')
+        ipcRenderer.removeAllListeners(ipcChannels.File.READY_TABLE_HEADERS)
       })
     }
 

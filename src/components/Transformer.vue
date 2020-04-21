@@ -127,6 +127,7 @@
   import { ipcRenderer } from 'electron'
   import OutcomeCard from '@/components/OutcomeCard.vue'
   import electronStore from '../common/electron-store'
+  import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
 
   @Component
   export default class Transformer extends Vue {
@@ -160,10 +161,10 @@
 
     transform () {
       if (this.transformList.length) {
-        ipcRenderer.send('to-background', 'transform')
+        ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.TRANSFORM)
         this.transformStatus = 'in-progress'
-        ipcRenderer.on('transform-result', (event, result: OutcomeDetail) => {
-          ipcRenderer.removeAllListeners(`transform-result`)
+        ipcRenderer.on(ipcChannels.Fhir.TRANSFORM_RESULT, (event, result: OutcomeDetail) => {
+          ipcRenderer.removeAllListeners(ipcChannels.Fhir.TRANSFORM_RESULT)
           this.transformStatus = result.status
           this.transformOutcomeDetails = result.outcomeDetails || []
         })
@@ -222,17 +223,14 @@
 
     removeResourceFromFHIR (resourceType: string) {
       this.$q.loading.show()
-      const fhirBase: string = this.$store.getters['fhir/fhirBase']
-      ipcRenderer.send('to-background', 'delete-resource', {resourceType})
-      ipcRenderer.on('delete-resource-result', (event, result) => {
-        ipcRenderer.removeAllListeners('delete-resource-result')
-        if (result) {
+      this.$store.dispatch('fhir/deleteAll', resourceType)
+        .then(() => {
           this.$q.loading.hide()
-          this.$notify.success(`${resourceType} Resources removed successfully`)
-        } else {
-          this.$q.loading.hide()
-          this.$notify.error('Something went wrong')
-        }
+          this.$notify.success(`${resourceType} Resources have been removed successfully`)
+        })
+      .catch(() => {
+        this.$q.loading.hide()
+        this.$notify.error('Something went wrong')
       })
     }
 

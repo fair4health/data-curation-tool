@@ -154,6 +154,7 @@
   import { Component, Vue } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
   import { FileSource } from '@/common/model/file-source'
+  import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
 
   @Component
   export default class DataSourceAnalyzer extends Vue {
@@ -225,8 +226,8 @@
 
     importSavedMapping (): void {
       this.$q.loading.show({spinner: undefined})
-      ipcRenderer.send('to-background', 'browse-mapping')
-      ipcRenderer.on('selected-mapping', (event, data) => {
+      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.BROWSE_MAPPING)
+      ipcRenderer.on(ipcChannels.File.SELECTED_MAPPING, (event, data) => {
         if (data) {
           this.$store.dispatch('file/initializeStore', data)
             .then(() => {
@@ -238,7 +239,7 @@
             })
         }
         this.$q.loading.hide()
-        ipcRenderer.removeAllListeners('selected-mapping')
+        ipcRenderer.removeAllListeners(ipcChannels.File.SELECTED_MAPPING)
       })
     }
 
@@ -248,15 +249,15 @@
 
     browseFile (): void {
       this.$q.loading.show({spinner: undefined})
-      ipcRenderer.send('to-background', 'browse-file')
-      ipcRenderer.on('selected-files', (event, data) => {
+      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.BROWSE_FILE)
+      ipcRenderer.on(ipcChannels.File.SELECTED_FILES, (event, data) => {
         if (data) {
           data.map(file => {
             this.$store.commit('file/addFile', file)
           })
         }
         this.$q.loading.hide()
-        ipcRenderer.removeAllListeners('selected-files')
+        ipcRenderer.removeAllListeners(ipcChannels.File.SELECTED_FILES)
       })
     }
 

@@ -183,6 +183,7 @@
   import { v4 as uuid } from 'uuid'
   import { FHIRUtil } from '@/common/utils/fhir-util'
   import { environment } from '@/common/environment'
+  import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
 
   @Component({
     components: {
@@ -311,7 +312,7 @@
       const mappingState: FileSource[] = this.$store.getters['file/sourceList']
       this.$q.loading.show({spinner: undefined})
 
-      ipcRenderer.send('to-background', 'export-file', JSON.stringify(
+      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.EXPORT_FILE, JSON.stringify(
         {
           fileSourceList: mappingState.map(_ =>
             ({
@@ -324,12 +325,12 @@
           )
         })
       )
-      ipcRenderer.on('export-done', (event, result) => {
+      ipcRenderer.on(ipcChannels.File.EXPORT_DONE, (event, result) => {
         if (result) {
           this.$notify.success('File is exported successfully')
         }
         this.$q.loading.hide()
-        ipcRenderer.removeAllListeners('export-done')
+        ipcRenderer.removeAllListeners(ipcChannels.File.EXPORT_DONE)
       })
     }
 

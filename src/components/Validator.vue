@@ -217,6 +217,7 @@
   import { FHIRUtil } from '@/common/utils/fhir-util'
   import OutcomeCard from '@/components/OutcomeCard.vue'
   import electronStore from '@/common/electron-store'
+  import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
 
   @Component
   export default class Validator extends Vue {
@@ -287,7 +288,7 @@
           // const sheets = this.mappingObj[filePath]
           const sheets = this.savedRecords.find((files: store.SavedRecord) => files.fileName === filePath)!.sheets
 
-          ipcRenderer.send('to-background', 'validate', {filePath, sheets})
+          ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.VALIDATE, {filePath, sheets})
 
           ipcRenderer.on(`validate-read-file-${filePath}`, (event, result) => {
             this.$q.loading.hide()
@@ -414,13 +415,13 @@
       const resources: any = electronStore.get('resources')
       this.$q.loading.show({spinner: undefined})
 
-      ipcRenderer.send('to-background', 'export-file', JSON.stringify(resources))
-      ipcRenderer.on('export-done', (event, result) => {
+      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.EXPORT_FILE, JSON.stringify(resources))
+      ipcRenderer.on(ipcChannels.File.EXPORT_DONE, (event, result) => {
         if (result) {
           this.$notify.success('File is successfully exported')
         }
         this.$q.loading.hide()
-        ipcRenderer.removeAllListeners('export-done')
+        ipcRenderer.removeAllListeners(ipcChannels.File.EXPORT_DONE)
       })
     }
 

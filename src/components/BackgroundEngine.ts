@@ -10,6 +10,7 @@ import { cellType } from '@/common/model/data-table'
 import { FhirService } from '@/common/services/fhir.service'
 import { FHIRUtil } from '@/common/utils/fhir-util'
 import { Component, Vue } from 'vue-property-decorator'
+import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
 
 @Component
 export default class BackgroundEngine extends Vue {
@@ -48,7 +49,6 @@ export default class BackgroundEngine extends Vue {
     // Resource operation listeners (Validate - Transform - Delete)
     this.onValidate()
     this.onTransform()
-    this.onDeleteResources()
 
     // Electron-store getter setter listeners
     this.getElectronStore()
@@ -63,11 +63,11 @@ export default class BackgroundEngine extends Vue {
    * Informs main process that this thread is available/ready to perform
    */
   public ready () {
-    ipcRenderer.send('ready')
+    ipcRenderer.send(ipcChannels.READY)
   }
 
   public setFhirBaseUrl () {
-    ipcRenderer.on('set-fhir-base', (event, url) => {
+    ipcRenderer.on(ipcChannels.Fhir.SET_FHIR_BASE, (event, url) => {
       this.fhirBase = url
       this.fhirService = new FhirService(this.fhirBase)
     })
@@ -77,8 +77,8 @@ export default class BackgroundEngine extends Vue {
    * Electron store GET by key operation
    */
   public getElectronStore () {
-    ipcRenderer.on('get-electron-store', (event, key) => {
-      ipcRenderer.send('to-renderer', 'got-electron-store', this.electronStore.get(key))
+    ipcRenderer.on(ipcChannels.ElectronStore.GET_ELECTRON_STORE, (event, key) => {
+      ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.ElectronStore.GOT_ELECTRON_STORE, this.electronStore.get(key))
 
       this.ready()
     })
@@ -88,7 +88,7 @@ export default class BackgroundEngine extends Vue {
    * Electron store SET (key, value) pair operation
    */
   public setElectronStore () {
-    ipcRenderer.on('set-electron-store', (event, data) => {
+    ipcRenderer.on(ipcChannels.ElectronStore.SET_ELECTRON_STORE, (event, data) => {
       try {
         this.electronStore.set(data.key, data.value)
         this.ready()
@@ -104,7 +104,7 @@ export default class BackgroundEngine extends Vue {
    * WorkbookMap stores the current tables with their contents
    */
   public setWorkbookMap () {
-    ipcRenderer.on('set-workbook-map', (event, data) => {
+    ipcRenderer.on(ipcChannels.SET_WORKBOOK_MAP, (event, data) => {
       workbookMap.set(data.key, data.value)
     })
   }
@@ -113,15 +113,15 @@ export default class BackgroundEngine extends Vue {
    * Browses files with extensions [xl*, csv] and sends back their paths as a list
    */
   public onBrowseFile () {
-    ipcRenderer.on('browse-file', (event) => {
+    ipcRenderer.on(ipcChannels.File.BROWSE_FILE, (event) => {
       remote.dialog.showOpenDialog(remote.BrowserWindow.getFocusedWindow(), {
         properties: ['openFile', 'multiSelections'],
         filters: [{ extensions: ['xl*', 'csv'], name: 'Excel or CSV' }]
       }, (files) => {
         if (files) {
           log.info('Browse file - ' + files)
-          ipcRenderer.send('to-renderer', 'selected-files', files)
-        } else ipcRenderer.send('to-renderer', 'selected-files', undefined)
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_FILES, files)
+        } else ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_FILES, undefined)
 
         this.ready()
       })
@@ -132,7 +132,7 @@ export default class BackgroundEngine extends Vue {
    * Reads file by path and sends back names of sheets in it
    */
   public onReadFile () {
-    ipcRenderer.on('read-file', (event, path) => {
+    ipcRenderer.on(ipcChannels.File.READ_FILE, (event, path) => {
       if (path) {
         try {
           // workbook = Excel.readFile(path, {type: 'binary', sheetRows: 1})
@@ -140,7 +140,7 @@ export default class BackgroundEngine extends Vue {
           const buffers = []
           stream.on('error', () => {
             log.error(`Cannot read file ${path}`)
-            ipcRenderer.send('to-renderer', 'worksheets-ready', undefined)
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, undefined)
             this.ready()
             return
           })
@@ -150,19 +150,19 @@ export default class BackgroundEngine extends Vue {
             const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', sheetRows: 1})
 
             // workbookMap.set(path, workbook)
-            ipcRenderer.send('to-all-background', 'set-workbook-map', {key: path, value: workbook})
+            ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: path, value: workbook})
             log.info('Read file ' + path)
-            ipcRenderer.send('to-renderer', 'worksheets-ready', workbook.SheetNames)
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, workbook.SheetNames)
           })
         } catch (err) {
           log.error(`Cannot read file ${path}`)
-          ipcRenderer.send('to-renderer', 'worksheets-ready', undefined)
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, undefined)
           this.ready()
           return
         }
       } else {
         log.warn('Cannot read undefined path')
-        ipcRenderer.send('to-renderer', 'worksheets-ready', undefined)
+        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, undefined)
       }
 
       this.ready()
@@ -173,15 +173,15 @@ export default class BackgroundEngine extends Vue {
    * Reads and parses table and sends back column headers as a list
    */
   public onGetTableHeaders () {
-    ipcRenderer.on('get-table-headers', (event, data) => {
+    ipcRenderer.on(ipcChannels.File.GET_TABLE_HEADERS, (event, data) => {
       const headers: object[] = []
       if (!workbookMap.has(data.path) || data.noCache) {
         try {
           workbookMap.set(data.path, Excel.readFile(data.path, {type: 'binary', sheetRows: 1}))
-          // ipcRenderer.send('to-all-background', 'set-workbook-map', {key: data.path, value: Excel.readFile(data.path, {type: 'binary', cellDates: true})})
+          // ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: data.path, value: Excel.readFile(data.path, {type: 'binary', cellDates: true})})
         } catch (e) {
           log.error(`Cannot read file ${data.path}`)
-          ipcRenderer.send('to-renderer', 'ready-table-headers', [])
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_TABLE_HEADERS, [])
           this.ready()
           return
         }
@@ -189,7 +189,7 @@ export default class BackgroundEngine extends Vue {
       const workbook = workbookMap.get(data.path)
       const sheet: Excel.WorkSheet | null = workbook ? workbook.Sheets[data.sheet] : null
       if (!(sheet && sheet['!ref'])) {
-        ipcRenderer.send('to-renderer', 'ready-table-headers', [])
+        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_TABLE_HEADERS, [])
         log.warn(`No columns found in ${data.path} - ${data.sheet}`)
         this.ready()
         return
@@ -206,7 +206,7 @@ export default class BackgroundEngine extends Vue {
 
         headers.push(header)
       }
-      ipcRenderer.send('to-renderer', 'ready-table-headers', headers)
+      ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_TABLE_HEADERS, headers)
 
       this.ready()
     })
@@ -216,7 +216,7 @@ export default class BackgroundEngine extends Vue {
    * Browses files with .json extension and sends back parsed content
    */
   public onBrowseMapping () {
-    ipcRenderer.on('browse-mapping', (event) => {
+    ipcRenderer.on(ipcChannels.File.BROWSE_MAPPING, (event) => {
       remote.dialog.showOpenDialog(remote.BrowserWindow.getFocusedWindow(), {
         properties: ['openFile'],
         filters: [{ extensions: ['json'], name: 'JSON (.json)' }]
@@ -225,14 +225,14 @@ export default class BackgroundEngine extends Vue {
           fs.readFile(files[0], (err, data) => {
             if (err) {
               log.error(`Cannot read mapping file ${files[0]}`)
-              ipcRenderer.send('to-renderer', 'selected-mapping', undefined)
+              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, undefined)
               this.ready()
               return
             }
             log.info(`Mapping loaded from ${files[0]}`)
-            ipcRenderer.send('to-renderer', 'selected-mapping', JSON.parse(data.toString()))
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, JSON.parse(data.toString()))
           })
-        } else ipcRenderer.send('to-renderer', 'selected-mapping', undefined)
+        } else ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, undefined)
 
         this.ready()
       })
@@ -243,23 +243,23 @@ export default class BackgroundEngine extends Vue {
    * File export - opens SAVE dialog and saves file with json extension
    */
   public onExportFile () {
-    ipcRenderer.on('export-file', (event, content) => {
+    ipcRenderer.on(ipcChannels.File.EXPORT_FILE, (event, content) => {
       remote.dialog.showSaveDialog(remote.BrowserWindow.getFocusedWindow(), {
         filters: [{ extensions: ['json'], name: 'JSON (.json)' }]
       }, (filename) => {
         if (!filename) {
-          ipcRenderer.send('to-renderer', 'export-done', null)
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.EXPORT_DONE, null)
           this.ready()
           return
         }
         fs.writeFile(filename, content, (err) => {
           if (err) {
             log.error(`Export file: ${err}`)
-            ipcRenderer.send('to-renderer', 'export-done', null)
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.EXPORT_DONE, null)
             this.ready()
             return
           }
-          ipcRenderer.send('to-renderer', 'export-done', true)
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.EXPORT_DONE, true)
         })
 
         this.ready()
@@ -271,7 +271,7 @@ export default class BackgroundEngine extends Vue {
    * Create and validate resources
    */
   public onValidate () {
-    ipcRenderer.on('validate', (event, data: any) => {
+    ipcRenderer.on(ipcChannels.Fhir.VALIDATE, (event, data: any) => {
       const filePath = data.filePath
 
       const getWorkbooks = new Promise<Excel.WorkBook>(((resolve, reject) => {
@@ -286,8 +286,8 @@ export default class BackgroundEngine extends Vue {
 
             // Save buffer workbook to map
             workbookMap.set(filePath, workbook)
-            // ipcRenderer.send('to-all-background', 'set-workbook-map', {key: filePath, value: workbook})
-            ipcRenderer.send('to-renderer', `validate-read-file-${filePath}`, [])
+            // ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: filePath, value: workbook})
+            ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-read-file-${filePath}`, [])
             resolve(workbook)
           })
         } catch (err) {
@@ -305,7 +305,7 @@ export default class BackgroundEngine extends Vue {
               const entries: any[] = Excel.utils.sheet_to_json(workbook.Sheets[sheet.sheetName]) || []
               const sheetRecords: store.Record[] = sheet.records
 
-              ipcRenderer.send('to-renderer', `info-${filePath}-${sheet.sheetName}`, {total: entries.length})
+              ipcRenderer.send(ipcChannels.TO_RENDERER, `info-${filePath}-${sheet.sheetName}`, {total: entries.length})
               log.info(`Creating resources in ${sheet.sheetName} in ${filePath}`)
 
               // Create resources row by row in entries
@@ -386,7 +386,7 @@ export default class BackgroundEngine extends Vue {
                 })
               }))
                 .then(() => { // End of sheet
-                  ipcRenderer.send('to-renderer', `generated-resources-${filePath}-${sheet.sheetName}`, {status: 'validating'})
+                  ipcRenderer.send(ipcChannels.TO_RENDERER, `generated-resources-${filePath}-${sheet.sheetName}`, {status: 'validating'})
                   if (entries.length) {
 
                     Promise.all(Array.from(resources.keys()).map(resourceType => {
@@ -461,24 +461,24 @@ export default class BackgroundEngine extends Vue {
                         resolveSheet()
                         const outcomeDetails: OutcomeDetail[] = [].concat.apply([], res)
                         const status = !!outcomeDetails.find(_ => _.status === 'error') ? 'warning' : 'done'
-                        ipcRenderer.send('to-renderer', `validate-${filePath}-${sheet.sheetName}`, {status, outcomeDetails})
+                        ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status, outcomeDetails})
                         log.info(`Validation completed ${sheet.sheetName} in ${filePath}`)
                       })
                       .catch(err => {
                         resolveSheet()
-                        ipcRenderer.send('to-renderer', `validate-${filePath}-${sheet.sheetName}`, {status: 'error', description: 'Batch process error', outcomeDetails: err})
+                        ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: 'error', description: 'Batch process error', outcomeDetails: err})
                         log.error(`Batch process error ${filePath}-${sheet.sheetName}`)
                       })
 
                   } else {
                     resolveSheet()
-                    ipcRenderer.send('to-renderer', `validate-${filePath}-${sheet.sheetName}`, {status: 'warning', description: 'Empty sheet'})
+                    ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: 'warning', description: 'Empty sheet'})
                     log.warn(`Empty sheet: ${sheet.sheetName} in ${filePath}`)
                   }
                 })
                 .catch(err => {
                   resolveSheet()
-                  ipcRenderer.send('to-renderer', `validate-${filePath}-${sheet.sheetName}`, {status: 'error', description: `Validation error for sheet: ${sheet.sheetName}. ${err}`})
+                  ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: 'error', description: `Validation error for sheet: ${sheet.sheetName}. ${err}`})
                   log.error(`Validation error for sheet: ${sheet.sheetName} in ${filePath}: ${err}`)
                 })
             }))
@@ -494,7 +494,7 @@ export default class BackgroundEngine extends Vue {
           })
       })
         .catch(err => {
-          ipcRenderer.send('to-renderer', `validate-error-${filePath}`, {status: 'error', description: `File not found : ${filePath}`})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-error-${filePath}`, {status: 'error', description: `File not found : ${filePath}`})
           log.error(`File not found. ${err}`)
           this.ready()
           return
@@ -506,7 +506,7 @@ export default class BackgroundEngine extends Vue {
    * Puts resources into the FHIR Repository
    */
   public onTransform () {
-    ipcRenderer.on('transform', (event) => {
+    ipcRenderer.on(ipcChannels.Fhir.TRANSFORM, (event) => {
       let resources: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
 
       try {
@@ -521,7 +521,7 @@ export default class BackgroundEngine extends Vue {
         const resourceList = resources.get(resourceType)
         return new Promise((resolve, reject) => {
 
-          ipcRenderer.send('to-renderer', `transform-${resourceType}`, {status: 'in-progress'} as OutcomeDetail)
+          ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: 'in-progress'} as OutcomeDetail)
 
           // Batch upload resources
           // Max capacity 1000 resources
@@ -570,12 +570,12 @@ export default class BackgroundEngine extends Vue {
             .then(res => {
               const concatResult: OutcomeDetail[] = [].concat.apply([], res)
               log.info(`Batch process completed for Resource: ${resourceType}`)
-              ipcRenderer.send('to-renderer', `transform-${resourceType}`, {status: 'success', outcomeDetails: concatResult} as OutcomeDetail)
+              ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: 'success', outcomeDetails: concatResult} as OutcomeDetail)
               resolve(concatResult)
             })
             .catch(err => {
               log.error(`Batch process error for Resource: ${resourceType}`)
-              ipcRenderer.send('to-renderer', `transform-${resourceType}`, {status: 'error'} as OutcomeDetail)
+              ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: 'error'} as OutcomeDetail)
               reject(err)
             })
 
@@ -583,30 +583,17 @@ export default class BackgroundEngine extends Vue {
 
       }))
         .then((res: any[]) => {
-          ipcRenderer.send('to-renderer', `transform-result`, {status: 'success', outcomeDetails: [].concat.apply([], res)})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: 'success', outcomeDetails: [].concat.apply([], res)})
           log.info(`Transform completed`)
 
           this.ready()
         })
         .catch(err => {
-          ipcRenderer.send('to-renderer', `transform-result`, {status: 'error', description: 'Transform error', outcomeDetails: err})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: 'error', description: 'Transform error', outcomeDetails: err})
           log.error(`Transform error. ${err}`)
 
           this.ready()
         })
-    })
-  }
-
-  /**
-   * Removes resources from FHIR repo
-   */
-  public onDeleteResources () {
-    ipcRenderer.on('delete-resource', (event, data) => {
-      this.fhirService.deleteAll(data.resourceType)
-        .then(_ => ipcRenderer.send('to-renderer', `delete-resource-result`, true))
-        .catch(_ => ipcRenderer.send('to-renderer', `delete-resource-result`, false))
-
-      this.ready()
     })
   }
 

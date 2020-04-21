@@ -3,6 +3,7 @@ import { environment } from '@/common/environment'
 import StructureDefinition = fhir.StructureDefinition
 import { FHIRUtil } from '@/common/utils/fhir-util'
 import { ipcRenderer } from 'electron'
+import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
 
 const fhirStore = {
   namespaced: true,
@@ -136,8 +137,8 @@ const fhirStore = {
     },
     getConceptMaps ({ commit, state }, noCache?: boolean): Promise<any> {
       return new Promise((resolve, reject) => {
-        ipcRenderer.send('to-background', 'get-electron-store', `${state.fhirBase}-ConceptMapList`)
-        ipcRenderer.on('got-electron-store', (event, cached) => {
+        ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.ElectronStore.GET_ELECTRON_STORE, `${state.fhirBase}-ConceptMapList`)
+        ipcRenderer.on(ipcChannels.ElectronStore.GOT_ELECTRON_STORE, (event, cached) => {
           if (!noCache && cached && !FHIRUtil.isEmpty(cached)) {
             commit('setConceptMapList', cached)
             resolve(true)
@@ -150,14 +151,14 @@ const fhirStore = {
                   commit('setConceptMapList', conceptMapList)
 
                   // electronStore.set(`${state.fhirBase}-ConceptMapList`, conceptMapList)
-                  ipcRenderer.send('to-background', 'set-electron-store', {key: `${state.fhirBase}-ConceptMapList`, value: conceptMapList})
+                  ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.ElectronStore.SET_ELECTRON_STORE, {key: `${state.fhirBase}-ConceptMapList`, value: conceptMapList})
 
                 }
                 resolve(true)
               })
               .catch(err => reject(err))
           }
-          ipcRenderer.removeAllListeners('got-electron-store')
+          ipcRenderer.removeAllListeners(ipcChannels.ElectronStore.GOT_ELECTRON_STORE)
         })
       })
     },
@@ -211,13 +212,20 @@ const fhirStore = {
               }) || [])
                 .then(() => {
                   // electronStore.set(`${url}`, list)
-                  // ipcRenderer.send('to-background', 'set-electron-store', {key: `${url}`, value: list})
+                  // ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.ElectronStore.SET_ELECTRON_STORE, {key: `${url}`, value: list})
                   resolve(list)
                 })
                 .catch(() => reject([]))
             } else { resolve([]) }
           })
           .catch(() => reject([]))
+      })
+    },
+    deleteAll ({ state }, resourceType: string): Promise<boolean> {
+      return new Promise<boolean>((resolve, reject) => {
+        state.fhirService.deleteAll(resourceType)
+          .then(_ => resolve(true))
+          .catch(_ => reject(false))
       })
     }
   }
