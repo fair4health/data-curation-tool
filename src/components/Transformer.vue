@@ -128,6 +128,7 @@
   import OutcomeCard from '@/components/OutcomeCard.vue'
   import electronStore from '../common/electron-store'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
   @Component
   export default class Transformer extends Vue {
@@ -140,19 +141,19 @@
       { name: 'count', label: 'Count', field: 'count', align: 'center', sortable: true }
     ]
 
-    get fhirBase (): string { return this.$store.getters['fhir/fhirBase'] }
+    get fhirBase (): string { return this.$store.getters[types.Fhir.FHIR_BASE] }
 
-    get transformStatus (): status { return this.$store.getters['transformStatus'] }
-    set transformStatus (value) { this.$store.commit('setTransformStatus', value) }
+    get transformStatus (): status { return this.$store.getters[types.TRANSFORM_STATUS] }
+    set transformStatus (value) { this.$store.commit(types.SET_TRANSFORM_STATUS, value) }
 
-    get resources (): Map<string, fhir.Resource[]> { return this.$store.getters['resources'] }
-    set resources (value) { this.$store.commit('setResources', value) }
+    get resources (): Map<string, fhir.Resource[]> { return this.$store.getters[types.RESOURCES] }
+    set resources (value) { this.$store.commit(types.SET_RESOURCES, value) }
 
-    get transformList (): TransformListItem[] { return this.$store.getters['transformList'] }
-    set transformList (value) { this.$store.commit('setTransformList', value) }
+    get transformList (): TransformListItem[] { return this.$store.getters[types.TRANSFORM_LIST] }
+    set transformList (value) { this.$store.commit(types.SET_TRANSFORM_LIST, value) }
 
-    get transformOutcomeDetails (): OutcomeDetail[] { return this.$store.getters['transformOutcomeDetails'] }
-    set transformOutcomeDetails (value) { this.$store.commit('setTransformOutcomeDetails', value) }
+    get transformOutcomeDetails (): OutcomeDetail[] { return this.$store.getters[types.TRANSFORM_OUTCOME_DETAILS] }
+    set transformOutcomeDetails (value) { this.$store.commit(types.SET_TRANSFORM_OUTCOME_DETAILS, value) }
 
     onInit () {
       this.resources = new Map(Object.entries(electronStore.get('resources') || {}))
@@ -204,7 +205,7 @@
         cancel: true,
         html: true
       }).onOk(() => {
-        this.$store.commit('decrementStep')
+        this.$store.commit(types.DECREMENT_STEP)
       })
     }
 
@@ -223,7 +224,7 @@
 
     removeResourceFromFHIR (resourceType: string) {
       this.$q.loading.show()
-      this.$store.dispatch('fhir/deleteAll', resourceType)
+      this.$store.dispatch(types.Fhir.DELETE_ALL, resourceType)
         .then(() => {
           this.$q.loading.hide()
           this.$notify.success(`${resourceType} Resources have been removed successfully`)
@@ -235,7 +236,7 @@
     }
 
     openOutcomeDetailCard (outcomeDetails: OutcomeDetail[]) {
-      this.$store.commit('fhir/setOutcomeDetails', outcomeDetails)
+      this.$store.commit(types.Fhir.SET_OUTCOME_DETAILS, outcomeDetails)
       this.$q.dialog({
         component: OutcomeCard,
         parent: this

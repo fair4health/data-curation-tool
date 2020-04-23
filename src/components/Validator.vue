@@ -218,6 +218,7 @@
   import OutcomeCard from '@/components/OutcomeCard.vue'
   import electronStore from '@/common/electron-store'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
   @Component
   export default class Validator extends Vue {
@@ -228,20 +229,20 @@
     private loading: boolean = false
 
     get columns (): object[] { return mappingDataTableHeaders }
-    get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
-    get savedRecords (): store.SavedRecord[] { return this.$store.getters['file/savedRecords'] }
+    get fileSourceList (): FileSource[] { return this.$store.getters[types.File.SOURCE_LIST] }
+    get savedRecords (): store.SavedRecord[] { return this.$store.getters[types.File.SAVED_RECORDS] }
 
-    get mappingList (): any[] { return this.$store.getters['mappingList'] }
-    set mappingList (value) { this.$store.commit('setMappingList', value) }
+    get mappingList (): any[] { return this.$store.getters[types.MAPPING_LIST] }
+    set mappingList (value) { this.$store.commit(types.SET_MAPPING_LIST, value) }
 
-    get validationStatus (): status { return this.$store.getters['validationStatus'] }
-    set validationStatus (value) { this.$store.commit('setValidationStatus', value) }
+    get validationStatus (): status { return this.$store.getters[types.VALIDATION_STATUS] }
+    set validationStatus (value) { this.$store.commit(types.SET_VALIDATION_STATUS, value) }
 
-    get resources (): Map<string, fhir.Resource[]> { return this.$store.getters['resources'] }
-    set resources (value) { this.$store.commit('setResources', value) }
+    get resources (): Map<string, fhir.Resource[]> { return this.$store.getters[types.RESOURCES] }
+    set resources (value) { this.$store.commit(types.SET_RESOURCES, value) }
 
-    get transformList (): TransformListItem[] { return this.$store.getters['transformList'] }
-    set transformList (value) { this.$store.commit('setTransformList', value) }
+    get transformList (): TransformListItem[] { return this.$store.getters[types.TRANSFORM_LIST] }
+    set transformList (value) { this.$store.commit(types.SET_TRANSFORM_LIST, value) }
 
     mounted () {
       this.loading = true
@@ -399,12 +400,12 @@
         cancel: true,
         html: true
       }).onOk(() => {
-        this.$store.commit('decrementStep')
+        this.$store.commit(types.DECREMENT_STEP)
       })
     }
 
     openOutcomeDetailCard (outcomeDetails: OutcomeDetail[]) {
-      this.$store.commit('fhir/setOutcomeDetails', outcomeDetails)
+      this.$store.commit(types.Fhir.SET_OUTCOME_DETAILS, outcomeDetails)
       this.$q.dialog({
         component: OutcomeCard,
         parent: this
@@ -429,8 +430,8 @@
       try {
         this.resources = new Map(Object.entries(electronStore.get('resources') || {}))
         this.transformList = Array.from(this.resources.entries()).map(resource => ({resourceType: resource[0], count: resource[1].length, status: 'pending'}))
-        this.$store.commit('setTransformStatus', 'pending')
-        this.$store.commit('incrementStep')
+        this.$store.commit(types.SET_TRANSFORM_STATUS, 'pending')
+        this.$store.commit(types.INCREMENT_STEP)
       } catch (e) {
         this.$notify.error('Cannot load created resources. Try again')
       }

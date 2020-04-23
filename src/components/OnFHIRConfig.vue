@@ -38,7 +38,7 @@
               </span>
             </q-btn>
             <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="fhirBaseVerificationStatus!=='success'"
-                   @click="$store.commit('incrementStep')" no-caps />
+                   @click="nextStep" no-caps />
           </div>
         </q-card-section>
       </q-card>
@@ -50,14 +50,15 @@
   import { Component, Vue } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
   @Component
   export default class OnFHIRConfig extends Vue {
     private onfhirBaseUrl: string = ''
     private statusDetail: string = ''
 
-    get fhirBaseVerificationStatus (): status { return this.$store.getters['fhir/fhirBaseVerificationStatus'] }
-    set fhirBaseVerificationStatus (value) { this.$store.commit('fhir/setFhirBaseVerificationStatus', value) }
+    get fhirBaseVerificationStatus (): status { return this.$store.getters[types.Fhir.FHIR_BASE_VERIFICATION_STATUS] }
+    set fhirBaseVerificationStatus (value) { this.$store.commit(types.Fhir.SET_FHIR_BASE_VERIFICATION_STATUS, value) }
 
     mounted () {
       const url = localStorage.getItem('fhirBaseUrl')
@@ -69,8 +70,8 @@
     verifyFhir () {
       if (this.onfhirBaseUrl) {
         this.fhirBaseVerificationStatus = 'in-progress'
-        this.$store.commit('fhir/updateFhirBase', this.onfhirBaseUrl)
-        this.$store.dispatch('fhir/verifyFhir')
+        this.$store.commit(types.Fhir.UPDATE_FHIR_BASE, this.onfhirBaseUrl)
+        this.$store.dispatch(types.Fhir.VERIFY_FHIR)
           .then(() => {
             this.statusDetail = 'FHIR Repository URL is verified.'
             this.fhirBaseVerificationStatus = 'success'
@@ -81,6 +82,10 @@
             this.fhirBaseVerificationStatus = 'error'
           })
       }
+    }
+
+    nextStep () {
+      this.$store.commit(types.INCREMENT_STEP)
     }
   }
 </script>

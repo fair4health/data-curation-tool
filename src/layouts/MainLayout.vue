@@ -91,6 +91,7 @@
   import { Component, Vue } from 'vue-property-decorator'
   import { shell } from 'electron'
   import TitleBar from '@/layouts/TitleBar.vue'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
   @Component({
     components: { TitleBar }
@@ -104,14 +105,14 @@
       { title: 'Confirm and Transform', icon: 'fas fa-exchange-alt', stepId: 5 },
     ]
 
-    get drawerOpen (): boolean { return this.$store.getters.drawerOpen }
-    set drawerOpen (value) { this.$store.commit('setDrawerOpen', value) }
+    get drawerOpen (): boolean { return this.$store.getters[types.DRAWER_OPEN] }
+    set drawerOpen (value) { this.$store.commit(types.SET_DRAWER_OPEN, value) }
 
-    get drawerMiniState (): boolean { return this.$store.getters.drawerMiniState }
-    set drawerMiniState (value) { this.$store.commit('setDrawerMiniState', value) }
+    get drawerMiniState (): boolean { return this.$store.getters[types.DRAWER_MINI_STATE] }
+    set drawerMiniState (value) { this.$store.commit(types.SET_DRAWER_MINI_STATE, value) }
 
-    get currentStep (): number { return this.$store.getters.curationStep }
-    set currentStep (value) { this.$store.commit('setStep', value) }
+    get currentStep (): number { return this.$store.getters[types.CURATION_STEP] }
+    set currentStep (value) { this.$store.commit(types.SET_STEP, value) }
 
     get isCollapsed () { return (this.$q.screen.gt.xs && (this.$q.screen.lt.lg || this.drawerMiniState)) }
     get projectHomePage (): string { return window.process.env.ELECTRON_WEBPACK_APP_F4H_HOMEPAGE }
@@ -127,8 +128,8 @@
           cancel: true,
           html: true
         }).onOk(() => {
-          if (newStep < 3) this.$store.dispatch('file/destroyStore')
-          this.$store.commit('setStep', newStep)
+          if (newStep < 3) this.$store.dispatch(types.File.DESTROY_STORE)
+          this.$store.commit(types.SET_STEP, newStep)
         })
       }
     }

@@ -1,32 +1,31 @@
-import {BufferElement, FileSource, Sheet, SourceDataElement} from '@/common/model/file-source'
+import { BufferElement, FileSource, Sheet, SourceDataElement } from '@/common/model/file-source'
+import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
-const fileSource = {
-  namespaced: true,
+const fileStore = {
   state: {
     fileSourceList: [],
     currentFile: null,
-    selectedElements: [],
+    selectedHeaders: [],
     bufferSheetHeaders: [],
     savedRecords: null
   },
   getters: {
-    sourceList: state => state.fileSourceList,
-    currentFile: state => state.fileSourceList.find(f => f.path === state.currentFile?.path),
-    sheets: state => state.currentFile?.sheets || [],
-    currentSheet: state => state.currentFile?.sheets.find(s => s.value === state.currentFile?.currentSheet?.value),
-    selectedElements: state => state.selectedElements || [],
-    fileByPath : state => filePath => state.fileSourceList.find(file => file.path === filePath),
-    bufferSheetHeaders: state => state.bufferSheetHeaders || [],
-    savedRecords: state => state.savedRecords || null
+    [types.File.SOURCE_LIST]: state => state.fileSourceList,
+    [types.File.CURRENT_FILE]: state => state.fileSourceList.find(f => f.path === state.currentFile?.path),
+    [types.File.SHEETS]: state => state.currentFile?.sheets || [],
+    [types.File.CURRENT_SHEET]: state => state.currentFile?.sheets.find(s => s.value === state.currentFile?.currentSheet?.value),
+    [types.File.SELECTED_HEADERS]: state => state.selectedHeaders || [],
+    [types.File.BUFFER_SHEET_HEADERS]: state => state.bufferSheetHeaders || [],
+    [types.File.SAVED_RECORDS]: state => state.savedRecords || null
   },
   mutations: {
-    updateSourceList (state, sourceList: FileSource[]) {
+    [types.File.UPDATE_SOURCE_LIST] (state, sourceList: FileSource[]) {
       state.fileSourceList = sourceList
     },
-    setCurrentFile (state, file: FileSource | null) {
+    [types.File.SET_CURRENT_FILE] (state, file: FileSource | null) {
       state.currentFile = state.fileSourceList.find(f => f.path === file?.path) || null
     },
-    setSheets (state, sheets: string[]) {
+    [types.File.SET_SHEETS] (state, sheets: string[]) {
       if (state.currentFile) {
         const tmpSheet: Sheet[] = []
         for (const sheetName of sheets) {
@@ -38,7 +37,7 @@ const fileSource = {
         state.currentFile.currentSheet = tmpSheet.find(s => s.value === state.currentFile?.currentSheet?.value) || null
       }
     },
-    setSheetHeaders (state, headers: SourceDataElement[]) {
+    [types.File.SET_SHEET_HEADERS] (state, headers: SourceDataElement[]) {
       if (state.currentFile?.currentSheet) {
         if (state.currentFile.currentSheet.headers) {
           const currentSheet = state.currentFile.currentSheet
@@ -54,51 +53,51 @@ const fileSource = {
         }
       }
     },
-    setCurrentSheet (state, sheet: Sheet | null) {
+    [types.File.SET_CURRENT_SHEET] (state, sheet: Sheet | null) {
       if (state.currentFile) {
         state.currentFile.currentSheet = sheet
       }
     },
-    addFile (state, filePath: string) {
+    [types.File.ADD_FILE] (state, filePath: string) {
       if (!state.fileSourceList.find(file => file.path === filePath)) {
         state.fileSourceList.push(new FileSource(filePath))
       }
     },
-    setSelectedElements (state, list: any[]) {
-      state.selectedElements = list
+    [types.File.SET_SELECTED_HEADERS] (state, list: any[]) {
+      state.selectedHeaders = list
     },
-    setBufferSheetHeaders (state, list: BufferElement[]) {
+    [types.File.SET_BUFFER_SHEET_HEADERS] (state, list: BufferElement[]) {
       state.bufferSheetHeaders = list
     },
-    setupBufferSheetHeaders (state) {
+    [types.File.SETUP_BUFFER_SHEET_HEADERS] (state) {
       state.bufferSheetHeaders = state.currentFile.currentSheet?.headers?.map(_ => ({type: _.type, value: _.value}))
     },
-    setSavedRecords (state, value: store.SavedRecord[]) {
+    [types.File.SET_SAVED_RECORDS] (state, value: store.SavedRecord[]) {
       state.savedRecords = value
     }
   },
   actions: {
-    initializeStore ({commit, state}, data): Promise<boolean> {
+    [types.File.INITIALIZE_STORE] ({commit, state}, data): Promise<boolean> {
       return new Promise((resolve, reject) => {
         if (data) {
           Object.assign(state, data)
-          commit('setCurrentFile', null)
+          commit(types.File.SET_CURRENT_FILE, null)
           resolve(true)
         } else {
           reject(false)
         }
       })
     },
-    destroyStore ({commit}): Promise<any> {
+    [types.File.DESTROY_STORE] ({commit}): Promise<any> {
       return new Promise<any>(resolve => {
-        commit('updateSourceList', [])
-        commit('setCurrentFile', null)
-        commit('setSelectedElements', [])
-        commit('setBufferSheetHeaders', [])
+        commit(types.File.UPDATE_SOURCE_LIST, [])
+        commit(types.File.SET_CURRENT_FILE, null)
+        commit(types.File.SET_SELECTED_HEADERS, [])
+        commit(types.File.SET_BUFFER_SHEET_HEADERS, [])
         resolve()
       })
     }
   }
 }
 
-export default fileSource
+export default fileStore

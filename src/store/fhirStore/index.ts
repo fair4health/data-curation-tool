@@ -4,9 +4,9 @@ import StructureDefinition = fhir.StructureDefinition
 import { FHIRUtil } from '@/common/utils/fhir-util'
 import { ipcRenderer } from 'electron'
 import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
+import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
 const fhirStore = {
-  namespaced: true,
   state: {
     resourceList: null,
     profileList: null,
@@ -14,7 +14,7 @@ const fhirStore = {
     elementListFlat: null,
     currentResource: '',
     currentProfile: '',
-    selectedElements: [],
+    selectedFhirElements: [],
     fhirBase: '',
     fhirBaseVerificationStatus: '',
     fhirService: new FhirService(),
@@ -22,56 +22,56 @@ const fhirStore = {
     conceptMapList: []
   },
   getters: {
-    resourceList: state => state.resourceList || [],
-    profileList: state => state.profileList || [],
-    elementList: state => state.elementList || [],
-    elementListFlat: state => state.elementListFlat || [],
-    currentResource: state => state.currentResource || '',
-    currentProfile: state => state.currentProfile || '',
-    selectedElements: state => state.selectedElements || [],
-    fhirBase: state => state.fhirBase,
-    fhirService: state => state.fhirService,
-    outcomeDetails: state => state.outcomeDetails || [],
-    fhirBaseVerificationStatus: state => state.fhirBaseVerificationStatus,
-    conceptMapList: state => state.conceptMapList
+    [types.Fhir.RESOURCE_LIST]: state => state.resourceList || [],
+    [types.Fhir.PROFILE_LIST]: state => state.profileList || [],
+    [types.Fhir.ELEMENT_LIST]: state => state.elementList || [],
+    [types.Fhir.ELEMENT_LIST_FLAT]: state => state.elementListFlat || [],
+    [types.Fhir.CURRENT_RESOURCE]: state => state.currentResource || '',
+    [types.Fhir.CURRENT_PROFILE]: state => state.currentProfile || '',
+    [types.Fhir.SELECTED_FHIR_ELEMENTS]: state => state.selectedFhirElements || [],
+    [types.Fhir.FHIR_BASE]: state => state.fhirBase,
+    [types.Fhir.FHIR_SERVICE]: state => state.fhirService,
+    [types.Fhir.OUTCOME_DETAILS]: state => state.outcomeDetails || [],
+    [types.Fhir.FHIR_BASE_VERIFICATION_STATUS]: state => state.fhirBaseVerificationStatus,
+    [types.Fhir.CONCEPT_MAP_LIST]: state => state.conceptMapList
   },
   mutations: {
-    setResourceList (state, list) {
+    [types.Fhir.SET_RESOURCE_LIST] (state, list) {
       state.resourceList = list
     },
-    setProfileList (state, list) {
+    [types.Fhir.SET_PROFILE_LIST] (state, list) {
       state.profileList = list
     },
-    setElementList (state, list) {
+    [types.Fhir.SET_ELEMENT_LIST] (state, list) {
       state.elementList = [...list]
       state.elementListFlat = list?.length ? FHIRUtil.flatten([...list]) : []
     },
-    setSelectedElements (state, list) {
-      state.selectedElements = list
+    [types.Fhir.SET_SELECTED_FHIR_ELEMENTS] (state, list) {
+      state.selectedFhirElements = list
     },
-    setCurrentResource (state, value) {
+    [types.Fhir.SET_CURRENT_RESOURCE] (state, value) {
       state.currentResource = value
     },
-    setCurrentProfile (state, value) {
+    [types.Fhir.SET_CURRENT_PROFILE] (state, value) {
       state.currentProfile = value
     },
-    updateFhirBase (state, baseUrl: string) {
+    [types.Fhir.UPDATE_FHIR_BASE] (state, baseUrl: string) {
       state.fhirBase = baseUrl
       state.fhirService = new FhirService(baseUrl)
       localStorage.setItem('fhirBaseUrl', baseUrl)
     },
-    setOutcomeDetails (state, outcomeDetails: OutcomeDetail[]) {
+    [types.Fhir.SET_OUTCOME_DETAILS] (state, outcomeDetails: OutcomeDetail[]) {
       state.outcomeDetails = outcomeDetails
     },
-    setFhirBaseVerificationStatus (state, status: status) {
+    [types.Fhir.SET_FHIR_BASE_VERIFICATION_STATUS] (state, status: status) {
       state.fhirBaseVerificationStatus = status
     },
-    setConceptMapList (state, conceptMapList: fhir.ConceptMap[]) {
+    [types.Fhir.SET_CONCEPT_MAP_LIST] (state, conceptMapList: fhir.ConceptMap[]) {
       state.conceptMapList = conceptMapList
     }
   },
   actions: {
-    getResources ({ commit, state }): Promise<boolean> {
+    [types.Fhir.GET_RESOURCES] ({ commit, state }): Promise<boolean> {
       return new Promise((resolve, reject) => {
         state.fhirService.search('metadata', null)
           .then(res => {
@@ -80,7 +80,7 @@ const fhirStore = {
             if (resource && resource.rest?.length && resource.rest[0].resource?.length) {
               resources = resource.rest[0].resource
             }
-            commit('setResourceList', resources.map(r => r.type) || [])
+            commit(types.Fhir.SET_RESOURCE_LIST, resources.map(r => r.type) || [])
             const profileMap: Map<string, string> = new Map<string, string>()
             resources.flatMap(r => r.supportedProfile).filter(_ => !!_).map(_ => {
               const id = _!.split('/').pop()
@@ -91,13 +91,13 @@ const fhirStore = {
           .catch(err => reject(err) )
       })
     },
-    getProfilesByRes ({ commit, state }, resource: string): Promise<boolean> {
+    [types.Fhir.GET_PROFILES_BY_RES] ({ commit, state }, resource: string): Promise<boolean> {
       return new Promise((resolve, reject) => {
         state.fhirService.search('StructureDefinition',
           {_summary: 'data', base: `${environment.hl7}/StructureDefinition/${resource}`}, true)
           .then(res => {
             const bundle = res.data as fhir.Bundle
-            commit('setProfileList', bundle.entry?.map(e => {
+            commit(types.Fhir.SET_PROFILE_LIST, bundle.entry?.map(e => {
               const structure = e.resource as fhir.StructureDefinition
               return {id: structure.id, title: structure.title, url: structure.url}
             }) || [])
@@ -106,18 +106,18 @@ const fhirStore = {
           .catch(err => reject(err) )
       })
     },
-    getElements ({ commit, state }, { parameterName, profile }): Promise<boolean> {
+    [types.Fhir.GET_ELEMENTS] ({ commit, state }, { parameterName, profile }): Promise<boolean> {
       return new Promise((resolve, reject) => {
         FHIRUtil.parseElementDefinitions(parameterName, profile)
           .then(res => {
             const elementList = res[0]?.children || []
-            commit('setElementList', elementList)
+            commit(types.Fhir.SET_ELEMENT_LIST, elementList)
             resolve(true)
           })
           .catch(err => reject(err))
       })
     },
-    verifyFhir ({ state }): Promise<any> {
+    [types.Fhir.VERIFY_FHIR] ({ state }): Promise<any> {
       return new Promise((resolve, reject) => {
         state.fhirService.search('metadata', {}, true)
           .then(res => {
@@ -135,12 +135,12 @@ const fhirStore = {
           .catch(err => reject('Given url is not verified.'))
       })
     },
-    getConceptMaps ({ commit, state }, noCache?: boolean): Promise<any> {
+    [types.Fhir.GET_CONCEPT_MAPS] ({ commit, state }, noCache?: boolean): Promise<any> {
       return new Promise((resolve, reject) => {
         ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.ElectronStore.GET_ELECTRON_STORE, `${state.fhirBase}-ConceptMapList`)
         ipcRenderer.on(ipcChannels.ElectronStore.GOT_ELECTRON_STORE, (event, cached) => {
           if (!noCache && cached && !FHIRUtil.isEmpty(cached)) {
-            commit('setConceptMapList', cached)
+            commit(types.Fhir.SET_CONCEPT_MAP_LIST, cached)
             resolve(true)
           } else {
             state.fhirService.search('ConceptMap', {}, true)
@@ -148,7 +148,7 @@ const fhirStore = {
                 const bundle = res.data as fhir.Bundle
                 if (bundle.entry?.length) {
                   const conceptMapList: fhir.ConceptMap[] = bundle.entry.map((bundleEntry: fhir.BundleEntry) => bundleEntry.resource) as fhir.ConceptMap[]
-                  commit('setConceptMapList', conceptMapList)
+                  commit(types.Fhir.SET_CONCEPT_MAP_LIST, conceptMapList)
 
                   // electronStore.set(`${state.fhirBase}-ConceptMapList`, conceptMapList)
                   ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.ElectronStore.SET_ELECTRON_STORE, {key: `${state.fhirBase}-ConceptMapList`, value: conceptMapList})
@@ -162,7 +162,7 @@ const fhirStore = {
         })
       })
     },
-    getDataTypes ({ state }, url: string): Promise<any> {
+    [types.Fhir.GET_DATA_TYPES] ({ state }, url: string): Promise<any> {
       return new Promise((resolve, reject) => {
         state.fhirService.search('StructureDefinition', {url}, true)
           .then(res => {
@@ -221,7 +221,7 @@ const fhirStore = {
           .catch(() => reject([]))
       })
     },
-    deleteAll ({ state }, resourceType: string): Promise<boolean> {
+    [types.Fhir.DELETE_ALL] ({ state }, resourceType: string): Promise<boolean> {
       return new Promise<boolean>((resolve, reject) => {
         state.fhirService.deleteAll(resourceType)
           .then(_ => resolve(true))

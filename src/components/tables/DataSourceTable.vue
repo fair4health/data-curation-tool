@@ -136,6 +136,7 @@
   import { SourceDataElement, FileSource, Sheet, BufferElement } from '@/common/model/file-source'
   import { sourceDataTableHeaders, cellType } from '@/common/model/data-table'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
   @Component
   export default class DataSourceTable extends Vue {
@@ -148,28 +149,28 @@
     get dataSourceColumns (): object[] { return sourceDataTableHeaders }
     get fieldTypes (): string[] { return Object.values(cellType) }
 
-    get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
-    set fileSourceList (value) { this.$store.commit('file/updateSourceList', value) }
+    get fileSourceList (): FileSource[] { return this.$store.getters[types.File.SOURCE_LIST] }
+    set fileSourceList (value) { this.$store.commit(types.File.UPDATE_SOURCE_LIST, value) }
 
-    get currentSource (): FileSource { return this.$store.getters['file/currentFile'] }
-    set currentSource (value) { this.$store.commit('file/setCurrentFile', value) }
+    get currentSource (): FileSource { return this.$store.getters[types.File.CURRENT_FILE] }
+    set currentSource (value) { this.$store.commit(types.File.SET_CURRENT_FILE, value) }
 
-    get sheets (): Sheet[] { return this.$store.getters['file/sheets'] }
-    set sheets (value) { this.$store.commit('file/setSheets', value) }
+    get sheets (): Sheet[] { return this.$store.getters[types.File.SHEETS] }
+    set sheets (value) { this.$store.commit(types.File.SET_SHEETS, value) }
 
-    get currentSheet (): Sheet | null { return this.$store.getters['file/currentSheet'] }
-    set currentSheet (value) { this.$store.commit('file/setCurrentSheet', value) }
+    get currentSheet (): Sheet | null { return this.$store.getters[types.File.CURRENT_SHEET] }
+    set currentSheet (value) { this.$store.commit(types.File.SET_CURRENT_SHEET, value) }
 
-    get selectedAttr (): any { return this.$store.getters['file/selectedElements'] }
-    set selectedAttr (value) { this.$store.commit('file/setSelectedElements', value) }
+    get selectedAttr (): any { return this.$store.getters[types.File.SELECTED_HEADERS] }
+    set selectedAttr (value) { this.$store.commit(types.File.SET_SELECTED_HEADERS, value) }
 
-    get bufferSheetHeaders (): BufferElement[] { return this.$store.getters['file/bufferSheetHeaders'] }
-    set bufferSheetHeaders (value) { this.$store.commit('file/setBufferSheetHeaders', value) }
+    get bufferSheetHeaders (): BufferElement[] { return this.$store.getters[types.File.BUFFER_SHEET_HEADERS] }
+    set bufferSheetHeaders (value) { this.$store.commit(types.File.SET_BUFFER_SHEET_HEADERS, value) }
 
     get conceptMapList (): Array<Array<{id: string, name: string}>> {
-      return this.$store.getters['fhir/conceptMapList'].map((_: fhir.ConceptMap) => ({id: _.id, name: _.name}))
+      return this.$store.getters[types.Fhir.CONCEPT_MAP_LIST].map((_: fhir.ConceptMap) => ({id: _.id, name: _.name}))
     }
-    set conceptMapList (value) { this.$store.commit('fhir/setConceptMapList', value) }
+    set conceptMapList (value) { this.$store.commit(types.Fhir.SET_CONCEPT_MAP_LIST, value) }
 
     get filteredBufferSheetHeaders (): BufferElement[] {
       return this.bufferSheetHeaders.filter(_ => !this.showMappedFields || _.target)
@@ -181,7 +182,7 @@
         this.bufferSheetHeaders = []
         if (!this.currentSource) this.currentSource = this.fileSourceList[0]
         if (this.currentSheet) this.onSheetChanged()
-        this.$store.dispatch('fhir/getConceptMaps', true)
+        this.$store.dispatch(types.Fhir.GET_CONCEPT_MAPS, true)
           .then(() => this.$q.loading.hide())
           .catch(() => {
             this.$q.loading.hide()
@@ -240,15 +241,15 @@
           this.$notify.error('Headers couldn\'t be detected')
         }
         // this.bufferSheetHeaders = headers.map(_ => ({type: _.type, value: _.value}))
-        this.$store.commit('file/setSheetHeaders', headers)
-        this.$store.commit('file/setupBufferSheetHeaders')
+        this.$store.commit(types.File.SET_SHEET_HEADERS, headers)
+        this.$store.commit(types.File.SETUP_BUFFER_SHEET_HEADERS)
         this.loadingAttr = false
         ipcRenderer.removeAllListeners(ipcChannels.File.READY_TABLE_HEADERS)
       })
     }
 
     onSaveFieldType (): void {
-      this.$store.commit('file/setBufferSheetHeaders', this.bufferSheetHeaders)
+      this.$store.commit(types.File.SET_BUFFER_SHEET_HEADERS, this.bufferSheetHeaders)
     }
 
     removeTarget (columnName: string, index: number) {

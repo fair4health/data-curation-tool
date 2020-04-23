@@ -97,6 +97,7 @@
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
   import { QDialog } from 'quasar'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
   @Component
   export default class OutcomeCard extends Vue {
@@ -113,9 +114,9 @@
     private selectedResources: string[] = []
     private fullscreen: boolean = false
 
-    get outcomeDetails (): OutcomeDetail[] { return this.$store.getters['fhir/outcomeDetails'] }
+    get outcomeDetails (): OutcomeDetail[] { return this.$store.getters[types.Fhir.OUTCOME_DETAILS] }
     get filteredOutcomeDetails (): OutcomeDetail[] {
-      const details: OutcomeDetail[] = this.$store.getters['fhir/outcomeDetails']
+      const details: OutcomeDetail[] = this.$store.getters[types.Fhir.OUTCOME_DETAILS]
       return details.filter(_ => {
         return ((this.successDetails ? _.status === 'success' : 0) || (this.errorDetails ? _.status === 'error' : 0))
           && this.selectedResources.includes(_.resourceType)
@@ -136,7 +137,7 @@
 
     hide () {
       (this.$refs.dialog as QDialog).hide()
-      this.$store.commit('fhir/setOutcomeDetails', [])
+      this.$store.commit(types.Fhir.SET_OUTCOME_DETAILS, [])
     }
 
     onDialogHide () {

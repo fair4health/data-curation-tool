@@ -32,6 +32,7 @@
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator'
   import Loading from '@/components/Loading.vue'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
   @Component({
     components: {
@@ -63,7 +64,7 @@
     } as any
   })
   export default class Stepper extends Vue {
-    get step (): number { return this.$store.getters.curationStep }
+    get step (): number { return this.$store.getters[types.CURATION_STEP] }
   }
 
 </script>
