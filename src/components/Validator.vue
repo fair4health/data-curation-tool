@@ -37,29 +37,29 @@
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td key="status" class="no-padding" :props="props">
-                <template v-if="props.row.validation.status === 'in-progress'">
+                <template v-if="isInProgress(props.row.validation.status)">
                   <span>
                     <q-spinner color="grey-9" />
                     <q-tooltip content-class="bg-white text-grey-8">Generating resources...</q-tooltip>
                   </span>
                 </template>
-                <template v-else-if="props.row.validation.status === 'validating'">
+                <template v-else-if="isValidating(props.row.validation.status)">
                   <span>
                     <q-spinner color="grey-9" />
                     <q-tooltip content-class="bg-white text-grey-8">Validating...</q-tooltip>
                   </span>
                 </template>
-                <template v-else-if="props.row.validation.status === 'done'">
+                <template v-else-if="isSuccess(props.row.validation.status)">
                   <q-icon name="check" color="positive">
                     <q-tooltip content-class="bg-white text-green">Completed</q-tooltip>
                   </q-icon>
                 </template>
-                <template v-else-if="props.row.validation.status === 'warning'">
+                <template v-else-if="isWarning(props.row.validation.status)">
                   <q-icon name="warning" color="orange-6">
                     <q-tooltip content-class="bg-white text-orange-6">Warning</q-tooltip>
                   </q-icon>
                 </template>
-                <template v-else-if="props.row.validation.status === 'error'">
+                <template v-else-if="isError(props.row.validation.status)">
                   <q-icon name="error_outline" color="negative">
                     <q-tooltip content-class="error-tooltip bg-white text-red-7" class="ellipsis-3-lines">
                       {{ props.row.validation.description }}
@@ -83,19 +83,19 @@
                 {{ computedSavedRecord(props.row.file, props.row.sheet).length }}
               </q-td>
               <q-td>
-                <template v-if="props.row.validation.status === 'in-progress'">
+                <template v-if="isInProgress(props.row.validation.status)">
                   <span class="text-grey-8 q-pl-sm text-size-sm">Creating...</span>
                 </template>
-                <template v-else-if="props.row.validation.status === 'validating'">
+                <template v-else-if="isValidating(props.row.validation.status)">
                   <span class="text-grey-8 q-pl-sm text-size-sm">Validating...</span>
                 </template>
-                <q-btn v-else-if="props.row.validation.status === 'done' || props.row.validation.status === 'warning'" flat rounded icon="receipt"
+                <q-btn v-else-if="isSuccess(props.row.validation.status) || isWarning(props.row.validation.status)" flat rounded icon="receipt"
                        color="primary" label="Details" size="sm" class="text-center"
                        @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)" no-caps
                 />
-                <q-btn v-else-if="props.row.validation.status === 'error'" flat rounded icon="error" color="negative"
+                <q-btn v-else-if="isError(props.row.validation.status)" flat rounded icon="error" color="negative"
                        label="Details" size="sm" class="text-center" no-caps
-                       @click="openOutcomeDetailCard([{status: 'error', message: props.row.validation.description, resourceType: 'OperationOutcome'}])"
+                       @click="openOutcomeDetailCard([{status: Status.ERROR, message: props.row.validation.description, resourceType: 'OperationOutcome'}])"
                 />
                 <template v-else>
                   <span class="text-grey-8 q-pl-sm text-size-sm">Pending</span>
@@ -186,15 +186,15 @@
         </q-table>
         <div class="row content-end q-gutter-sm">
           <q-space />
-          <q-btn v-if="validationStatus==='success'" label="Export Resources" color="green" icon="publish"
+          <q-btn v-if="isSuccess(validationStatus)" label="Export Resources" color="green" icon="publish"
                  class="q-mt-lg" @click="exportResources" no-caps />
-          <q-btn outline label="Validate" icon="verified_user" :color="validationStatus==='in-progress' ? 'grey-7' : 'green-7'"
-                 :disable="validationStatus === 'in-progress'" @click="validate" class="q-mt-lg" no-caps>
+          <q-btn outline label="Validate" icon="verified_user" :color="isInProgress(validationStatus) ? 'grey-7' : 'green-7'"
+                 :disable="isInProgress(validationStatus)" @click="validate" class="q-mt-lg" no-caps>
               <span class="q-ml-sm">
-                <q-spinner class="q-ml-sm" size="xs" v-show="validationStatus==='in-progress'" />
-                <q-icon name="check" size="xs" color="green" v-show="validationStatus==='success'" />
-                <q-icon name="error_outline" size="xs" color="red" v-show="validationStatus==='error'" />
-                <q-icon name="warning" size="xs" color="orange-6" v-show="validationStatus==='warning'" />
+                <q-spinner class="q-ml-sm" size="xs" v-show="isInProgress(validationStatus)" />
+                <q-icon name="check" size="xs" color="green" v-show="isSuccess(validationStatus)" />
+                <q-icon name="error_outline" size="xs" color="red" v-show="isError(validationStatus)" />
+                <q-icon name="warning" size="xs" color="orange-6" v-show="isWarning(validationStatus)" />
               </span>
           </q-btn>
         </div>
@@ -203,14 +203,14 @@
     <div class="row q-pa-sm">
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
       <q-space />
-      <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="validationStatus !== 'success'"
+      <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!isSuccess(validationStatus)"
              @click="nextStep" no-caps />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-  import { Component, Vue } from 'vue-property-decorator'
+  import { Component, Vue, Mixins } from 'vue-property-decorator'
   import { FileSource, Record, Sheet, SourceDataElement } from '@/common/model/file-source'
   import { ipcRenderer } from 'electron'
   import { mappingDataTableHeaders } from '@/common/model/data-table'
@@ -219,14 +219,17 @@
   import electronStore from '@/common/electron-store'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+  import Status from '@/common/Status'
+  import StatusMixin from '@/common/mixins/statusMixin'
 
   @Component
-  export default class Validator extends Vue {
+  export default class Validator extends Mixins(StatusMixin) {
     // Mapping data grouped by file and sheets
     private mappingObj: Map<string, any> = new Map<string, any>()
     private pagination = { page: 1, rowsPerPage: 0 }
     private filter: string = ''
     private loading: boolean = false
+    private Status = Status
 
     get columns (): object[] { return mappingDataTableHeaders }
     get fileSourceList (): FileSource[] { return this.$store.getters[types.File.SOURCE_LIST] }
@@ -263,14 +266,14 @@
 
     validate () {
       // Init status
-      this.validationStatus = 'in-progress'
+      this.validationStatus = Status.IN_PROGRESS
       // If there are resources created, clear them
       electronStore.set('resources', null)
       const filePathList = Object.keys(FHIRUtil.groupBy(this.mappingList, 'file'))
 
       if (!filePathList.length) {
         this.$notify.error('No mapping available')
-        this.validationStatus = 'pending'
+        this.validationStatus = Status.PENDING
         return
       }
 
@@ -282,7 +285,7 @@
           })
           this.mappingList = this.mappingList.map(_ => {
             if (_.file === filePath) {
-              _.validation = {status: 'in-progress'}
+              _.validation = {status: Status.IN_PROGRESS}
             }
             return _
           })
@@ -348,7 +351,7 @@
                   }
                   return _
                 })
-                if (result && result.status === 'done') {
+                if (result && this.isSuccess(result.status)) {
                   // this.$log.success('Validation', `Validation is completed ${sheet} in ${filePath}`)
                   resolveSheet()
                 } else {
@@ -364,8 +367,8 @@
             .catch(() => rejectFile())
         })
       }))
-        .then(_ => this.validationStatus = 'success')
-        .catch(_ => this.validationStatus = 'error')
+        .then(_ => this.validationStatus = Status.SUCCESS)
+        .catch(_ => this.validationStatus = Status.ERROR)
     }
 
     getMappings (): Promise<any> {
@@ -429,8 +432,8 @@
     nextStep () {
       try {
         this.resources = new Map(Object.entries(electronStore.get('resources') || {}))
-        this.transformList = Array.from(this.resources.entries()).map(resource => ({resourceType: resource[0], count: resource[1].length, status: 'pending'}))
-        this.$store.commit(types.SET_TRANSFORM_STATUS, 'pending')
+        this.transformList = Array.from(this.resources.entries()).map(resource => ({resourceType: resource[0], count: resource[1].length, status: Status.PENDING}))
+        this.$store.commit(types.SET_TRANSFORM_STATUS, Status.PENDING)
         this.$store.commit(types.INCREMENT_STEP)
       } catch (e) {
         this.$notify.error('Cannot load created resources. Try again')

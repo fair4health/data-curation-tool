@@ -11,6 +11,7 @@ import { FhirService } from '@/common/services/fhir.service'
 import { FHIRUtil } from '@/common/utils/fhir-util'
 import { Component, Vue } from 'vue-property-decorator'
 import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
+import Status from '@/common/Status'
 
 @Component
 export default class BackgroundEngine extends Vue {
@@ -386,7 +387,7 @@ export default class BackgroundEngine extends Vue {
                 })
               }))
                 .then(() => { // End of sheet
-                  ipcRenderer.send(ipcChannels.TO_RENDERER, `generated-resources-${filePath}-${sheet.sheetName}`, {status: 'validating'})
+                  ipcRenderer.send(ipcChannels.TO_RENDERER, `generated-resources-${filePath}-${sheet.sheetName}`, {status: Status.VALIDATING})
                   if (entries.length) {
 
                     Promise.all(Array.from(resources.keys()).map(resourceType => {
@@ -421,14 +422,14 @@ export default class BackgroundEngine extends Vue {
                                     operationOutcome.issue.map(issue => {
                                       if (issue.severity === 'error') {
                                         hasError = true
-                                        outcomeDetails.push({status: 'error', resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
+                                        outcomeDetails.push({status: Status.ERROR, resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
                                       }
                                       // else if (issue.severity === 'information') {
-                                      // outcomeDetails.push({status: 'success', resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
+                                      // outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
                                       // }
                                     })
                                   } else {
-                                    outcomeDetails.push({status: 'success', resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
+                                    outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
                                   }
                                 }) || [])
                                   .then(() => {
@@ -460,25 +461,25 @@ export default class BackgroundEngine extends Vue {
                       .then((res: any[]) => {
                         resolveSheet()
                         const outcomeDetails: OutcomeDetail[] = [].concat.apply([], res)
-                        const status = !!outcomeDetails.find(_ => _.status === 'error') ? 'warning' : 'done'
+                        const status = !!outcomeDetails.find(_ => _.status === Status.ERROR) ? Status.WARNING : Status.SUCCESS
                         ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status, outcomeDetails})
                         log.info(`Validation completed ${sheet.sheetName} in ${filePath}`)
                       })
                       .catch(err => {
                         resolveSheet()
-                        ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: 'error', description: 'Batch process error', outcomeDetails: err})
+                        ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, description: 'Batch process error', outcomeDetails: err})
                         log.error(`Batch process error ${filePath}-${sheet.sheetName}`)
                       })
 
                   } else {
                     resolveSheet()
-                    ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: 'warning', description: 'Empty sheet'})
+                    ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.WARNING, description: 'Empty sheet'})
                     log.warn(`Empty sheet: ${sheet.sheetName} in ${filePath}`)
                   }
                 })
                 .catch(err => {
                   resolveSheet()
-                  ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: 'error', description: `Validation error for sheet: ${sheet.sheetName}. ${err}`})
+                  ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, description: `Validation error for sheet: ${sheet.sheetName}. ${err}`})
                   log.error(`Validation error for sheet: ${sheet.sheetName} in ${filePath}: ${err}`)
                 })
             }))
@@ -494,7 +495,7 @@ export default class BackgroundEngine extends Vue {
           })
       })
         .catch(err => {
-          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-error-${filePath}`, {status: 'error', description: `File not found : ${filePath}`})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-error-${filePath}`, {status: Status.ERROR, description: `File not found : ${filePath}`})
           log.error(`File not found. ${err}`)
           this.ready()
           return
@@ -521,7 +522,7 @@ export default class BackgroundEngine extends Vue {
         const resourceList = resources.get(resourceType)
         return new Promise((resolve, reject) => {
 
-          ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: 'in-progress'} as OutcomeDetail)
+          ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: Status.IN_PROGRESS} as OutcomeDetail)
 
           // Batch upload resources
           // Max capacity 1000 resources
@@ -544,13 +545,13 @@ export default class BackgroundEngine extends Vue {
                       operationOutcome.issue.map(issue => {
                         if (issue.severity === 'error') {
                           hasError = true
-                          outcomeDetails.push({status: 'error', resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
+                          outcomeDetails.push({status: Status.ERROR, resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
                         } else if (issue.severity === 'information') {
-                          outcomeDetails.push({status: 'success', resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
+                          outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
                         }
                       })
                     } else {
-                      outcomeDetails.push({status: 'success', resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
+                      outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
                     }
                   }) || [])
                     .then(() => {
@@ -570,12 +571,12 @@ export default class BackgroundEngine extends Vue {
             .then(res => {
               const concatResult: OutcomeDetail[] = [].concat.apply([], res)
               log.info(`Batch process completed for Resource: ${resourceType}`)
-              ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: 'success', outcomeDetails: concatResult} as OutcomeDetail)
+              ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: Status.SUCCESS, outcomeDetails: concatResult} as OutcomeDetail)
               resolve(concatResult)
             })
             .catch(err => {
               log.error(`Batch process error for Resource: ${resourceType}`)
-              ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: 'error'} as OutcomeDetail)
+              ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: Status.ERROR} as OutcomeDetail)
               reject(err)
             })
 
@@ -583,13 +584,13 @@ export default class BackgroundEngine extends Vue {
 
       }))
         .then((res: any[]) => {
-          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: 'success', outcomeDetails: [].concat.apply([], res)})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: Status.SUCCESS, outcomeDetails: [].concat.apply([], res)})
           log.info(`Transform completed`)
 
           this.ready()
         })
         .catch(err => {
-          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: 'error', description: 'Transform error', outcomeDetails: err})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: Status.ERROR, description: 'Transform error', outcomeDetails: err})
           log.error(`Transform error. ${err}`)
 
           this.ready()
