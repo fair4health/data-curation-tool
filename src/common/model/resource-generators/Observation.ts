@@ -15,6 +15,9 @@ export class Observation implements Generator {
 
       const keys: string[] = Array.from(resource.keys())
 
+      if (resource.has('Observation.id')) {
+        observation.id = String(resource.get('Observation.id')?.value || '')
+      }
       if (resource.has('Observation.status')) {
         const item = resource.get('Observation.status')
         if (item.conceptMap) {
@@ -430,18 +433,22 @@ export class Observation implements Generator {
   public generateID (resource: fhir.Observation): string {
     let value: string = ''
 
-    if (resource.status) value += resource.status
-    if (resource.code?.coding && resource.code.coding.length) value += resource.code.coding[0].code
-    if (resource.valueCodeableConcept?.coding?.length) value += resource.valueCodeableConcept.coding[0].code
-    if (resource.valueQuantity?.value) value += resource.valueQuantity.value
-    if (resource.subject?.reference) value += resource.subject.reference
-    if (resource.effectiveInstant) value += resource.effectiveInstant
-    if (resource.effectiveDateTime) value += resource.effectiveDateTime
-    if (resource.effectivePeriod) value += String(resource.effectivePeriod?.start) + String(resource.effectivePeriod?.end)
-    if (resource.effectiveTiming?.code?.coding?.length) value += resource.effectiveTiming.code.coding[0].code
-    if (resource.effectiveTiming?.event?.length) value += String(resource.effectiveTiming.event[0])
-    if (resource.effectiveTiming?.repeat) value += JSON.stringify(resource.effectiveTiming.repeat)
-    if (resource.component?.length) value += JSON.stringify(resource.component)
+    if (resource.id) {
+      value += resource.id
+    } else {
+      if (resource.status) value += resource.status
+      if (resource.code?.coding && resource.code.coding.length) value += resource.code.coding[0].code
+      if (resource.valueCodeableConcept?.coding?.length) value += resource.valueCodeableConcept.coding[0].code
+      if (resource.valueQuantity?.value) value += resource.valueQuantity.value
+      if (resource.subject?.reference) value += resource.subject.reference
+      if (resource.effectiveInstant) value += resource.effectiveInstant
+      if (resource.effectiveDateTime) value += resource.effectiveDateTime
+      if (resource.effectivePeriod) value += String(resource.effectivePeriod?.start) + String(resource.effectivePeriod?.end)
+      if (resource.effectiveTiming?.code?.coding?.length) value += resource.effectiveTiming.code.coding[0].code
+      if (resource.effectiveTiming?.event?.length) value += String(resource.effectiveTiming.event[0])
+      if (resource.effectiveTiming?.repeat) value += JSON.stringify(resource.effectiveTiming.repeat)
+      if (resource.component?.length) value += JSON.stringify(resource.component)
+    }
 
     return FHIRUtil.hash(value)
   }

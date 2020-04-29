@@ -15,6 +15,9 @@ export class Condition implements Generator {
 
       const keys: string[] = Array.from(resource.keys())
 
+      if (resource.has('Condition.id')) {
+        condition.id = String(resource.get('Condition.id')?.value || '')
+      }
       if (resource.has('Condition.clinicalStatus')) {
         const item = resource.get('Condition.clinicalStatus')
         if (item.conceptMap) {
@@ -194,10 +197,14 @@ export class Condition implements Generator {
   public generateID (resource: fhir.Condition): string {
     let value: string = ''
 
-    if (resource.subject?.reference) value += resource.subject.reference
-    if (resource.code?.coding && resource.code.coding.length) value += resource.code.coding[0].code
-    if (resource.onsetDateTime) value += resource.onsetDateTime
-    if (resource.abatementDateTime) value += resource.abatementDateTime
+    if (resource.id) {
+      value += resource.id
+    } else {
+      if (resource.subject?.reference) value += resource.subject.reference
+      if (resource.code?.coding && resource.code.coding.length) value += resource.code.coding[0].code
+      if (resource.onsetDateTime) value += resource.onsetDateTime
+      if (resource.abatementDateTime) value += resource.abatementDateTime
+    }
 
     return FHIRUtil.hash(value)
   }

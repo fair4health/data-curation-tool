@@ -18,6 +18,9 @@ export class Device implements Generator {
 
       const keys: string[] = Array.from(resource.keys())
 
+      if (resource.has('Device.id')) {
+        device.id = String(resource.get('Device.id')?.value || '')
+      }
       if (resource.has('Device.status')) {
         const item = resource.get('Device.status')
         if (item.conceptMap) {
@@ -136,7 +139,11 @@ export class Device implements Generator {
   public generateID (resource: fhir.Device): string {
     let value: string = ''
     // TODO: serialNumber ?
-    if (resource.serialNumber) value += resource.serialNumber
+    if (resource.id) {
+      value += resource.id
+    } else {
+      if (resource.serialNumber) value += resource.serialNumber
+    }
 
     return FHIRUtil.hash(value)
   }

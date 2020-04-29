@@ -14,6 +14,9 @@ export class MedicationRequest implements Generator {
 
       const keys: string[] = Array.from(resource.keys())
 
+      if (resource.has('MedicationRequest.id')) {
+        medicationRequest.id = String(resource.get('MedicationRequest.id')?.value || '')
+      }
       if (resource.has('MedicationRequest.status')) {
         const item = resource.get('MedicationRequest.status')
         if (item.conceptMap) {
@@ -108,12 +111,16 @@ export class MedicationRequest implements Generator {
   public generateID (resource: fhir.MedicationRequest): string {
     let value: string = ''
 
-    if (resource.status) value += resource.status
-    if (resource.intent) value += resource.intent
-    if (resource.subject?.reference) value += resource.subject.reference
-    if (resource.medicationCodeableConcept?.coding && resource.medicationCodeableConcept.coding.length)
-      value += resource.medicationCodeableConcept.coding[0].code
-    if (resource.medicationReference) value += resource.medicationReference.reference
+    if (resource.id) {
+      value += resource.id
+    } else {
+      if (resource.status) value += resource.status
+      if (resource.intent) value += resource.intent
+      if (resource.subject?.reference) value += resource.subject.reference
+      if (resource.medicationCodeableConcept?.coding && resource.medicationCodeableConcept.coding.length)
+        value += resource.medicationCodeableConcept.coding[0].code
+      if (resource.medicationReference) value += resource.medicationReference.reference
+    }
 
     return FHIRUtil.hash(value)
   }

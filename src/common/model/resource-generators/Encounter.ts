@@ -15,13 +15,16 @@ export class Encounter implements Generator {
 
       const keys: string[] = Array.from(resource.keys())
 
+      if (resource.has('Encounter.id')) {
+        encounter.id = String(resource.get('Encounter.id')?.value || '')
+      }
       if (resource.has('Encounter.status')) {
         const item = resource.get('Encounter.status')
         if (item.conceptMap) {
           const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
           if (targetValue) encounter.status = targetValue
         } else {
-          encounter.status = 'planned' // String(item.value)
+          encounter.status = String(item.value)
         }
       }
       if (resource.has('Encounter.statusHistory.status')) {
@@ -479,8 +482,11 @@ export class Encounter implements Generator {
   public generateID (resource: fhir.Encounter): string {
     let value: string = ''
 
-    // TODO
-    value += JSON.stringify(resource)
+    if (resource.id) {
+      value += resource.id
+    } else {
+      value += JSON.stringify(resource)
+    }
 
     return FHIRUtil.hash(value)
   }

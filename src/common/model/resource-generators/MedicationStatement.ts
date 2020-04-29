@@ -17,6 +17,9 @@ export class MedicationStatement implements Generator {
 
       const keys: string[] = Array.from(resource.keys())
 
+      if (resource.has('MedicationStatement.id')) {
+        medicationStatement.id = String(resource.get('MedicationStatement.id')?.value || '')
+      }
       if (resource.has('MedicationStatement.status')) {
         const item = resource.get('MedicationStatement.status')
         if (item.conceptMap) {
@@ -168,15 +171,19 @@ export class MedicationStatement implements Generator {
   public generateID (resource: fhir.MedicationStatement): string {
     let value: string = ''
 
-    if (resource.status) value += resource.status
-    if (resource.subject?.reference) value += resource.subject.reference
-    if (resource.medicationCodeableConcept?.coding && resource.medicationCodeableConcept.coding.length)
-      value += resource.medicationCodeableConcept.coding[0].code
-    if (resource.medicationReference) value += resource.medicationReference.reference
-    if (resource.effectiveDateTime) value += resource.effectiveDateTime
-    if (resource.effectivePeriod?.start) value += resource.effectivePeriod.start
-    if (resource.effectivePeriod?.end) value += resource.effectivePeriod.end
-    if (resource.dosage?.length) value += JSON.stringify(resource.dosage[0])
+    if (resource.id) {
+      value += resource.id
+    } else {
+      if (resource.status) value += resource.status
+      if (resource.subject?.reference) value += resource.subject.reference
+      if (resource.medicationCodeableConcept?.coding && resource.medicationCodeableConcept.coding.length)
+        value += resource.medicationCodeableConcept.coding[0].code
+      if (resource.medicationReference) value += resource.medicationReference.reference
+      if (resource.effectiveDateTime) value += resource.effectiveDateTime
+      if (resource.effectivePeriod?.start) value += resource.effectivePeriod.start
+      if (resource.effectivePeriod?.end) value += resource.effectivePeriod.end
+      if (resource.dosage?.length) value += JSON.stringify(resource.dosage[0])
+    }
 
     return FHIRUtil.hash(value)
   }
