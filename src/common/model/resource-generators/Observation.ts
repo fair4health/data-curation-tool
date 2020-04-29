@@ -1,5 +1,4 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { FHIRUtil } from './../../utils/fhir-util'
 import { Generator } from './Generator'
 import log from 'electron-log'
@@ -32,7 +31,7 @@ export class Observation implements Generator {
           observation.category = [targetValue]
         } else {
           observation.category = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/observation-category', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }
@@ -43,7 +42,7 @@ export class Observation implements Generator {
           if (targetValue) observation.code = targetValue
         } else {
           observation.code = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.LOINC, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -124,7 +123,7 @@ export class Observation implements Generator {
             if (targetValue) timing.code = targetValue
           } else {
             timing.code = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/v3-GTSAbbreviation', code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )
           }
         }
@@ -268,7 +267,7 @@ export class Observation implements Generator {
           if (targetValue) observation.valueCodeableConcept = targetValue
         } else {
           observation.valueCodeableConcept = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.LOINC, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -331,7 +330,7 @@ export class Observation implements Generator {
           if (targetValue) observation.dataAbsentReason = targetValue
         } else {
           observation.dataAbsentReason = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/data-absent-reason', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -342,7 +341,7 @@ export class Observation implements Generator {
           if (targetValue) observation.interpretation = [targetValue]
         } else {
           observation.interpretation = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }
@@ -353,7 +352,7 @@ export class Observation implements Generator {
           if (targetValue) observation.bodySite = targetValue
         } else {
           observation.bodySite = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.SNOMED, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -364,7 +363,7 @@ export class Observation implements Generator {
           if (targetValue) observation.method = targetValue
         } else {
           observation.method = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.SNOMED, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -385,7 +384,7 @@ export class Observation implements Generator {
             if (targetValue) component.code = targetValue
           } else {
             component.code = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: environment.codesystems.LOINC, code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )
           }
         }
@@ -397,7 +396,7 @@ export class Observation implements Generator {
             if (targetValue) component.dataAbsentReason = targetValue
           } else {
             component.dataAbsentReason = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/data-absent-reason', code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )
           }
         }
@@ -408,7 +407,7 @@ export class Observation implements Generator {
             if (targetValue) component.interpretation = [targetValue]
           } else {
             component.interpretation = [DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation', code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )]
           }
         }

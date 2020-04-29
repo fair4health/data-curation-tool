@@ -72,21 +72,25 @@ export class FHIRUtil {
               const list: fhir.ElementTree[] = []
               Promise.all(resource?.snapshot?.element.map((element: fhir.ElementDefinition) => {
                 return new Promise(resolveElement => {
-                  const parts = element?.id?.split('.') || []
+                  const parts = element.id?.split('.') || []
                   let tmpList = list
+
+                  // Fixed code-system uri for code fields
+                  const fixedUri = element.fixedUri
+
                   Promise.all(parts.map(part => {
                     return new Promise((resolveElementPart => {
                       let match = tmpList.findIndex(_ => _.label === part)
                       if (match === -1) {
                         match = 0
                         const item: fhir.ElementTree = {
-                          value: element?.id,
+                          value: element.id,
                           label: part,
-                          definition: element?.definition,
-                          comment: element?.comment,
-                          short: element?.short,
-                          min: element?.min,
-                          max: element?.max,
+                          definition: element.definition,
+                          comment: element.comment,
+                          short: element.short,
+                          min: element.min,
+                          max: element.max,
                           type: element.type.map(_ => {
                             const elementType: fhir.ElementTree = {value: _.code, label: _.code, type: [{value: _.code, label: _.code}], targetProfile: _.targetProfile}
                             if (_.code !== 'CodeableConcept' && _.code !== 'Coding' && _.code !== 'Reference' && environment.datatypes[_.code])
@@ -98,6 +102,7 @@ export class FHIRUtil {
                         tmpList.push(item)
                         resolveElementPart()
                       }
+                      if (fixedUri) tmpList[match].fixedUri = fixedUri
                       tmpList = tmpList[match].children as fhir.ElementTree[]
                       resolveElementPart()
                     }))

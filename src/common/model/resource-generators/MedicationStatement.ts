@@ -1,5 +1,4 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { FHIRUtil } from './../../utils/fhir-util'
 import { Generator } from './Generator'
 import log from 'electron-log'
@@ -34,7 +33,7 @@ export class MedicationStatement implements Generator {
           if (targetValue) medicationStatement.statusReason = [targetValue]
         } else {
           medicationStatement.statusReason = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.SNOMED, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }
@@ -45,7 +44,7 @@ export class MedicationStatement implements Generator {
           medicationStatement.category = targetValue
         } else {
           medicationStatement.category = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/medication-statement-category', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -56,7 +55,7 @@ export class MedicationStatement implements Generator {
           if (targetValue) medicationStatement.medicationCodeableConcept = targetValue
         } else {
           medicationStatement.medicationCodeableConcept = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.ATC, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }

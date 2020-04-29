@@ -1,5 +1,4 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { FHIRUtil } from './../../utils/fhir-util'
 import { Generator } from './Generator'
 import log from 'electron-log'
@@ -130,7 +129,7 @@ export class Encounter implements Generator {
           encounter.type = [targetValue]
         } else {
           encounter.type = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/encounter-type', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }
@@ -141,7 +140,7 @@ export class Encounter implements Generator {
           if (targetValue) encounter.serviceType = targetValue
         } else {
           encounter.serviceType = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/service-type', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -152,7 +151,7 @@ export class Encounter implements Generator {
           encounter.priority = targetValue
         } else {
           encounter.priority = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/v3-ActPriority', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -174,7 +173,7 @@ export class Encounter implements Generator {
           if (targetValue) _type = targetValue
         } else {
           _type = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/v3-ParticipationType', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
 
@@ -285,7 +284,7 @@ export class Encounter implements Generator {
           if (targetValue) encounter.reasonCode = [targetValue]
         } else {
           encounter.reasonCode = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.SNOMED, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }
@@ -306,7 +305,7 @@ export class Encounter implements Generator {
             if (targetValue) encounterDiagnosis.use = targetValue
           } else {
             encounterDiagnosis.use = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/diagnosis-role', code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )
           }
         }
@@ -335,7 +334,7 @@ export class Encounter implements Generator {
             if (targetValue) encounterHospitalization.admitSource = targetValue
           } else {
             encounterHospitalization.admitSource = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/admit-source', code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )
           }
         }
@@ -346,7 +345,7 @@ export class Encounter implements Generator {
             if (targetValue) encounterHospitalization.reAdmission = targetValue
           } else {
             encounterHospitalization.reAdmission = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/v2-0092', code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )
           }
         }
@@ -357,7 +356,7 @@ export class Encounter implements Generator {
             if (targetValue) encounterHospitalization.dietPreference = [targetValue]
           } else {
             encounterHospitalization.dietPreference = [DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/diet', code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )]
           }
         }
@@ -368,7 +367,7 @@ export class Encounter implements Generator {
             if (targetValue) encounterHospitalization.specialCourtesy = [targetValue]
           } else {
             encounterHospitalization.specialCourtesy = [DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/v3-EncounterSpecialCourtesy', code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )]
           }
         }
@@ -379,7 +378,7 @@ export class Encounter implements Generator {
             if (targetValue) encounterHospitalization.specialArrangement = [targetValue]
           } else {
             encounterHospitalization.specialArrangement = [DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/encounter-special-arrangements', code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )]
           }
         }
@@ -390,7 +389,7 @@ export class Encounter implements Generator {
             if (targetValue) encounterHospitalization.dischargeDisposition = targetValue
           } else {
             encounterHospitalization.dischargeDisposition = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/discharge-disposition', code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )
           }
         }
@@ -427,7 +426,7 @@ export class Encounter implements Generator {
             if (targetValue) location.physicalType = targetValue
           } else {
             location.physicalType = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/location-physical-type', code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )
           }
         }

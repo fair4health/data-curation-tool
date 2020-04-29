@@ -1,5 +1,4 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { FHIRUtil } from './../../utils/fhir-util'
 import { Generator } from './Generator'
 
@@ -31,7 +30,7 @@ export class MedicationRequest implements Generator {
           if (targetValue) medicationRequest.statusReason = targetValue
         } else {
           medicationRequest.statusReason = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/medicationrequest-status-reason', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -51,7 +50,7 @@ export class MedicationRequest implements Generator {
           medicationRequest.category = [targetValue]
         } else {
           medicationRequest.category = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/medicationrequest-category', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }
@@ -62,7 +61,7 @@ export class MedicationRequest implements Generator {
           if (targetValue) medicationRequest.medicationCodeableConcept = targetValue
         } else {
           medicationRequest.medicationCodeableConcept = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.ATC, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -92,7 +91,7 @@ export class MedicationRequest implements Generator {
           medicationRequest.reasonCode = [targetValue]
         } else {
           medicationRequest.reasonCode = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/medicationrequest-category', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }

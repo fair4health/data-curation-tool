@@ -1,5 +1,4 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { FHIRUtil } from './../../utils/fhir-util'
 import { Generator } from './Generator'
 
@@ -34,7 +33,7 @@ export class Medication implements Generator {
           if (targetValue) medication.code = targetValue
         } else {
           medication.code = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.ATC, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -49,7 +48,7 @@ export class Medication implements Generator {
             if (targetValue) ingredient.itemCodeableConcept = targetValue
           } else {
             ingredient.itemCodeableConcept = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: environment.codesystems.SNOMED, code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )
           }
         }

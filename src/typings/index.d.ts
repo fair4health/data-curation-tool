@@ -4790,6 +4790,8 @@ declare namespace fhir {
     lazy?: boolean // To dynamically fetch the structure of data type
     targetProfile?: string[]
     error?: boolean
+    fixedUri?: string
+    selectedUri?: string
   }
   type Resource = (DomainResource|Account|ActivityDefinition|AllergyIntolerance|Appointment|AppointmentResponse|
     AuditEvent|Basic|Binary|BodySite|Bundle|CarePlan|CareTeam|Claim|ClaimResponse|ClinicalImpression|CodeSystem|
@@ -4854,6 +4856,7 @@ declare namespace store {
     profile: string
     value: string
     type?: string
+    fixedUri?: string
   }
 }
 
@@ -4878,6 +4881,7 @@ declare interface BufferResource {
   sourceType: string
   targetType: string | undefined
   conceptMap?: fhir.ConceptMap
+  fixedUri?: string
 }
 
 declare interface StepItem {

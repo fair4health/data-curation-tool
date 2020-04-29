@@ -1,5 +1,4 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { FHIRUtil } from './../../utils/fhir-util'
 import { Generator } from './Generator'
 import log from 'electron-log'
@@ -22,7 +21,7 @@ export class Condition implements Generator {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) condition.clinicalStatus = targetValue
         } else {
-          condition.clinicalStatus = DataTypeFactory.createCodeableConcept({system: 'http://terminology.hl7.org/CodeSystem/condition-clinical', code: String(item.value)})
+          condition.clinicalStatus = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
         }
       }
       if (resource.has('Condition.verificationStatus')) {
@@ -31,7 +30,7 @@ export class Condition implements Generator {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) condition.verificationStatus = targetValue
         } else {
-          condition.verificationStatus = DataTypeFactory.createCodeableConcept({system: 'http://terminology.hl7.org/CodeSystem/condition-ver-status', code: String(item.value)})
+          condition.verificationStatus = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
         }
       }
       if (resource.has('Condition.category')) {
@@ -41,7 +40,7 @@ export class Condition implements Generator {
           condition.category = [targetValue]
         } else {
           condition.category = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/condition-category', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }
@@ -51,7 +50,7 @@ export class Condition implements Generator {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) condition.severity = targetValue
         } else {
-          condition.severity = DataTypeFactory.createCodeableConcept({system: environment.codesystems.SNOMED, code: String(item.value)})
+          condition.severity = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
         }
       }
       if (resource.has('Condition.code')) {
@@ -61,7 +60,7 @@ export class Condition implements Generator {
           if (targetValue) condition.code = targetValue
         } else {
           condition.code = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.SNOMED, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -74,7 +73,7 @@ export class Condition implements Generator {
           else condition.bodySite = [targetValue]
         } else {
           condition.bodySite = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.SNOMED, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }

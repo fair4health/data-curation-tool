@@ -159,6 +159,27 @@
                                         </div>
                                         <q-space />
                                         <div>
+                                          <q-btn dense
+                                                 unelevated
+                                                 v-if="!propType.node.fixedUri
+                                                      && propType.node.type.length === 1
+                                                      && (propType.node.type[0].value === 'CodeableConcept'
+                                                          || propType.node.type[0].value === 'Coding')"
+                                                 color="grey-3"
+                                                 text-color="grey-8"
+                                                 icon-right="arrow_drop_down"
+                                                 class="q-mr-sm"
+                                                 no-caps
+                                          >
+                                            <span class="text-size-sm">System</span>
+                                            <q-menu auto-close>
+                                              <q-list dense style="min-width: 100px">
+                                                <q-item dense clickable v-for="system in systems" :key="system" @click="prop.node.selectedUri = system; updateElementList()">
+                                                  <q-item-section>{{ system }}</q-item-section>
+                                                </q-item>
+                                              </q-list>
+                                            </q-menu>
+                                          </q-btn>
                                           <span v-if="propType.node.type" class="text-caption text-primary">{{ propType.node.type.map(_ => _.label).join(', ') }}</span>
                                         </div>
                                       </div>
@@ -170,6 +191,30 @@
                           </div>
                         </div>
                         <div class="col-4 text-right">
+                          <span v-if="prop.node.fixedUri || prop.node.selectedUri" class="q-mr-sm">
+                            <a class="text-size-sm bg-grey-3 text-grey-8"><u>{{ prop.node.fixedUri || prop.node.selectedUri }}</u></a>
+                          </span>
+                          <q-btn dense
+                                 unelevated
+                                 v-if="!prop.node.fixedUri
+                                      && prop.node.type.length === 1
+                                      && (prop.node.type[0].value === 'CodeableConcept'
+                                          || prop.node.type[0].value === 'Coding')"
+                                 color="grey-3"
+                                 text-color="grey-8"
+                                 icon-right="arrow_drop_down"
+                                 class="q-mr-sm"
+                                 no-caps
+                          >
+                            <span class="text-size-sm">System</span>
+                            <q-menu auto-close>
+                              <q-list dense style="min-width: 100px">
+                                <q-item dense clickable v-for="system in systems" :key="system" @click="prop.node.selectedUri = system; updateElementList()">
+                                  <q-item-section>{{ system }}</q-item-section>
+                                </q-item>
+                              </q-list>
+                            </q-menu>
+                          </q-btn>
                           <span v-if="prop.node.type" class="text-caption text-primary">{{ prop.node.type.map(_ => _.value).join(', ') }}</span>
                         </div>
                       </div>
@@ -256,6 +301,7 @@
     private showMustFields: boolean = false
     private env = environment
     private loadingResources: boolean = false
+    private systems: string[] = Object.values(environment.codesystems).map(_ => _)
 
     get fhirResourceList (): string[] { return this.$store.getters[types.Fhir.RESOURCE_LIST] }
     get fhirProfileList (): any[] { return this.$store.getters[types.Fhir.PROFILE_LIST].map(_ => _.url) }

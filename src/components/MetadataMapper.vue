@@ -248,7 +248,6 @@
     }
 
     loadSavedRecords () {
-      this.$q.loading.show()
       this.savedRecords = []
       this.getMappings().then(() => {
         return Promise.all(Object.keys(this.mappingObj).map((fileName: string) => {
@@ -275,7 +274,6 @@
             if (sheets.length) this.savedRecords.push({fileName, sheets})
           })
         })).then(_ => {
-          this.$q.loading.hide()
           this.$store.commit(types.File.SET_SAVED_RECORDS, this.savedRecords)
         })
       })
@@ -403,8 +401,9 @@
             value: node.value,
             resource: this.currentFHIRRes,
             profile: this.currentFHIRProf,
-            type: node.selectedType
-          }
+            type: node.selectedType,
+            fixedUri: node.fixedUri || node.selectedUri
+          } as store.Target
         })
         for (const column of this.selectedAttr) {
           if (!column['target']) column['target'] = [...this.tickedFHIRAttr]
