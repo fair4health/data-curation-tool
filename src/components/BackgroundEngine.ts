@@ -369,7 +369,7 @@ export default class BackgroundEngine extends Vue {
                               })
                               .catch(err => {
 
-                                log.error('Record generation error.', err)
+                                log.error(record.resource + ' Resource generation error.', err)
                                 setTimeout(() => { resolveRecord() }, 0)
 
                               })
@@ -433,7 +433,7 @@ export default class BackgroundEngine extends Vue {
                                   }
                                 }) || [])
                                   .then(() => {
-                                    if (hasError) rejectBatch(outcomeDetails)
+                                    if (hasError) resolveBatch(outcomeDetails)
                                     else resolveBatch(outcomeDetails)
                                   })
                                   .catch(err => rejectBatch(err))
@@ -441,14 +441,24 @@ export default class BackgroundEngine extends Vue {
                               .catch(err => {
                                 log.error(`Batch process error. ${err}`)
                                 rejectBatch(err)
+                                ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: 'CONNECTIN ERROR'}]})
                               })
-                          }).catch(_ => _)))
+                          })))
                         }
 
                         Promise.all(batchPromiseList)
                           .then(res => {
-                            log.info(`Batch process completed for Resource: ${resourceType}`)
-                            resolve([].concat.apply([], res))
+                            if (res.length) {
+                              log.info(`Batch process completed for Resource: ${resourceType}`)
+                              resolve([].concat.apply([], res))
+                            } else {
+                              log.error(`Batch process error for Resource: ${resourceType}`)
+                              reject([{
+                                status: Status.ERROR,
+                                message: `There is no ${resourceType} Resource created. See the logs for detailed error information.`,
+                                resourceType: 'OperationOutcome'
+                              } as OutcomeDetail])
+                            }
                           })
                           .catch(err => {
                             log.error(`Batch process error for Resource: ${resourceType}`)
@@ -461,25 +471,25 @@ export default class BackgroundEngine extends Vue {
                       .then((res: any[]) => {
                         resolveSheet()
                         const outcomeDetails: OutcomeDetail[] = [].concat.apply([], res)
-                        const status = !!outcomeDetails.find(_ => _.status === Status.ERROR) ? Status.WARNING : Status.SUCCESS
+                        const status = !outcomeDetails.length || !!outcomeDetails.find(_ => _.status === Status.ERROR) ? Status.ERROR : Status.SUCCESS
                         ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status, outcomeDetails})
                         log.info(`Validation completed ${sheet.sheetName} in ${filePath}`)
                       })
                       .catch(err => {
                         resolveSheet()
-                        ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, description: 'Batch process error', outcomeDetails: err})
+                        ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, message: 'Batch process error', outcomeDetails: err})
                         log.error(`Batch process error ${filePath}-${sheet.sheetName}`)
                       })
 
                   } else {
                     resolveSheet()
-                    ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.WARNING, description: 'Empty sheet'})
+                    ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: 'Empty sheet'}]})
                     log.warn(`Empty sheet: ${sheet.sheetName} in ${filePath}`)
                   }
                 })
                 .catch(err => {
                   resolveSheet()
-                  ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, description: `Validation error for sheet: ${sheet.sheetName}. ${err}`})
+                  ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: `Validation error for sheet: ${sheet.sheetName}. ${err}`}]})
                   log.error(`Validation error for sheet: ${sheet.sheetName} in ${filePath}: ${err}`)
                 })
             }))
@@ -495,7 +505,7 @@ export default class BackgroundEngine extends Vue {
           })
       })
         .catch(err => {
-          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-error-${filePath}`, {status: Status.ERROR, description: `File not found : ${filePath}`})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-error-${filePath}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, message: `File not found : ${filePath}`, resourceType: 'OperationOutcome'}]})
           log.error(`File not found. ${err}`)
           this.ready()
           return
@@ -590,7 +600,7 @@ export default class BackgroundEngine extends Vue {
           this.ready()
         })
         .catch(err => {
-          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: Status.ERROR, description: 'Transform error', outcomeDetails: err})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: Status.ERROR, message: 'Transform error', outcomeDetails: err})
           log.error(`Transform error. ${err}`)
 
           this.ready()

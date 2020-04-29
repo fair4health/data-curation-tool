@@ -60,10 +60,7 @@
                   </q-icon>
                 </template>
                 <template v-else-if="isError(props.row.validation.status)">
-                  <q-icon name="error_outline" color="negative">
-                    <q-tooltip content-class="error-tooltip bg-white text-red-7" class="ellipsis-3-lines">
-                      {{ props.row.validation.description }}
-                    </q-tooltip>
+                  <q-icon name="error" color="negative">
                   </q-icon>
                 </template>
                 <template v-else>
@@ -95,7 +92,7 @@
                 />
                 <q-btn v-else-if="isError(props.row.validation.status)" flat rounded icon="error" color="negative"
                        label="Details" size="sm" class="text-center" no-caps
-                       @click="openOutcomeDetailCard([{status: Status.ERROR, message: props.row.validation.description, resourceType: 'OperationOutcome'}])"
+                       @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)"
                 />
                 <template v-else>
                   <span class="text-grey-8 q-pl-sm text-size-sm">Pending</span>
@@ -193,7 +190,7 @@
               <span class="q-ml-sm">
                 <q-spinner class="q-ml-sm" size="xs" v-show="isInProgress(validationStatus)" />
                 <q-icon name="check" size="xs" color="green" v-show="isSuccess(validationStatus)" />
-                <q-icon name="error_outline" size="xs" color="red" v-show="isError(validationStatus)" />
+                <q-icon name="error" size="xs" color="red" v-show="isError(validationStatus)" />
                 <q-icon name="warning" size="xs" color="orange-6" v-show="isWarning(validationStatus)" />
               </span>
           </q-btn>
@@ -203,8 +200,12 @@
     <div class="row q-pa-sm">
       <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
       <q-space />
-      <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!isSuccess(validationStatus)"
-             @click="nextStep" no-caps />
+      <div class="q-gutter-sm">
+        <q-btn outline label="Continue Anyway" icon-right="error_outline" color="primary" v-if="isError(validationStatus)"
+               @click="nextStep" no-caps />
+        <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!isSuccess(validationStatus)"
+               @click="nextStep" no-caps />
+      </div>
     </div>
   </div>
 </template>
@@ -314,7 +315,7 @@
               })
               ipcRenderer.removeAllListeners(`validate-${filePath}-${sheet}`)
             })
-            rejectFile()
+            rejectFile(false)
           })
 
           Promise.all(Object.keys(this.mappingObj[filePath]).map(sheet => {
@@ -357,17 +358,16 @@
                 } else {
                   // this.$log.error('Validation', `${result.description}. Validation error for ${sheet} in ${filePath}. For more details see logs`)
                   // Reject even if a resource has error
-                  resolveSheet()
-                  // rejectSheet()
+                  rejectSheet()
                 }
               })
             })
           }))
-            .then(() => resolveFile())
-            .catch(() => rejectFile())
-        })
+            .then(() => resolveFile(true))
+            .catch(() => rejectFile(false))
+        }).catch(_ => _)
       }))
-        .then(_ => this.validationStatus = Status.SUCCESS)
+        .then(_ => this.validationStatus = this.validationStatus = _.includes(false) ? Status.ERROR : Status.SUCCESS)
         .catch(_ => this.validationStatus = Status.ERROR)
     }
 
