@@ -397,11 +397,15 @@
       if (this.checkMatchingStatus(tickedNodes)) {
         this.tickedFHIRAttr = tickedNodes.map((node: fhir.ElementTree) => {
           if (node.error) delete node.error
+          let type: string
+          if (FHIRUtil.isMultiDataTypeForm(node.value) && node.type?.length === 1) {
+            type = node.type[0].value
+          }
           return {
             value: node.value,
             resource: this.currentFHIRRes,
             profile: this.currentFHIRProf,
-            type: node.selectedType,
+            type: node.selectedType || type,
             fixedUri: node.fixedUri || node.selectedUri
           } as store.Target
         })

@@ -52,6 +52,15 @@ export class FHIRUtil {
   }
 
   /**
+   * If the element have a choice of more than one data type, it takes the form nnn[x]
+   * Returns true if it is in the form of multi datatype
+   * @param element
+   */
+  static isMultiDataTypeForm (element: string): boolean {
+    return element.substr(element.length - 3) === '[x]'
+  }
+
+  /**
    * Parses elements of a StructureDefinition resource (StructureDefinition.snapshot.element)
    * @param parameter - Search parameter
    * @param profileId
@@ -150,17 +159,6 @@ export class FHIRUtil {
       return DataTypeFactory.createCodeableConcept(coding).toJSON()
     }
     return null
-    // if (conceptMap.group?.length && conceptMap.group[0].element.length) {
-    //   const conceptMapGroupElement = conceptMap.group[0].element.find(element => element.code === sourceCode)
-    //   if (conceptMapGroupElement?.target?.length) {
-    //     const conceptMapGroupElementTarget = conceptMapGroupElement.target[0]
-    //     return DataTypeFactory.createCodeableConcept({
-    //       code: conceptMapGroupElementTarget.code,
-    //       display: conceptMapGroupElementTarget.display,
-    //       system: conceptMap.group[0].target
-    //     }) as fhir.CodeableConcept
-    //   } else return null
-    // } else return null
   }
 
   /**
