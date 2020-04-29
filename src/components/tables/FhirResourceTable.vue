@@ -91,7 +91,7 @@
                             </div>
                             <q-chip v-if="prop.node.selectedType" :label="prop.node.selectedType" size="sm"
                                     :removable="prop.node.type && prop.node.type.length > 0"
-                                    @remove="prop.node.selectedType = ''; $store.commit('fhir/setElementList', fhirElementList)"
+                                    @remove="prop.node.selectedType = ''; updateElementList()"
                             />
                           </div>
                           <div class="row">
@@ -129,7 +129,7 @@
                                             <div class="row items-center">
                                               <div v-if="propType.node.type[0].value !== 'Reference' && (!propType.node.children || !propType.node.children.length)">
                                                 <q-radio dense v-model="prop.node.selectedType" class="text-grey-8 text-weight-medium full-width" :val="propType.node.value"
-                                                         :label="propType.node.label" size="xs" @input="$store.commit('fhir/setElementList', fhirElementList)"
+                                                         :label="propType.node.label" size="xs" @input="updateElementList()"
                                                 />
                                               </div>
                                               <div class="text-grey-8 text-weight-medium" v-else>
@@ -149,9 +149,9 @@
                                                           option-label="name"
                                                           option-value="id"
                                                           @input="prop.node.selectedReference ? prop.node.selectedType = propType.node.value + '.' + prop.node.selectedReference : undefined;
-                                                                  $store.commit('fhir/setElementList', fhirElementList);
+                                                                  updateElementList();
                                                                   $refs[prop.node.value].blur();"
-                                                          @clear="prop.node.selectedReference = ''; $refs[prop.node.value].blur(); $store.commit('fhir/setElementList', fhirElementList)"
+                                                          @clear="prop.node.selectedReference = ''; $refs[prop.node.value].blur(); updateElementList()"
                                                 />
                                               </div>
                                             </div>
@@ -237,6 +237,7 @@
   import { FileSource, Sheet } from '@/common/model/file-source'
   import Loading from '@/components/Loading.vue'
   import { environment } from '@/common/environment'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
   @Component({
     components: {
@@ -256,35 +257,31 @@
     private env = environment
     private loadingResources: boolean = false
 
-    get fhirResourceList (): string[] { return this.$store.getters['fhir/resourceList'] }
-    get fhirProfileList (): any[] { return this.$store.getters['fhir/profileList'].map(_ => _.url) }
-    set fhirProfileList (value) { this.$store.commit('fhir/setProfileList', value) }
+    get fhirResourceList (): string[] { return this.$store.getters[types.Fhir.RESOURCE_LIST] }
+    get fhirProfileList (): any[] { return this.$store.getters[types.Fhir.PROFILE_LIST].map(_ => _.url) }
+    set fhirProfileList (value) { this.$store.commit(types.Fhir.SET_PROFILE_LIST, value) }
 
-    get currentFHIRRes (): string { return this.$store.getters['fhir/currentResource'] }
-    set currentFHIRRes (value) { this.$store.commit('fhir/setCurrentResource', value) }
+    get currentFHIRRes (): string { return this.$store.getters[types.Fhir.CURRENT_RESOURCE] }
+    set currentFHIRRes (value) { this.$store.commit(types.Fhir.SET_CURRENT_RESOURCE, value) }
 
-    get currentFHIRProf (): any { return this.$store.getters['fhir/currentProfile'] }
-    set currentFHIRProf (value) { this.$store.commit('fhir/setCurrentProfile', value) }
+    get currentFHIRProf (): any { return this.$store.getters[types.Fhir.CURRENT_PROFILE] }
+    set currentFHIRProf (value) { this.$store.commit(types.Fhir.SET_CURRENT_PROFILE, value) }
 
     get filteredFhirElementList (): fhir.ElementTree[] {
-      return this.$store.getters['fhir/elementList'].filter(child => !this.showMustFields || child.min)
+      return this.$store.getters[types.Fhir.ELEMENT_LIST].filter(child => !this.showMustFields || child.min)
     }
-    get fhirElementList (): fhir.ElementTree[] { return this.$store.getters['fhir/elementList'] }
-    set fhirElementList (value) { this.$store.commit('fhir/setElementList', value) }
+    get fhirElementList (): fhir.ElementTree[] { return this.$store.getters[types.Fhir.ELEMENT_LIST] }
+    set fhirElementList (value) { this.$store.commit(types.Fhir.SET_ELEMENT_LIST, value) }
 
-    get fhirElementListFlat (): any { return this.$store.getters['fhir/elementListFlat'] }
-    get currentSource (): FileSource { return this.$store.getters['file/currentFile'] }
-    get currentSheet (): Sheet | null { return this.$store.getters['file/currentSheet'] }
+    get fhirElementListFlat (): any { return this.$store.getters[types.Fhir.ELEMENT_LIST_FLAT] }
+    get currentSheet (): Sheet | null { return this.$store.getters[types.File.CURRENT_SHEET] }
 
-    get selectedAttr (): any { return this.$store.getters['file/selectedElements'] }
-    set selectedAttr (value) { this.$store.commit('file/setSelectedElements', value) }
-
-    get tickedFHIRAttr (): any { return this.$store.getters['fhir/selectedElements'] }
-    set tickedFHIRAttr (value) { this.$store.commit('fhir/setSelectedElements', value) }
+    get tickedFHIRAttr (): any { return this.$store.getters[types.Fhir.SELECTED_FHIR_ELEMENTS] }
+    set tickedFHIRAttr (value) { this.$store.commit(types.Fhir.SET_SELECTED_FHIR_ELEMENTS, value) }
 
     created () {
       this.loadingResources = true
-      this.$store.dispatch('fhir/getResources')
+      this.$store.dispatch(types.Fhir.GET_RESOURCES)
         .then(res => {
           this.loadingResources = false
           if (res) this.fhirElementList = []
@@ -300,13 +297,13 @@
     onFHIRResourceChanged (): void {
       ([this.currentFHIRProf, this.selectedStr, this.fhirProfileList, this.tickedFHIRAttr, this.fhirElementList] = ['', '', [], [], []])
       this.loadingFhir = true
-      this.$store.dispatch('fhir/getProfilesByRes', this.currentFHIRRes)
+      this.$store.dispatch(types.Fhir.GET_PROFILES_BY_RES, this.currentFHIRRes)
         .then(result => {
           if (result) {
             this.currentFHIRProf = this.fhirProfileList.length ? this.fhirProfileList[0] : ''
             // Fetch elements of base resources
             if (!this.currentFHIRProf) {
-              this.$store.dispatch('fhir/getElements', {parameterName: '_id', profile: this.currentFHIRRes})
+              this.$store.dispatch(types.Fhir.GET_ELEMENTS, {parameterName: '_id', profile: this.currentFHIRRes})
                 .then(() => this.loadingFhir = false )
                 .catch(() => {
                   this.loadingFhir = false
@@ -326,7 +323,7 @@
       if (newVal) {
         ([this.tickedFHIRAttr, this.selectedElem, this.expanded, this.fhirElementList] = [[], null, [this.currentFHIRRes], []])
         this.loadingFhir = true
-        this.$store.dispatch('fhir/getElements', {parameterName: 'url', profile: this.currentFHIRProf})
+        this.$store.dispatch(types.Fhir.GET_ELEMENTS, {parameterName: 'url', profile: this.currentFHIRProf})
           .then(() => {
             this.loadingFhir = false
           })
@@ -374,7 +371,7 @@
         } else {
 
           // If there exists only one data type, fetch and display its content
-          this.$store.dispatch('fhir/getDataTypes', environment.datatypes[node.type?.length && node.type[0].value])
+          this.$store.dispatch(types.Fhir.GET_DATA_TYPES, environment.datatypes[node.type?.length && node.type[0].value])
             .then((elementTreeList: fhir.ElementTree[]) => {
               if (elementTreeList.length) {
                 done(elementTreeList[0].children.map(_ => {
@@ -393,6 +390,10 @@
         fail([])
 
       }
+    }
+
+    updateElementList () {
+      this.$store.commit(types.Fhir.SET_ELEMENT_LIST, this.fhirElementList)
     }
 
   }

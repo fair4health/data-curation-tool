@@ -142,10 +142,10 @@
       </q-card>
     </q-expansion-item>
     <div class="row q-pa-sm">
-      <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="$store.commit('decrementStep')" no-caps />
+      <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
       <q-space />
       <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!fileSourceList.length"
-             @click="$store.commit('incrementStep')" no-caps />
+             @click="nextStep" no-caps />
     </div>
   </div>
 </template>
@@ -154,16 +154,18 @@
   import { Component, Vue } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
   import { FileSource } from '@/common/model/file-source'
+  import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
   @Component
   export default class DataSourceAnalyzer extends Vue {
     private isHovering: boolean = false
     private mappingStore: store.MappingObject[] = []
 
-    get step (): number { return this.$store.getters.curationStep }
+    get step (): number { return this.$store.getters[types.CURATION_STEP] }
 
-    get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
-    set fileSourceList (value) { this.$store.commit('file/updateSourceList', value) }
+    get fileSourceList (): FileSource[] { return this.$store.getters[types.File.SOURCE_LIST] }
+    set fileSourceList (value) { this.$store.commit(types.File.UPDATE_SOURCE_LIST, value) }
 
     get files (): string[] { return this.fileSourceList.map(f => f.path) }
     get savedMappings (): store.MappingObject[] {
@@ -174,7 +176,7 @@
 
     mounted () {
       // Drag and drop handlers
-      const holder = document.getElementById('drag-file');
+      const holder = document.getElementById('drag-file')
       if (holder) {
         holder.ondragenter = () => { this.isHovering = true; return false }
 
@@ -190,7 +192,7 @@
           if (e && e.dataTransfer) {
             [...e.dataTransfer.files].map(file => {
               if (file.path.split('.')?.pop()?.match('(xl|csv).*'))
-                this.$store.commit('file/addFile', file.path)
+                this.$store.commit(types.File.ADD_FILE, file.path)
             })
           }
           return false
@@ -201,7 +203,7 @@
     loadFromStorage (mapping: store.MappingObject) {
       if (mapping) {
         this.$q.loading.show()
-        this.$store.dispatch('file/initializeStore', mapping.data)
+        this.$store.dispatch(types.File.INITIALIZE_STORE, mapping.data)
           .then(() => this.$q.loading.hide())
           .catch(() => this.$q.loading.hide())
       } else {
@@ -225,10 +227,10 @@
 
     importSavedMapping (): void {
       this.$q.loading.show({spinner: undefined})
-      ipcRenderer.send('to-background', 'browse-mapping')
-      ipcRenderer.on('selected-mapping', (event, data) => {
+      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.BROWSE_MAPPING)
+      ipcRenderer.on(ipcChannels.File.SELECTED_MAPPING, (event, data) => {
         if (data) {
-          this.$store.dispatch('file/initializeStore', data)
+          this.$store.dispatch(types.File.INITIALIZE_STORE, data)
             .then(() => {
               // this.$log.info('Import Mapping', `Found ${this.fileSourceList.length} mapped file(s)`)
             })
@@ -238,7 +240,7 @@
             })
         }
         this.$q.loading.hide()
-        ipcRenderer.removeAllListeners('selected-mapping')
+        ipcRenderer.removeAllListeners(ipcChannels.File.SELECTED_MAPPING)
       })
     }
 
@@ -248,16 +250,24 @@
 
     browseFile (): void {
       this.$q.loading.show({spinner: undefined})
-      ipcRenderer.send('to-background', 'browse-file')
-      ipcRenderer.on('selected-files', (event, data) => {
+      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.BROWSE_FILE)
+      ipcRenderer.on(ipcChannels.File.SELECTED_FILES, (event, data) => {
         if (data) {
           data.map(file => {
-            this.$store.commit('file/addFile', file)
+            this.$store.commit(types.File.ADD_FILE, file)
           })
         }
         this.$q.loading.hide()
-        ipcRenderer.removeAllListeners('selected-files')
+        ipcRenderer.removeAllListeners(ipcChannels.File.SELECTED_FILES)
       })
+    }
+
+    nextStep () {
+      this.$store.commit(types.INCREMENT_STEP)
+    }
+
+    previousStep () {
+      this.$store.commit(types.DECREMENT_STEP)
     }
 
   }

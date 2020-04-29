@@ -183,6 +183,8 @@
   import { v4 as uuid } from 'uuid'
   import { FHIRUtil } from '@/common/utils/fhir-util'
   import { environment } from '@/common/environment'
+  import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
   @Component({
     components: {
@@ -204,35 +206,35 @@
     private savedRecords: store.SavedRecord[] = []
     private editRecordId: string = ''
 
-    get fileSourceList (): FileSource[] { return this.$store.getters['file/sourceList'] }
-    set fileSourceList (value) { this.$store.commit('file/updateSourceList', value) }
+    get fileSourceList (): FileSource[] { return this.$store.getters[types.File.SOURCE_LIST] }
+    set fileSourceList (value) { this.$store.commit(types.File.UPDATE_SOURCE_LIST, value) }
 
-    get currentSource (): FileSource { return this.$store.getters['file/currentFile'] }
-    set currentSource (value) { this.$store.commit('file/setCurrentFile', value) }
+    get currentSource (): FileSource { return this.$store.getters[types.File.CURRENT_FILE] }
+    set currentSource (value) { this.$store.commit(types.File.SET_CURRENT_FILE, value) }
 
-    get sheets (): Sheet[] { return this.$store.getters['file/sheets'] }
-    set sheets (value) { this.$store.commit('file/setSheets', value) }
+    get sheets (): Sheet[] { return this.$store.getters[types.File.SHEETS] }
+    set sheets (value) { this.$store.commit(types.File.SET_SHEETS, value) }
 
-    get currentSheet (): Sheet | null { return this.$store.getters['file/currentSheet'] }
-    set currentSheet (value) { this.$store.commit('file/setCurrentSheet', value) }
+    get currentSheet (): Sheet | null { return this.$store.getters[types.File.CURRENT_SHEET] }
+    set currentSheet (value) { this.$store.commit(types.File.SET_CURRENT_SHEET, value) }
 
-    get currentFHIRRes (): string { return this.$store.getters['fhir/currentResource'] }
+    get currentFHIRRes (): string { return this.$store.getters[types.Fhir.CURRENT_RESOURCE] }
 
-    get currentFHIRProf (): string { return this.$store.getters['fhir/currentProfile'] }
+    get currentFHIRProf (): string { return this.$store.getters[types.Fhir.CURRENT_PROFILE] }
 
-    get selectedAttr (): any { return this.$store.getters['file/selectedElements'] }
-    set selectedAttr (value) { this.$store.commit('file/setSelectedElements', value) }
+    get selectedAttr (): any { return this.$store.getters[types.File.SELECTED_HEADERS] }
+    set selectedAttr (value) { this.$store.commit(types.File.SET_SELECTED_HEADERS, value) }
 
-    get tickedFHIRAttr (): any { return this.$store.getters['fhir/selectedElements'] }
-    set tickedFHIRAttr (value) { this.$store.commit('fhir/setSelectedElements', value) }
+    get tickedFHIRAttr (): any { return this.$store.getters[types.Fhir.SELECTED_FHIR_ELEMENTS] }
+    set tickedFHIRAttr (value) { this.$store.commit(types.Fhir.SET_SELECTED_FHIR_ELEMENTS, value) }
 
-    get bufferSheetHeaders (): BufferElement[] { return this.$store.getters['file/bufferSheetHeaders'] }
-    set bufferSheetHeaders (value) { this.$store.commit('file/setBufferSheetHeaders', value) }
+    get bufferSheetHeaders (): BufferElement[] { return this.$store.getters[types.File.BUFFER_SHEET_HEADERS] }
+    set bufferSheetHeaders (value) { this.$store.commit(types.File.SET_BUFFER_SHEET_HEADERS, value) }
 
-    get mappingList (): any[] { return this.$store.getters['mappingList'] }
-    set mappingList (value) { this.$store.commit('setMappingList', value) }
+    get mappingList (): any[] { return this.$store.getters[types.MAPPING_LIST] }
+    set mappingList (value) { this.$store.commit(types.SET_MAPPING_LIST, value) }
 
-    get fhirElementList (): fhir.ElementTree[] { return this.$store.getters['fhir/elementList'] }
+    get fhirElementList (): fhir.ElementTree[] { return this.$store.getters[types.Fhir.ELEMENT_LIST] }
 
     @Watch('currentSource')
     @Watch('currentSheet')
@@ -274,7 +276,7 @@
           })
         })).then(_ => {
           this.$q.loading.hide()
-          this.$store.commit('file/setSavedRecords', this.savedRecords)
+          this.$store.commit(types.File.SET_SAVED_RECORDS, this.savedRecords)
         })
       })
         .catch(err => this.$notify.error('Cannot get saved mappings'))
@@ -308,10 +310,10 @@
     }
 
     exportState () {
-      const mappingState: FileSource[] = this.$store.getters['file/sourceList']
+      const mappingState: FileSource[] = this.$store.getters[types.File.SOURCE_LIST]
       this.$q.loading.show({spinner: undefined})
 
-      ipcRenderer.send('to-background', 'export-file', JSON.stringify(
+      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.EXPORT_FILE, JSON.stringify(
         {
           fileSourceList: mappingState.map(_ =>
             ({
@@ -324,12 +326,12 @@
           )
         })
       )
-      ipcRenderer.on('export-done', (event, result) => {
+      ipcRenderer.on(ipcChannels.File.EXPORT_DONE, (event, result) => {
         if (result) {
           this.$notify.success('File is exported successfully')
         }
         this.$q.loading.hide()
-        ipcRenderer.removeAllListeners('export-done')
+        ipcRenderer.removeAllListeners(ipcChannels.File.EXPORT_DONE)
       })
     }
 
@@ -364,8 +366,8 @@
         cancel: true,
         html: true
       }).onOk(() => {
-        this.$store.dispatch('file/destroyStore')
-        this.$store.commit('decrementStep')
+        this.$store.dispatch(types.File.DESTROY_STORE)
+        this.$store.commit(types.DECREMENT_STEP)
       })
     }
 
@@ -384,7 +386,7 @@
       }
 
       if (hasError) {
-        this.$store.commit('fhir/setElementList', this.fhirElementList)
+        this.$store.commit(types.Fhir.SET_ELEMENT_LIST, this.fhirElementList)
         return false
       }
       return true
@@ -447,7 +449,7 @@
             }
           })).then(_ => {
             this.editRecordId = ''
-            this.$store.commit('file/setupBufferSheetHeaders')
+            this.$store.commit(types.File.SETUP_BUFFER_SHEET_HEADERS)
             this.$notify.success('Mapping is added successfully')
             this.loadSavedRecords()
           })
@@ -469,7 +471,7 @@
       }).then(() => {
         this.editRecordId = recordId
         this.$q.loading.show()
-        this.$store.commit('file/setupBufferSheetHeaders')
+        this.$store.commit(types.File.SETUP_BUFFER_SHEET_HEADERS)
         const file = this.savedRecords.filter(_ => _.fileName === fileName) || []
         if (file.length === 1) {
           const sheet = file[0].sheets?.filter(_ => _.sheetName === sheetName) || []
@@ -566,7 +568,7 @@
 
     closeEditMode () {
       this.editRecordId = ''
-      this.$store.commit('file/setupBufferSheetHeaders')
+      this.$store.commit(types.File.SETUP_BUFFER_SHEET_HEADERS)
     }
 
     nextStep () {
@@ -576,9 +578,9 @@
           Object.keys(this.mappingObj[f]).map(s =>
             ({name: index++, file: f, sheet: s, validation: 0})))
 
-        this.$store.commit('setValidationStatus', '')
+        this.$store.commit(types.SET_VALIDATION_STATUS, '')
         // Next step - Validation
-        this.$store.commit('incrementStep')
+        this.$store.commit(types.INCREMENT_STEP)
       })
     }
 

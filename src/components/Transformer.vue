@@ -19,23 +19,23 @@
           <template v-if="transformList.length">
             <q-item v-for="resource in transformList" :key="resource.resourceType" class="q-py-md bg-grey-1">
               <q-item-section avatar>
-                <template v-if="resource.status === 'in-progress'">
+                <template v-if="isInProgress(resource.status)">
                   <span>
                     <q-spinner color="grey-9" />
                     <q-tooltip>Transforming...</q-tooltip>
                   </span>
                 </template>
-                <template v-else-if="resource.status === 'success'">
+                <template v-else-if="isSuccess(resource.status)">
                   <q-icon name="check" color="green">
                     <q-tooltip>Completed</q-tooltip>
                   </q-icon>
                 </template>
-                <template v-else-if="resource.status === 'warning'">
+                <template v-else-if="isWarning(resource.status)">
                   <q-icon name="warning" color="orange-6">
                     <q-tooltip>{{ resource.description }}</q-tooltip>
                   </q-icon>
                 </template>
-                <template v-else-if="resource.status === 'error'">
+                <template v-else-if="isError(resource.status)">
                   <q-icon name="error_outline" color="red" class="cursor-pointer">
                     <q-tooltip content-class="error-tooltip" class="ellipsis-3-lines">{{ resource.validation.description }}</q-tooltip>
                   </q-icon>
@@ -48,10 +48,10 @@
               </q-item-section>
 
               <q-item-section class="col-1 gt-sm">
-                <template v-if="resource.status === 'in-progress'"><q-item-label class="q-mt-sm" caption>In progress</q-item-label></template>
-                <template v-else-if="resource.status === 'success'"><q-item-label class="q-mt-sm" caption>Completed</q-item-label></template>
-                <template v-else-if="resource.status === 'error'"><q-item-label class="q-mt-sm" caption>Error</q-item-label></template>
-                <template v-else-if="resource.status === 'warning'"><q-item-label class="q-mt-sm" caption>Warning</q-item-label></template>
+                <template v-if="isInProgress(resource.status)"><q-item-label class="q-mt-sm" caption>In progress</q-item-label></template>
+                <template v-else-if="isSuccess(resource.status)"><q-item-label class="q-mt-sm" caption>Completed</q-item-label></template>
+                <template v-else-if="isError(resource.status)"><q-item-label class="q-mt-sm" caption>Error</q-item-label></template>
+                <template v-else-if="isWarning(resource.status)"><q-item-label class="q-mt-sm" caption>Warning</q-item-label></template>
                 <template v-else><q-item-label class="q-mt-sm" caption>Pending</q-item-label></template>
               </q-item-section>
 
@@ -75,10 +75,10 @@
               <q-item-section side>
                 <div class="text-grey-8 q-gutter-xs">
                   <q-btn class="gt-xs" size="12px" flat dense round icon="delete" color="red-7" @click="removeResourceFromStore(resource.resourceType)"
-                         :disable="transformStatus === 'in-progress'">
+                         :disable="isInProgress(transformStatus)">
                     <q-tooltip content-class="bg-white text-red-7">Remove</q-tooltip>
                   </q-btn>
-                  <q-btn size="12px" flat dense round icon="more_vert" :disable="transformStatus === 'in-progress'">
+                  <q-btn size="12px" flat dense round icon="more_vert" :disable="isInProgress(transformStatus)">
                     <q-tooltip content-class="bg-white text-grey-9">More</q-tooltip>
                     <q-menu transition-show="jump-down" transition-hide="jump-up" auto-close>
                       <q-list class="menu-list">
@@ -103,13 +103,13 @@
         <div class="row content-end q-gutter-sm">
           <q-space />
           <q-btn unelevated color="primary" label="Details" @click="openOutcomeDetailCard(transformOutcomeDetails)" class="q-mt-lg"
-                 v-show="transformStatus !== 'in-progress' && transformStatus !== 'pending'" no-caps />
+                 v-show="!isInProgress(transformStatus) && !isPending(transformStatus)" no-caps />
           <q-btn outline color="primary" @click="transform" class="q-mt-lg"
-                 :disable="transformStatus === 'in-progress' || !transformList.length" no-caps>
-            <span v-if="transformStatus !== 'pending'" class="q-mr-sm">
-              <q-spinner size="xs" v-show="transformStatus === 'in-progress'" />
-              <q-icon name="check" size="xs" color="green" v-show="transformStatus === 'success'" />
-              <q-icon name="error_outline" size="xs" color="red" v-show="transformStatus === 'error'" />
+                 :disable="isInProgress(transformStatus) || !transformList.length" no-caps>
+            <span v-if="!isPending(transformStatus)" class="q-mr-sm">
+              <q-spinner size="xs" v-show="isInProgress(transformStatus)" />
+              <q-icon name="check" size="xs" color="green" v-show="isSuccess(transformStatus)" />
+              <q-icon name="error_outline" size="xs" color="red" v-show="isError(transformStatus)" />
             </span>
             <span>Transform</span>
           </q-btn>
@@ -123,13 +123,17 @@
 </template>
 
 <script lang="ts">
-  import { Component, Vue } from 'vue-property-decorator'
+  import { Component, Mixins } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
   import OutcomeCard from '@/components/OutcomeCard.vue'
   import electronStore from '../common/electron-store'
+  import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+  import Status from '@/common/Status'
+  import StatusMixin from '@/common/mixins/statusMixin'
 
   @Component
-  export default class Transformer extends Vue {
+  export default class Transformer extends Mixins(StatusMixin) {
     private pagination = { page: 1, rowsPerPage: 0 }
     private columns = [
       { name: 'status', label: 'Status', field: 'status', align: 'center', icon: 'fas fa-info-circle',
@@ -139,41 +143,41 @@
       { name: 'count', label: 'Count', field: 'count', align: 'center', sortable: true }
     ]
 
-    get fhirBase (): string { return this.$store.getters['fhir/fhirBase'] }
+    get fhirBase (): string { return this.$store.getters[types.Fhir.FHIR_BASE] }
 
-    get transformStatus (): status { return this.$store.getters['transformStatus'] }
-    set transformStatus (value) { this.$store.commit('setTransformStatus', value) }
+    get transformStatus (): status { return this.$store.getters[types.TRANSFORM_STATUS] }
+    set transformStatus (value) { this.$store.commit(types.SET_TRANSFORM_STATUS, value) }
 
-    get resources (): Map<string, fhir.Resource[]> { return this.$store.getters['resources'] }
-    set resources (value) { this.$store.commit('setResources', value) }
+    get resources (): Map<string, fhir.Resource[]> { return this.$store.getters[types.RESOURCES] }
+    set resources (value) { this.$store.commit(types.SET_RESOURCES, value) }
 
-    get transformList (): TransformListItem[] { return this.$store.getters['transformList'] }
-    set transformList (value) { this.$store.commit('setTransformList', value) }
+    get transformList (): TransformListItem[] { return this.$store.getters[types.TRANSFORM_LIST] }
+    set transformList (value) { this.$store.commit(types.SET_TRANSFORM_LIST, value) }
 
-    get transformOutcomeDetails (): OutcomeDetail[] { return this.$store.getters['transformOutcomeDetails'] }
-    set transformOutcomeDetails (value) { this.$store.commit('setTransformOutcomeDetails', value) }
+    get transformOutcomeDetails (): OutcomeDetail[] { return this.$store.getters[types.TRANSFORM_OUTCOME_DETAILS] }
+    set transformOutcomeDetails (value) { this.$store.commit(types.SET_TRANSFORM_OUTCOME_DETAILS, value) }
 
     onInit () {
       this.resources = new Map(Object.entries(electronStore.get('resources') || {}))
-      this.transformList = Array.from(this.resources.entries()).map(resource => ({resourceType: resource[0], count: resource[1].length, status: 'pending'}))
+      this.transformList = Array.from(this.resources.entries()).map(resource => ({resourceType: resource[0], count: resource[1].length, status: Status.PENDING}))
     }
 
     transform () {
       if (this.transformList.length) {
-        ipcRenderer.send('to-background', 'transform')
-        this.transformStatus = 'in-progress'
-        ipcRenderer.on('transform-result', (event, result: OutcomeDetail) => {
-          ipcRenderer.removeAllListeners(`transform-result`)
+        ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.TRANSFORM)
+        this.transformStatus = Status.IN_PROGRESS
+        ipcRenderer.on(ipcChannels.Fhir.TRANSFORM_RESULT, (event, result: OutcomeDetail) => {
+          ipcRenderer.removeAllListeners(ipcChannels.Fhir.TRANSFORM_RESULT)
           this.transformStatus = result.status
           this.transformOutcomeDetails = result.outcomeDetails || []
         })
         this.transformList.map((item: TransformListItem) => {
 
           ipcRenderer.on(`transform-${item.resourceType}`, (event, result: OutcomeDetail) => {
-            if (result.status === 'in-progress') {
+            if (this.isInProgress(result.status)) {
 
               this.transformList = this.transformList.map(_ => {
-                if (_.resourceType === item.resourceType) _.status = 'in-progress'
+                if (_.resourceType === item.resourceType) _.status = Status.IN_PROGRESS
                 return _
               })
 
@@ -182,7 +186,7 @@
               this.transformList = this.transformList.map(_ => {
                 if (_.resourceType === item.resourceType) {
                   _.status = result.status
-                  _.createdCount = (result.outcomeDetails || []).filter(value => value.status === 'success').length
+                  _.createdCount = (result.outcomeDetails || []).filter(value => this.isSuccess(value.status)).length
                 }
                 return _
               })
@@ -203,7 +207,7 @@
         cancel: true,
         html: true
       }).onOk(() => {
-        this.$store.commit('decrementStep')
+        this.$store.commit(types.DECREMENT_STEP)
       })
     }
 
@@ -222,22 +226,19 @@
 
     removeResourceFromFHIR (resourceType: string) {
       this.$q.loading.show()
-      const fhirBase: string = this.$store.getters['fhir/fhirBase']
-      ipcRenderer.send('to-background', 'delete-resource', {resourceType})
-      ipcRenderer.on('delete-resource-result', (event, result) => {
-        ipcRenderer.removeAllListeners('delete-resource-result')
-        if (result) {
+      this.$store.dispatch(types.Fhir.DELETE_ALL, resourceType)
+        .then(() => {
           this.$q.loading.hide()
-          this.$notify.success(`${resourceType} Resources removed successfully`)
-        } else {
-          this.$q.loading.hide()
-          this.$notify.error('Something went wrong')
-        }
+          this.$notify.success(`${resourceType} Resources have been removed successfully`)
+        })
+      .catch(() => {
+        this.$q.loading.hide()
+        this.$notify.error('Something went wrong')
       })
     }
 
     openOutcomeDetailCard (outcomeDetails: OutcomeDetail[]) {
-      this.$store.commit('fhir/setOutcomeDetails', outcomeDetails)
+      this.$store.commit(types.Fhir.SET_OUTCOME_DETAILS, outcomeDetails)
       this.$q.dialog({
         component: OutcomeCard,
         parent: this

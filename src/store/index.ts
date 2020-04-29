@@ -1,8 +1,8 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-
 import file from './fileStore'
 import fhir from './fhirStore'
+import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
 Vue.use(Vuex)
 
@@ -23,48 +23,48 @@ export default new Vuex.Store({
     transformOutcomeDetails: [] as OutcomeDetail[]
   },
   getters: {
-    drawerOpen: state => state.drawerOpen,
-    drawerMiniState: state => state.drawerMiniState,
-    curationStep: state => state.curationStep,
-    mappingList: state => state.mappingList || [],
-    validationStatus: state => state.validationStatus,
-    resources: state => state.resources || new Map<string, fhir.Resource[]>(),
-    transformList: state => state.transformList || [],
-    transformStatus: state => state.transformStatus,
-    transformOutcomeDetails: state => state.transformOutcomeDetails || []
+    [types.DRAWER_OPEN]: state => state.drawerOpen,
+    [types.DRAWER_MINI_STATE]: state => state.drawerMiniState,
+    [types.CURATION_STEP]: state => state.curationStep,
+    [types.MAPPING_LIST]: state => state.mappingList || [],
+    [types.VALIDATION_STATUS]: state => state.validationStatus,
+    [types.RESOURCES]: state => state.resources || new Map<string, fhir.Resource[]>(),
+    [types.TRANSFORM_LIST]: state => state.transformList || [],
+    [types.TRANSFORM_STATUS]: state => state.transformStatus,
+    [types.TRANSFORM_OUTCOME_DETAILS]: state => state.transformOutcomeDetails || []
   },
   mutations: {
-    setDrawerOpen (state, value: boolean) {
+    [types.SET_DRAWER_OPEN] (state, value: boolean) {
       state.drawerOpen = value
     },
-    setDrawerMiniState (state, value: boolean) {
+    [types.SET_DRAWER_MINI_STATE] (state, value: boolean) {
       state.drawerMiniState = value
     },
-    incrementStep (state) {
+    [types.INCREMENT_STEP] (state) {
       state.curationStep += 1
     },
-    decrementStep (state) {
+    [types.DECREMENT_STEP] (state) {
       state.curationStep -= 1
     },
-    setStep (state, value: number) {
+    [types.SET_STEP] (state, value: number) {
       state.curationStep = value
     },
-    setMappingList (state, list: any) {
+    [types.SET_MAPPING_LIST] (state, list: any) {
       state.mappingList = list
     },
-    setValidationStatus (state, status: status) {
+    [types.SET_VALIDATION_STATUS] (state, status: status) {
       state.validationStatus = status
     },
-    setResources (state, resources: Map<string, fhir.Resource[]>) {
+    [types.SET_RESOURCES] (state, resources: Map<string, fhir.Resource[]>) {
       state.resources = resources
     },
-    setTransformList (state, list: TransformListItem[]) {
+    [types.SET_TRANSFORM_LIST] (state, list: TransformListItem[]) {
       state.transformList = list
     },
-    setTransformStatus (state, status: status) {
+    [types.SET_TRANSFORM_STATUS] (state, status: status) {
       state.transformStatus = status
     },
-    setTransformOutcomeDetails (state, details: OutcomeDetail[]) {
+    [types.SET_TRANSFORM_OUTCOME_DETAILS] (state, details: OutcomeDetail[]) {
       state.transformOutcomeDetails = details
     }
   },

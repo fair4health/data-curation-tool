@@ -64,10 +64,10 @@
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td key="status" :props="props">
-                <template v-if="props.row.status === 'success'">
+                <template v-if="isSuccess(props.row.status)">
                   <q-icon name="check" color="green" size="xs" />
                 </template>
-                <template v-else-if="props.row.status === 'error'">
+                <template v-else-if="isError(props.row.status)">
                   <q-icon name="warning" color="orange-6" size="xs" />
                 </template>
               </q-td>
@@ -95,11 +95,13 @@
 </template>
 
 <script lang="ts">
-  import { Component, Vue } from 'vue-property-decorator'
+  import { Component, Mixins } from 'vue-property-decorator'
   import { QDialog } from 'quasar'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+  import StatusMixin from '@/common/mixins/statusMixin'
 
   @Component
-  export default class OutcomeCard extends Vue {
+  export default class OutcomeCard extends Mixins(StatusMixin) {
     private columns = [
       { name: 'status', label: 'Status', field: 'status', align: 'center', icon: 'fas fa-info-circle',
         classes: 'bg-grey-2', headerClasses: 'bg-primary text-white col-1 outcome-table-column' },
@@ -113,16 +115,16 @@
     private selectedResources: string[] = []
     private fullscreen: boolean = false
 
-    get outcomeDetails (): OutcomeDetail[] { return this.$store.getters['fhir/outcomeDetails'] }
+    get outcomeDetails (): OutcomeDetail[] { return this.$store.getters[types.Fhir.OUTCOME_DETAILS] }
     get filteredOutcomeDetails (): OutcomeDetail[] {
-      const details: OutcomeDetail[] = this.$store.getters['fhir/outcomeDetails']
+      const details: OutcomeDetail[] = this.$store.getters[types.Fhir.OUTCOME_DETAILS]
       return details.filter(_ => {
-        return ((this.successDetails ? _.status === 'success' : 0) || (this.errorDetails ? _.status === 'error' : 0))
+        return ((this.successDetails ? this.isSuccess(_.status) : 0) || (this.errorDetails ? this.isError(_.status) : 0))
           && this.selectedResources.includes(_.resourceType)
       })
     }
-    get successTransformCount (): number { return this.outcomeDetails.filter(_ => _.status === 'success').length }
-    get errorTransformCount (): number { return this.outcomeDetails.filter(_ => _.status === 'error').length }
+    get successTransformCount (): number { return this.outcomeDetails.filter(_ => this.isSuccess(_.status)).length }
+    get errorTransformCount (): number { return this.outcomeDetails.filter(_ => this.isError(_.status)).length }
     get activeProfiles (): any[] {
       return this.selectedResources = Object.keys(this.outcomeDetails.reduce((acc, curr) => {
         (acc[curr['resourceType']] = acc[curr['resourceType']] || [])
@@ -136,7 +138,7 @@
 
     hide () {
       (this.$refs.dialog as QDialog).hide()
-      this.$store.commit('fhir/setOutcomeDetails', [])
+      this.$store.commit(types.Fhir.SET_OUTCOME_DETAILS, [])
     }
 
     onDialogHide () {
