@@ -1,5 +1,4 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { FHIRUtil } from './../../utils/fhir-util'
 import { Generator } from './Generator'
 
@@ -15,6 +14,9 @@ export class Medication implements Generator {
 
       const keys: string[] = Array.from(resource.keys())
 
+      if (resource.has('Medication.id')) {
+        medication.id = String(resource.get('Medication.id')?.value || '')
+      }
       if (resource.has('Medication.status')) {
         const item = resource.get('Medication.status')
         if (item.conceptMap) {
@@ -34,7 +36,7 @@ export class Medication implements Generator {
           if (targetValue) medication.code = targetValue
         } else {
           medication.code = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.ATC, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -49,7 +51,7 @@ export class Medication implements Generator {
             if (targetValue) ingredient.itemCodeableConcept = targetValue
           } else {
             ingredient.itemCodeableConcept = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: environment.codesystems.SNOMED, code: String(item.value)})
+              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
             )
           }
         }
@@ -77,7 +79,11 @@ export class Medication implements Generator {
   public generateID (resource: fhir.Medication): string {
     let value: string = ''
 
-    if (resource.code?.coding && resource.code.coding.length) value += resource.code?.coding![0].code
+    if (resource.id) {
+      value += resource.id
+    } else {
+      if (resource.code?.coding && resource.code.coding.length) value += resource.code?.coding![0].code
+    }
 
     return FHIRUtil.hash(value)
   }

@@ -9,7 +9,8 @@
       <q-card-section>
         <q-table flat binary-state-sort title="Validate" :data="mappingList" :columns="columns" row-key="name"
                  :rows-per-page-options="[0]" :pagination.sync="pagination" :filter="filter" class="sticky-header-table"
-                 table-class="validator-table" :loading="loading" color="primary"
+                 table-class="validator-table" :loading="loading" color="primary" selection="multiple"
+                 :selected.sync="tablesToValidate"
         >
           <template v-slot:top-right>
             <q-input borderless dense v-model="filter" placeholder="Search">
@@ -18,24 +19,30 @@
               </template>
             </q-input>
           </template>
-            <template v-slot:header="props">
-              <q-tr :props="props">
-                <q-th
-                  v-for="col in props.cols"
-                  :key="col.name"
-                  :props="props"
-                  class="bg-primary text-white"
-                >
-                  <q-icon v-if="col.icon" :name="col.icon" />
-                  <span class="vertical-middle q-ml-xs">{{ col.label }}</span>
-                </q-th>
-                <q-th class="bg-primary text-white" auto-width>
-                  Details
-                </q-th>
-              </q-tr>
-            </template>
+          <template v-slot:header="props">
+            <q-tr :props="props">
+              <q-th class="q-table--col-auto-width">
+                <q-checkbox dense v-model="props.selected" />
+              </q-th>
+              <q-th
+                v-for="col in props.cols"
+                :key="col.name"
+                :props="props"
+                class="bg-primary text-white"
+              >
+                <q-icon v-if="col.icon" :name="col.icon" />
+                <span class="vertical-middle q-ml-xs">{{ col.label }}</span>
+              </q-th>
+              <q-th class="bg-primary text-white" auto-width>
+                Details
+              </q-th>
+            </q-tr>
+          </template>
           <template v-slot:body="props">
             <q-tr :props="props">
+              <q-td class="q-table--col-auto-width">
+                <q-checkbox dense v-model="props.selected"/>
+              </q-td>
               <q-td key="status" class="no-padding" :props="props">
                 <template v-if="isInProgress(props.row.validation.status)">
                   <span>
@@ -231,6 +238,7 @@
     private filter: string = ''
     private loading: boolean = false
     private Status = Status
+    private tablesToValidate = []
 
     get columns (): object[] { return mappingDataTableHeaders }
     get fileSourceList (): FileSource[] { return this.$store.getters[types.File.SOURCE_LIST] }
@@ -253,6 +261,7 @@
       this.getMappings()
         .then(_ => this.loading = false)
         .catch(_ => this.loading = false)
+      this.tablesToValidate = this.mappingList.slice()
     }
 
     computedSavedRecord (fileName: string, sheetName: string): store.Record[] {
@@ -270,7 +279,7 @@
       this.validationStatus = Status.IN_PROGRESS
       // If there are resources created, clear them
       electronStore.set('resources', null)
-      const filePathList = Object.keys(FHIRUtil.groupBy(this.mappingList, 'file'))
+      const filePathList = Object.keys(FHIRUtil.groupBy(this.tablesToValidate, 'file'))
 
       if (!filePathList.length) {
         this.$notify.error('No mapping available')

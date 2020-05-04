@@ -341,14 +341,16 @@ export default class BackgroundEngine extends Vue {
                                     value,
                                     sourceType: sourceData.type,
                                     targetType: target.type,
-                                    conceptMap: conceptMap.get(sourceData.conceptMap?.id)
+                                    conceptMap: conceptMap.get(sourceData.conceptMap?.id),
+                                    fixedUri: target.fixedUri
                                   }))
                                 else
                                   bufferResourceMap.set(target.value, FHIRUtil.cleanJSON({
                                     value,
                                     sourceType: sourceData.type,
                                     targetType: target.type,
-                                    conceptMap: conceptMap.get(sourceData.conceptMap?.id)
+                                    conceptMap: conceptMap.get(sourceData.conceptMap?.id),
+                                    fixedUri: target.fixedUri
                                   }))
 
                               }))

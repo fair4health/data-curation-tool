@@ -1,5 +1,4 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { FHIRUtil } from './../../utils/fhir-util'
 import { Generator } from './Generator'
 import log from 'electron-log'
@@ -16,13 +15,16 @@ export class Condition implements Generator {
 
       const keys: string[] = Array.from(resource.keys())
 
+      if (resource.has('Condition.id')) {
+        condition.id = String(resource.get('Condition.id')?.value || '')
+      }
       if (resource.has('Condition.clinicalStatus')) {
         const item = resource.get('Condition.clinicalStatus')
         if (item.conceptMap) {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) condition.clinicalStatus = targetValue
         } else {
-          condition.clinicalStatus = DataTypeFactory.createCodeableConcept({system: 'http://terminology.hl7.org/CodeSystem/condition-clinical', code: String(item.value)})
+          condition.clinicalStatus = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
         }
       }
       if (resource.has('Condition.verificationStatus')) {
@@ -31,7 +33,7 @@ export class Condition implements Generator {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) condition.verificationStatus = targetValue
         } else {
-          condition.verificationStatus = DataTypeFactory.createCodeableConcept({system: 'http://terminology.hl7.org/CodeSystem/condition-ver-status', code: String(item.value)})
+          condition.verificationStatus = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
         }
       }
       if (resource.has('Condition.category')) {
@@ -41,7 +43,7 @@ export class Condition implements Generator {
           condition.category = [targetValue]
         } else {
           condition.category = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/condition-category', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }
@@ -51,7 +53,7 @@ export class Condition implements Generator {
           const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
           if (targetValue) condition.severity = targetValue
         } else {
-          condition.severity = DataTypeFactory.createCodeableConcept({system: environment.codesystems.SNOMED, code: String(item.value)})
+          condition.severity = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
         }
       }
       if (resource.has('Condition.code')) {
@@ -61,7 +63,7 @@ export class Condition implements Generator {
           if (targetValue) condition.code = targetValue
         } else {
           condition.code = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.SNOMED, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -74,7 +76,7 @@ export class Condition implements Generator {
           else condition.bodySite = [targetValue]
         } else {
           condition.bodySite = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.SNOMED, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }
@@ -195,10 +197,14 @@ export class Condition implements Generator {
   public generateID (resource: fhir.Condition): string {
     let value: string = ''
 
-    if (resource.subject?.reference) value += resource.subject.reference
-    if (resource.code?.coding && resource.code.coding.length) value += resource.code.coding[0].code
-    if (resource.onsetDateTime) value += resource.onsetDateTime
-    if (resource.abatementDateTime) value += resource.abatementDateTime
+    if (resource.id) {
+      value += resource.id
+    } else {
+      if (resource.subject?.reference) value += resource.subject.reference
+      if (resource.code?.coding && resource.code.coding.length) value += resource.code.coding[0].code
+      if (resource.onsetDateTime) value += resource.onsetDateTime
+      if (resource.abatementDateTime) value += resource.abatementDateTime
+    }
 
     return FHIRUtil.hash(value)
   }

@@ -174,6 +174,7 @@ const fhirStore = {
                 return new Promise(resolveElement => {
                   const parts = element.id?.split('.') || []
                   let tmpList = list
+                  const fixedUri = element.fixedUri
                   Promise.all(parts.map(part => {
                     return new Promise((resolveElementPart => {
                       let match = tmpList.findIndex(_ => _.label === part)
@@ -204,6 +205,7 @@ const fhirStore = {
                         tmpList.push(item)
                         resolveElementPart()
                       }
+                      if (fixedUri) tmpList[match].fixedUri = fixedUri
                       tmpList = tmpList[match].children as fhir.ElementTree[]
                       resolveElementPart()
                     }))

@@ -11,13 +11,13 @@
           <div v-if="outcomeDetails.length" class="row q-gutter-sm">
             <div>
               <q-chip square class="bg-grey-3">
-                <q-avatar color="green" text-color="white" icon="check" />
+                <q-avatar color="positive" text-color="white" icon="check" />
                 {{ successTransformCount.toLocaleString() }}
               </q-chip>
             </div>
             <div>
               <q-chip square class="bg-grey-3">
-                <q-avatar color="orange-6" text-color="white" icon="warning" />
+                <q-avatar color="negative" text-color="white" icon="warning" />
                 {{ errorTransformCount.toLocaleString() }}
               </q-chip>
             </div>
@@ -39,8 +39,8 @@
           <div class="bg-grey-2 q-mb-sm col">
             <div class="text-subtitle1 text-weight-bold text-grey-7 q-pa-sm">Status</div>
             <q-separator />
-            <q-toggle v-model="successDetails" checked-icon="check" color="green" label="Success" unchecked-icon="clear"/>
-            <q-toggle v-model="errorDetails" checked-icon="warning" color="orange-6" label="Error" unchecked-icon="clear"/>
+            <q-toggle v-model="successDetails" checked-icon="check" color="positive" label="Success" unchecked-icon="clear"/>
+            <q-toggle v-model="errorDetails" checked-icon="warning" color="negative" label="Error" unchecked-icon="clear"/>
           </div>
           <div class="bg-grey-2 q-mb-sm col">
             <div class="text-subtitle1 text-weight-bold text-grey-7 q-pa-sm">Resources</div>
@@ -65,10 +65,10 @@
             <q-tr :props="props">
               <q-td key="status" :props="props">
                 <template v-if="isSuccess(props.row.status)">
-                  <q-icon name="check" color="green" size="xs" />
+                  <q-icon name="check" color="positive" size="xs" />
                 </template>
                 <template v-else-if="isError(props.row.status)">
-                  <q-icon name="warning" color="orange-6" size="xs" />
+                  <q-icon name="warning" color="negative" size="xs" />
                 </template>
               </q-td>
               <q-td key="resourceType" :props="props">

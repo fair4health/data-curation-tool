@@ -1,5 +1,4 @@
 import { DataTypeFactory } from './../factory/data-type-factory'
-import { environment } from './../../environment'
 import { FHIRUtil } from './../../utils/fhir-util'
 import { Generator } from './Generator'
 
@@ -15,6 +14,9 @@ export class MedicationRequest implements Generator {
 
       const keys: string[] = Array.from(resource.keys())
 
+      if (resource.has('MedicationRequest.id')) {
+        medicationRequest.id = String(resource.get('MedicationRequest.id')?.value || '')
+      }
       if (resource.has('MedicationRequest.status')) {
         const item = resource.get('MedicationRequest.status')
         if (item.conceptMap) {
@@ -31,7 +33,7 @@ export class MedicationRequest implements Generator {
           if (targetValue) medicationRequest.statusReason = targetValue
         } else {
           medicationRequest.statusReason = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/medicationrequest-status-reason', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -51,7 +53,7 @@ export class MedicationRequest implements Generator {
           medicationRequest.category = [targetValue]
         } else {
           medicationRequest.category = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/medicationrequest-category', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }
@@ -62,7 +64,7 @@ export class MedicationRequest implements Generator {
           if (targetValue) medicationRequest.medicationCodeableConcept = targetValue
         } else {
           medicationRequest.medicationCodeableConcept = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: environment.codesystems.ATC, code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )
         }
       }
@@ -92,7 +94,7 @@ export class MedicationRequest implements Generator {
           medicationRequest.reasonCode = [targetValue]
         } else {
           medicationRequest.reasonCode = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/medicationrequest-category', code: String(item.value)})
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
           )]
         }
       }
@@ -109,12 +111,16 @@ export class MedicationRequest implements Generator {
   public generateID (resource: fhir.MedicationRequest): string {
     let value: string = ''
 
-    if (resource.status) value += resource.status
-    if (resource.intent) value += resource.intent
-    if (resource.subject?.reference) value += resource.subject.reference
-    if (resource.medicationCodeableConcept?.coding && resource.medicationCodeableConcept.coding.length)
-      value += resource.medicationCodeableConcept.coding[0].code
-    if (resource.medicationReference) value += resource.medicationReference.reference
+    if (resource.id) {
+      value += resource.id
+    } else {
+      if (resource.status) value += resource.status
+      if (resource.intent) value += resource.intent
+      if (resource.subject?.reference) value += resource.subject.reference
+      if (resource.medicationCodeableConcept?.coding && resource.medicationCodeableConcept.coding.length)
+        value += resource.medicationCodeableConcept.coding[0].code
+      if (resource.medicationReference) value += resource.medicationReference.reference
+    }
 
     return FHIRUtil.hash(value)
   }

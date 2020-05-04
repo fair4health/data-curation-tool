@@ -18,7 +18,8 @@ export let environment = {
   codesystems: {
     ATC: 'http://www.whocc.no/atc',
     SNOMED: 'http://snomed.info/sct',
-    LOINC: 'http://loinc.org'
+    LOINC: 'http://loinc.org',
+    ICD_10: 'http://hl7.org/fhir/sid/icd-10'
   },
   datatypes: {
     Address: `${hl7Base}/StructureDefinition/Address`,

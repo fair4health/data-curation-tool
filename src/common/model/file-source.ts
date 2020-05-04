@@ -23,6 +23,7 @@ export interface TargetResource {
   profile: string
   value: string
   type?: string
+  fixedUri?: string
 }
 
 export interface BufferElement {
