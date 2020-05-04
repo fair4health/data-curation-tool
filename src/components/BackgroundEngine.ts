@@ -7,7 +7,6 @@ import { VNode, CreateElement } from 'vue'
 import { remote, ipcRenderer } from 'electron'
 import { workbookMap } from '@/common/model/workbook'
 import { cellType } from '@/common/model/data-table'
-import { FhirService } from '@/common/services/fhir.service'
 import { FHIRUtil } from '@/common/utils/fhir-util'
 import { Component, Vue } from 'vue-property-decorator'
 import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
@@ -17,7 +16,6 @@ import Status from '@/common/Status'
 export default class BackgroundEngine extends Vue {
   private electronStore: ElectronStore
   private fhirBase: fhir.uri
-  private fhirService: FhirService
 
   created () {
 
@@ -70,7 +68,7 @@ export default class BackgroundEngine extends Vue {
   public setFhirBaseUrl () {
     ipcRenderer.on(ipcChannels.Fhir.SET_FHIR_BASE, (event, url) => {
       this.fhirBase = url
-      this.fhirService = new FhirService(this.fhirBase)
+      this.$fhirService.setUrl(this.fhirBase)
     })
   }
 
@@ -411,7 +409,7 @@ export default class BackgroundEngine extends Vue {
 
                         for (let i = 0, p = Promise.resolve(); i < len; i++) {
                           batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
-                            this.fhirService.validate(resourceList!.slice(i * 1000, (i + 1) * 1000))
+                            this.$fhirService.validate(resourceList!.slice(i * 1000, (i + 1) * 1000))
                               .then(res => {
                                 const bundle: fhir.Bundle = res.data as fhir.Bundle
                                 const outcomeDetails: OutcomeDetail[] = []
@@ -544,7 +542,7 @@ export default class BackgroundEngine extends Vue {
 
           for (let i = 0, p = Promise.resolve(); i < len; i++) {
             batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
-              this.fhirService.postBatch(resourceList!.slice(i * 1000, (i + 1) * 1000), 'PUT')
+              this.$fhirService.postBatch(resourceList!.slice(i * 1000, (i + 1) * 1000), 'PUT')
                 .then(res => {
                   const bundle: fhir.Bundle = res.data as fhir.Bundle
                   const outcomeDetails: OutcomeDetail[] = []

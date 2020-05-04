@@ -62,75 +62,72 @@ export class FHIRUtil {
 
   /**
    * Parses elements of a StructureDefinition resource (StructureDefinition.snapshot.element)
+   * @param fhirService
    * @param parameter - Search parameter
    * @param profileId
    */
-  static parseElementDefinitions (parameter: string, profileId: string): Promise<any> {
+  static parseElementDefinitions (fhirService: FhirService, parameter: string, profileId: string): Promise<any> {
     return new Promise((resolveParam, rejectParam) => {
-      const fhirBase = localStorage.getItem('fhirBaseUrl')
-      if (fhirBase) {
-        const fhirService: FhirService = new FhirService(fhirBase)
-        const query = {}
-        query[parameter] = profileId
+      const query = {}
+      query[parameter] = profileId
 
-        fhirService.search('StructureDefinition', query, true)
-          .then(res => {
-            const bundle = res.data as fhir.Bundle
-            if (bundle.entry?.length) {
-              const resource = bundle.entry[0].resource as fhir.StructureDefinition
-              const list: fhir.ElementTree[] = []
-              Promise.all(resource?.snapshot?.element.map((element: fhir.ElementDefinition) => {
-                return new Promise(resolveElement => {
-                  const parts = element.id?.split('.') || []
-                  let tmpList = list
+      fhirService.search('StructureDefinition', query, true)
+        .then(res => {
+          const bundle = res.data as fhir.Bundle
+          if (bundle.entry?.length) {
+            const resource = bundle.entry[0].resource as fhir.StructureDefinition
+            const list: fhir.ElementTree[] = []
+            Promise.all(resource?.snapshot?.element.map((element: fhir.ElementDefinition) => {
+              return new Promise(resolveElement => {
+                const parts = element.id?.split('.') || []
+                let tmpList = list
 
-                  // Fixed code-system uri for code fields
-                  const fixedUri = element.fixedUri
+                // Fixed code-system uri for code fields
+                const fixedUri = element.fixedUri
 
-                  Promise.all(parts.map(part => {
-                    return new Promise((resolveElementPart => {
-                      let match = tmpList.findIndex(_ => _.label === part)
-                      if (match === -1) {
-                        match = 0
-                        const item: fhir.ElementTree = {
-                          value: element.id,
-                          label: part,
-                          definition: element.definition,
-                          comment: element.comment,
-                          short: element.short,
-                          min: element.min,
-                          max: element.max,
-                          type: element.type.map(_ => {
-                            const elementType: fhir.ElementTree = {value: _.code, label: _.code, type: [{value: _.code, label: _.code}], targetProfile: _.targetProfile}
-                            if (_.code !== 'CodeableConcept' && _.code !== 'Coding' && _.code !== 'Reference' && environment.datatypes[_.code])
-                              elementType.lazy = true
-                            return FHIRUtil.cleanJSON(elementType)
-                          }),
-                          children: []
-                        }
-                        tmpList.push(item)
-                        resolveElementPart()
+                Promise.all(parts.map(part => {
+                  return new Promise((resolveElementPart => {
+                    let match = tmpList.findIndex(_ => _.label === part)
+                    if (match === -1) {
+                      match = 0
+                      const item: fhir.ElementTree = {
+                        value: element.id,
+                        label: part,
+                        definition: element.definition,
+                        comment: element.comment,
+                        short: element.short,
+                        min: element.min,
+                        max: element.max,
+                        type: element.type.map(_ => {
+                          const elementType: fhir.ElementTree = {value: _.code, label: _.code, type: [{value: _.code, label: _.code}], targetProfile: _.targetProfile}
+                          if (_.code !== 'CodeableConcept' && _.code !== 'Coding' && _.code !== 'Reference' && environment.datatypes[_.code])
+                            elementType.lazy = true
+                          return FHIRUtil.cleanJSON(elementType)
+                        }),
+                        children: []
                       }
-                      if (fixedUri) tmpList[match].fixedUri = fixedUri
-                      tmpList = tmpList[match].children as fhir.ElementTree[]
+                      tmpList.push(item)
                       resolveElementPart()
-                    }))
-                  })).then(() => resolveElement()).catch(() => resolveElement())
+                    }
+                    if (fixedUri) tmpList[match].fixedUri = fixedUri
+                    tmpList = tmpList[match].children as fhir.ElementTree[]
+                    resolveElementPart()
+                  }))
+                })).then(() => resolveElement()).catch(() => resolveElement())
+              })
+            }) || [])
+              .then(() => {
+                list[0].children.map(_ => {
+                  if (_.type[0].value !== 'BackboneElement') _.children = []
+                  else _.noTick = true
+                  return _
                 })
-              }) || [])
-                .then(() => {
-                  list[0].children.map(_ => {
-                    if (_.type[0].value !== 'BackboneElement') _.children = []
-                    else _.noTick = true
-                    return _
-                  })
-                  resolveParam(list)
-                })
-                .catch(() => rejectParam([]))
-            } else { resolveParam([]) }
-          })
-          .catch(() => rejectParam([]))
-      } else rejectParam([])
+                resolveParam(list)
+              })
+              .catch(() => rejectParam([]))
+          } else { resolveParam([]) }
+        })
+        .catch(() => rejectParam([]))
     })
   }
 

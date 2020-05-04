@@ -1,4 +1,3 @@
-import { FhirService } from '@/common/services/fhir.service'
 import { environment } from '@/common/environment'
 import StructureDefinition = fhir.StructureDefinition
 import { FHIRUtil } from '@/common/utils/fhir-util'
@@ -17,7 +16,6 @@ const fhirStore = {
     selectedFhirElements: [],
     fhirBase: '',
     fhirBaseVerificationStatus: '',
-    fhirService: new FhirService(),
     outcomeDetails: [],
     conceptMapList: []
   },
@@ -30,7 +28,6 @@ const fhirStore = {
     [types.Fhir.CURRENT_PROFILE]: state => state.currentProfile || '',
     [types.Fhir.SELECTED_FHIR_ELEMENTS]: state => state.selectedFhirElements || [],
     [types.Fhir.FHIR_BASE]: state => state.fhirBase,
-    [types.Fhir.FHIR_SERVICE]: state => state.fhirService,
     [types.Fhir.OUTCOME_DETAILS]: state => state.outcomeDetails || [],
     [types.Fhir.FHIR_BASE_VERIFICATION_STATUS]: state => state.fhirBaseVerificationStatus,
     [types.Fhir.CONCEPT_MAP_LIST]: state => state.conceptMapList
@@ -57,7 +54,7 @@ const fhirStore = {
     },
     [types.Fhir.UPDATE_FHIR_BASE] (state, baseUrl: string) {
       state.fhirBase = baseUrl
-      state.fhirService = new FhirService(baseUrl)
+      this._vm.$fhirService.setUrl(baseUrl)
       localStorage.setItem('fhirBaseUrl', baseUrl)
     },
     [types.Fhir.SET_OUTCOME_DETAILS] (state, outcomeDetails: OutcomeDetail[]) {
@@ -73,7 +70,7 @@ const fhirStore = {
   actions: {
     [types.Fhir.GET_RESOURCES] ({ commit, state }): Promise<boolean> {
       return new Promise((resolve, reject) => {
-        state.fhirService.search('metadata', null)
+        this._vm.$fhirService.search('metadata', null)
           .then(res => {
             const resource = res.data as fhir.CapabilityStatement
             let resources: fhir.CapabilityStatementRestResource[] = []
@@ -93,14 +90,18 @@ const fhirStore = {
     },
     [types.Fhir.GET_PROFILES_BY_RES] ({ commit, state }, resource: string): Promise<boolean> {
       return new Promise((resolve, reject) => {
-        state.fhirService.search('StructureDefinition',
+        this._vm.$fhirService.search('StructureDefinition',
           {_summary: 'data', base: `${environment.hl7}/StructureDefinition/${resource}`}, true)
           .then(res => {
             const bundle = res.data as fhir.Bundle
-            commit(types.Fhir.SET_PROFILE_LIST, bundle.entry?.map(e => {
-              const structure = e.resource as fhir.StructureDefinition
-              return {id: structure.id, title: structure.title, url: structure.url}
-            }) || [])
+            if (bundle.total > 0) {
+              commit(types.Fhir.SET_PROFILE_LIST, bundle.entry?.map(e => {
+                const structure = e.resource as fhir.StructureDefinition
+                return {id: structure.id, title: structure.title, url: structure.url}
+              }) || [])
+            } else {
+              commit(types.Fhir.SET_PROFILE_LIST, [])
+            }
             resolve(true)
           })
           .catch(err => reject(err) )
@@ -108,7 +109,7 @@ const fhirStore = {
     },
     [types.Fhir.GET_ELEMENTS] ({ commit, state }, { parameterName, profile }): Promise<boolean> {
       return new Promise((resolve, reject) => {
-        FHIRUtil.parseElementDefinitions(parameterName, profile)
+        FHIRUtil.parseElementDefinitions(this._vm.$fhirService, parameterName, profile)
           .then(res => {
             const elementList = res[0]?.children || []
             commit(types.Fhir.SET_ELEMENT_LIST, elementList)
@@ -119,11 +120,11 @@ const fhirStore = {
     },
     [types.Fhir.VERIFY_FHIR] ({ state }): Promise<any> {
       return new Promise((resolve, reject) => {
-        state.fhirService.search('metadata', {}, true)
+        this._vm.$fhirService.search('metadata', {}, true)
           .then(res => {
             const metadata: fhir.CapabilityStatement = res.data
             if (metadata.fhirVersion) {
-              if (environment.server.compatibleFhirVersions.includes(metadata.fhirVersion) || 1) {
+              if (environment.server.compatibleFhirVersions.includes(metadata.fhirVersion)) {
                 resolve(res)
               } else {
                 reject(`FHIR version (${metadata.fhirVersion}) is not supported. FHIR version must be R4.`)
@@ -143,7 +144,7 @@ const fhirStore = {
             commit(types.Fhir.SET_CONCEPT_MAP_LIST, cached)
             resolve(true)
           } else {
-            state.fhirService.search('ConceptMap', {}, true)
+            this._vm.$fhirService.search('ConceptMap', {}, true)
               .then(res => {
                 const bundle = res.data as fhir.Bundle
                 if (bundle.entry?.length) {
@@ -164,7 +165,7 @@ const fhirStore = {
     },
     [types.Fhir.GET_DATA_TYPES] ({ state }, url: string): Promise<any> {
       return new Promise((resolve, reject) => {
-        state.fhirService.search('StructureDefinition', {url}, true)
+        this._vm.$fhirService.search('StructureDefinition', {url}, true)
           .then(res => {
             const bundle = res.data as fhir.Bundle
             if (bundle.entry?.length) {
@@ -225,7 +226,7 @@ const fhirStore = {
     },
     [types.Fhir.DELETE_ALL] ({ state }, resourceType: string): Promise<boolean> {
       return new Promise<boolean>((resolve, reject) => {
-        state.fhirService.deleteAll(resourceType)
+        this._vm.$fhirService.deleteAll(resourceType)
           .then(_ => resolve(true))
           .catch(_ => reject(false))
       })

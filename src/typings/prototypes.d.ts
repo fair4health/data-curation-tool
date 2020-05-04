@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import { FhirService } from '@/common/services/fhir.service'
 
 interface Notifier {
   success (message: string): void
@@ -10,5 +11,6 @@ interface Notifier {
 declare module 'vue/types/vue' {
   interface Vue {
     $notify: Notifier
+    $fhirService: FhirService
   }
 }

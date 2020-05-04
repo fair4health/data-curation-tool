@@ -5,12 +5,21 @@ import http from 'http'
 
 export class FhirService {
 
-  config: any
-  client: FhirClient
+  private config: any
+  private client: FhirClient
 
   constructor (baseUrl?: any) {
     if (baseUrl) environment.server.config.baseUrl = baseUrl
     this.config = environment.server.config
+    this.client = new FhirClient(this.config)
+  }
+
+  /**
+   * Set FHIR base url
+   * @param url
+   */
+  setUrl (url: string) {
+    this.config.baseUrl = url
     this.client = new FhirClient(this.config)
   }
 
