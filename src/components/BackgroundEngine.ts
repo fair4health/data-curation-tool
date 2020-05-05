@@ -15,7 +15,8 @@ import Status from '@/common/Status'
 @Component
 export default class BackgroundEngine extends Vue {
   private electronStore: ElectronStore
-  private fhirBase: fhir.uri
+  private fhirBaseUrl: fhir.uri
+  private terminologyBaseUrl: fhir.uri
 
   created () {
 
@@ -37,6 +38,7 @@ export default class BackgroundEngine extends Vue {
 
   public initListeners () {
     this.setFhirBaseUrl()
+    this.setTerminologyBaseUrl()
 
     // File listeners
     this.onBrowseFile()
@@ -45,7 +47,7 @@ export default class BackgroundEngine extends Vue {
     this.onBrowseMapping()
     this.onExportFile()
 
-    // Resource operation listeners (Validate - Transform - Delete)
+    // Resource operation listeners (Validate - Transform)
     this.onValidate()
     this.onTransform()
 
@@ -67,8 +69,14 @@ export default class BackgroundEngine extends Vue {
 
   public setFhirBaseUrl () {
     ipcRenderer.on(ipcChannels.Fhir.SET_FHIR_BASE, (event, url) => {
-      this.fhirBase = url
-      this.$fhirService.setUrl(this.fhirBase)
+      this.fhirBaseUrl = url
+      this.$fhirService.setUrl(this.fhirBaseUrl)
+    })
+  }
+
+  public setTerminologyBaseUrl () {
+    ipcRenderer.on(ipcChannels.Terminology.SET_TERMINOLOGY_BASE_URL, (event, url) => {
+      this.terminologyBaseUrl = url
     })
   }
 
@@ -295,7 +303,7 @@ export default class BackgroundEngine extends Vue {
       }))
       getWorkbooks.then(workbook => {
         const conceptMap: Map<string, fhir.ConceptMap> = new Map<string, fhir.ConceptMap>()
-        this.electronStore.get(`${this.fhirBase}-ConceptMapList`)?.map(_ => {
+        this.electronStore.get(`${this.terminologyBaseUrl}-ConceptMapList`)?.map(_ => {
           conceptMap.set(_.id, _)
         })
         data.sheets.reduce((promise: Promise<any>, sheet: store.Sheet) =>

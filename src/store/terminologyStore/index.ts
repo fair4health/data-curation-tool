@@ -30,7 +30,7 @@ const terminologyStore = {
   actions: {
     [types.Terminology.GET_CONCEPT_MAPS] ({ commit, state }, noCache?: boolean): Promise<any> {
       return new Promise((resolve, reject) => {
-        ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.ElectronStore.GET_ELECTRON_STORE, `${state.fhirBase}-ConceptMapList`)
+        ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.ElectronStore.GET_ELECTRON_STORE, `${state.terminologyBaseUrl}-ConceptMapList`)
         ipcRenderer.on(ipcChannels.ElectronStore.GOT_ELECTRON_STORE, (event, cached) => {
           if (!noCache && cached && !FHIRUtil.isEmpty(cached)) {
             commit(types.Terminology.SET_CONCEPT_MAP_LIST, cached)
@@ -43,7 +43,7 @@ const terminologyStore = {
                   const conceptMapList: fhir.ConceptMap[] = bundle.entry.map((bundleEntry: fhir.BundleEntry) => bundleEntry.resource as fhir.ConceptMap)
                   commit(types.Terminology.SET_CONCEPT_MAP_LIST, conceptMapList)
 
-                  ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.ElectronStore.SET_ELECTRON_STORE, {key: `${state.fhirBase}-ConceptMapList`, value: conceptMapList})
+                  ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.ElectronStore.SET_ELECTRON_STORE, {key: `${state.terminologyBaseUrl}-ConceptMapList`, value: conceptMapList})
 
                 }
                 resolve(true)
@@ -54,7 +54,7 @@ const terminologyStore = {
         })
       })
     },
-    [types.Terminology.VERIFY_TERMINOLOGY] ({ commit, state }, baseUrl: string): Promise<any> {
+    [types.Terminology.VERIFY_TERMINOLOGY] ({ commit }, baseUrl: string): Promise<any> {
 
       commit(types.Terminology.UPDATE_TERMINOLOGY_BASE, baseUrl)
 

@@ -61,7 +61,7 @@ const fhirStore = {
     }
   },
   actions: {
-    [types.Fhir.GET_RESOURCES] ({ commit, state }): Promise<boolean> {
+    [types.Fhir.GET_RESOURCES] ({ commit }): Promise<boolean> {
       return new Promise((resolve, reject) => {
         this._vm.$fhirService.search('metadata', null)
           .then(res => {
@@ -81,7 +81,7 @@ const fhirStore = {
           .catch(err => reject(err) )
       })
     },
-    [types.Fhir.GET_PROFILES_BY_RES] ({ commit, state }, resource: string): Promise<boolean> {
+    [types.Fhir.GET_PROFILES_BY_RES] ({ commit }, resource: string): Promise<boolean> {
       return new Promise((resolve, reject) => {
         this._vm.$fhirService.search('StructureDefinition',
           {_summary: 'data', base: `${environment.hl7}/StructureDefinition/${resource}`}, true)
@@ -100,7 +100,7 @@ const fhirStore = {
           .catch(err => reject(err) )
       })
     },
-    [types.Fhir.GET_ELEMENTS] ({ commit, state }, { parameterName, profile }): Promise<boolean> {
+    [types.Fhir.GET_ELEMENTS] ({ commit }, { parameterName, profile }): Promise<boolean> {
       return new Promise((resolve, reject) => {
         FHIRUtil.parseElementDefinitions(this._vm.$fhirService, parameterName, profile)
           .then(res => {
@@ -111,7 +111,10 @@ const fhirStore = {
           .catch(err => reject(err))
       })
     },
-    [types.Fhir.VERIFY_FHIR] ({ state }): Promise<any> {
+    [types.Fhir.VERIFY_FHIR] ({ commit }, onfhirBaseUrl: string): Promise<any> {
+
+      commit(types.Fhir.UPDATE_FHIR_BASE, onfhirBaseUrl)
+
       return new Promise((resolve, reject) => {
         this._vm.$fhirService.search('metadata', {}, true)
           .then(res => {
@@ -123,13 +126,13 @@ const fhirStore = {
                 reject(`FHIR version (${metadata.fhirVersion}) is not supported. FHIR version must be R4.`)
               }
             } else {
-              throw Error()
+              reject('FHIR version couldn\'t be detected for given url.')
             }
           })
           .catch(err => reject('Given url is not verified.'))
       })
     },
-    [types.Fhir.GET_DATA_TYPES] ({ state }, url: string): Promise<any> {
+    [types.Fhir.GET_DATA_TYPES] ({}, url: string): Promise<any> {
       return new Promise((resolve, reject) => {
         this._vm.$fhirService.search('StructureDefinition', {url}, true)
           .then(res => {
@@ -190,7 +193,7 @@ const fhirStore = {
           .catch(() => reject([]))
       })
     },
-    [types.Fhir.DELETE_ALL] ({ state }, resourceType: string): Promise<boolean> {
+    [types.Fhir.DELETE_ALL] ({}, resourceType: string): Promise<boolean> {
       return new Promise<boolean>((resolve, reject) => {
         this._vm.$fhirService.deleteAll(resourceType)
           .then(_ => resolve(true))

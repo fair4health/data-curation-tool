@@ -1,4 +1,3 @@
-import {ipcRenderer} from "electron"
 <template>
   <q-card flat class="col-xs-12 col-sm-12 col-md-6 bg-grey-1">
     <q-card-section>
@@ -48,6 +47,8 @@ import {ipcRenderer} from "electron"
   import StatusMixin from '@/common/mixins/statusMixin'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import Status from '@/common/Status'
+  import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
+  import { ipcRenderer } from 'electron'
 
   @Component
   export default class TerminologyConfig extends Mixins(StatusMixin) {
@@ -69,6 +70,7 @@ import {ipcRenderer} from "electron"
           .then(() => {
             this.statusDetail = 'Terminology URL is verified.'
             this.tBaseVerificationStatus = Status.SUCCESS
+            ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.Terminology.SET_TERMINOLOGY_BASE_URL, this.terminologyBaseUrl)
           })
           .catch(err => {
             this.statusDetail = err

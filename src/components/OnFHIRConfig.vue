@@ -83,8 +83,7 @@
     verifyFhir () {
       if (this.onfhirBaseUrl) {
         this.fhirBaseVerificationStatus = Status.IN_PROGRESS
-        this.$store.commit(types.Fhir.UPDATE_FHIR_BASE, this.onfhirBaseUrl)
-        this.$store.dispatch(types.Fhir.VERIFY_FHIR)
+        this.$store.dispatch(types.Fhir.VERIFY_FHIR, this.onfhirBaseUrl)
           .then(() => {
             this.statusDetail = 'FHIR Repository URL is verified.'
             this.fhirBaseVerificationStatus = Status.SUCCESS
