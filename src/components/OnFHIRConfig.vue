@@ -1,7 +1,7 @@
 <template>
   <div class="q-py-xl">
-    <div class="row justify-center">
-      <q-card flat class="col-6">
+    <div class="row justify-center q-mx-lg">
+      <q-card flat class="col-xs-12 col-sm-12 col-md-6">
         <q-card-section>
           <q-item-label class="text-weight-bold q-mb-lg">
             <span class="text-primary"><q-icon name="fas fa-info" size="xs" class="q-mr-xs" /> Provide FHIR Repository URL </span>
@@ -43,6 +43,10 @@
         </q-card-section>
       </q-card>
     </div>
+
+    <div class="row justify-center q-mx-lg q-mt-lg">
+      <terminology-binding />
+    </div>
   </div>
 </template>
 
@@ -53,8 +57,17 @@
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import Status from '@/common/Status'
   import StatusMixin from '@/common/mixins/statusMixin'
+  import Loading from '@/components/Loading.vue'
 
-  @Component
+  @Component({
+    components: {
+      TerminologyBinding: () => ({
+        component: import('@/components/TerminologyConfig.vue'),
+        loading: Loading,
+        delay: 0
+      })
+    } as any
+  })
   export default class OnFHIRConfig extends Mixins(StatusMixin) {
     private onfhirBaseUrl: string = ''
     private statusDetail: string = ''
@@ -64,10 +77,7 @@
     set fhirBaseVerificationStatus (value) { this.$store.commit(types.Fhir.SET_FHIR_BASE_VERIFICATION_STATUS, value) }
 
     mounted () {
-      const url = localStorage.getItem('fhirBaseUrl')
-      if (url) {
-        this.onfhirBaseUrl = url
-      }
+      this.onfhirBaseUrl = localStorage.getItem('fhirBaseUrl') || ''
     }
 
     verifyFhir () {

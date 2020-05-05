@@ -11,7 +11,6 @@ export class FhirService {
   constructor (baseUrl?: any) {
     if (baseUrl) environment.server.config.baseUrl = baseUrl
     this.config = environment.server.config
-    this.client = new FhirClient(this.config)
   }
 
   /**

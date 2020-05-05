@@ -15,6 +15,7 @@ webFrame.setZoomFactor(0.9)
 Vue.config.productionTip = false
 
 Vue.prototype.$fhirService = new FhirService()
+Vue.prototype.$terminologyService = new FhirService()
 
 Vue.use(notifier)
 
