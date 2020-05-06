@@ -95,17 +95,21 @@ export class VuexStoreUtil {
   public static Terminology = class {
 
     // Getters
+    public static TERMINOLOGY_BASE_URL = 'terminologyBaseUrl'
     public static CONCEPT_MAP_LIST = 'conceptMapList'
+    public static CODE_SYSTEM_LIST = 'codeSystemList'
 
     // Mutations
     public static SET_CONCEPT_MAP_LIST = 'setConceptMapList'
     public static UPDATE_TERMINOLOGY_BASE = 'updateTerminologyBase'
     public static T_BASE_VERIFICATION_STATUS = 'tBaseVerificationStatus'
+    public static SET_CODE_SYSTEM_LIST = 'setCodeSystemList'
 
     // Actions
     public static GET_CONCEPT_MAPS = 'getConceptMaps'
     public static VERIFY_TERMINOLOGY = 'verifyTerminology'
-    public static SET_T_BASE_VERIFICATION_STATUS = 'SetTBaseVerificationStatus'
+    public static SET_T_BASE_VERIFICATION_STATUS = 'setTBaseVerificationStatus'
+    public static GET_CODE_SYSTEMS = 'getCodeSystems'
 
   }
 

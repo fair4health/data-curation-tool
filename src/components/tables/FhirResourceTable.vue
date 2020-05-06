@@ -159,27 +159,14 @@
                                         </div>
                                         <q-space />
                                         <div>
-                                          <q-btn dense
-                                                 unelevated
-                                                 v-if="!propType.node.fixedUri
-                                                      && propType.node.type.length === 1
-                                                      && (propType.node.type[0].value === 'CodeableConcept'
-                                                          || propType.node.type[0].value === 'Coding')"
-                                                 color="grey-3"
-                                                 text-color="grey-8"
-                                                 icon-right="arrow_drop_down"
-                                                 class="q-mr-sm"
-                                                 no-caps
-                                          >
-                                            <span class="text-size-sm">System</span>
-                                            <q-menu auto-close>
-                                              <q-list dense style="min-width: 100px">
-                                                <q-item dense clickable v-for="system in systems" :key="system" @click="prop.node.selectedUri = system; updateElementList()">
-                                                  <q-item-section>{{ system }}</q-item-section>
-                                                </q-item>
-                                              </q-list>
-                                            </q-menu>
-                                          </q-btn>
+                                          <code-system-popup
+                                            v-if="!propType.node.fixedUri
+                                                  && propType.node.type.length === 1
+                                                  && (propType.node.type[0].value === 'CodeableConcept'
+                                                      || propType.node.type[0].value === 'Coding')"
+                                            :prop="prop"
+                                            @update-prop="(value) => prop = value"
+                                          />
                                           <span v-if="propType.node.type" class="text-caption text-primary">{{ propType.node.type.map(_ => _.label).join(', ') }}</span>
                                         </div>
                                       </div>
@@ -190,31 +177,28 @@
                             </div>
                           </div>
                         </div>
-                        <div class="col-4 text-right">
+                        <div class="col text-right ellipsis cursor-pointer">
                           <span v-if="prop.node.fixedUri || prop.node.selectedUri" class="q-mr-sm">
-                            <a class="text-size-sm bg-grey-3 text-grey-8"><u>{{ prop.node.fixedUri || prop.node.selectedUri }}</u></a>
+                            <a class="text-size-sm bg-grey-3 text-grey-8" @click="openExternal(prop.node.fixedUri || prop.node.selectedUri)">
+                              <u>{{ prop.node.fixedUri || prop.node.selectedUri }}</u>
+                            </a>
+                            <q-tooltip>
+                              <span class="row items-center">
+                                <q-icon name="open_in_new" class="q-mr-xs" />
+                              {{ prop.node.fixedUri || prop.node.selectedUri }}
+                              </span>
+                            </q-tooltip>
                           </span>
-                          <q-btn dense
-                                 unelevated
-                                 v-if="!prop.node.fixedUri
-                                      && prop.node.type.length === 1
-                                      && (prop.node.type[0].value === 'CodeableConcept'
-                                          || prop.node.type[0].value === 'Coding')"
-                                 color="grey-3"
-                                 text-color="grey-8"
-                                 icon-right="arrow_drop_down"
-                                 class="q-mr-sm"
-                                 no-caps
-                          >
-                            <span class="text-size-sm">System</span>
-                            <q-menu auto-close>
-                              <q-list dense style="min-width: 100px">
-                                <q-item dense clickable v-for="system in systems" :key="system" @click="prop.node.selectedUri = system; updateElementList()">
-                                  <q-item-section>{{ system }}</q-item-section>
-                                </q-item>
-                              </q-list>
-                            </q-menu>
-                          </q-btn>
+                        </div>
+                        <div class="col-4 text-right">
+                          <code-system-popup
+                            v-if="!prop.node.fixedUri
+                                  && prop.node.type.length === 1
+                                  && (prop.node.type[0].value === 'CodeableConcept'
+                                      || prop.node.type[0].value === 'Coding')"
+                            :prop="prop"
+                            @update-prop="(value) => prop = value"
+                          />
                           <span v-if="prop.node.type" class="text-caption text-primary">{{ prop.node.type.map(_ => _.value).join(', ') }}</span>
                         </div>
                       </div>
@@ -279,15 +263,21 @@
 
 <script lang="ts">
   import { Component, Vue, Watch } from 'vue-property-decorator'
-  import { FileSource, Sheet } from '@/common/model/file-source'
+  import { Sheet } from '@/common/model/file-source'
   import Loading from '@/components/Loading.vue'
   import { environment } from '@/common/environment'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+  import { shell } from 'electron'
 
   @Component({
     components: {
-      Loading
-    }
+      Loading,
+      CodeSystemPopup: () => ({
+        component: import('@/components/modals/CodeSystemPopup.vue'),
+        loading: Loading,
+        delay: 0
+      })
+    } as any
   })
   export default class FhirResourceTable extends Vue {
     private splitterModel = 100
@@ -301,7 +291,6 @@
     private showMustFields: boolean = false
     private env = environment
     private loadingResources: boolean = false
-    private systems: string[] = Object.values(environment.codesystems).map(_ => _)
 
     get fhirResourceList (): string[] { return this.$store.getters[types.Fhir.RESOURCE_LIST] }
     get fhirProfileList (): any[] { return this.$store.getters[types.Fhir.PROFILE_LIST].map(_ => _.url) }
@@ -440,6 +429,10 @@
 
     updateElementList () {
       this.$store.commit(types.Fhir.SET_ELEMENT_LIST, this.fhirElementList)
+    }
+
+    openExternal (url: string) {
+      shell.openExternal(url)
     }
 
   }

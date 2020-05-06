@@ -176,7 +176,7 @@
     get bufferSheetHeaders (): BufferElement[] { return this.$store.getters[types.File.BUFFER_SHEET_HEADERS] }
     set bufferSheetHeaders (value) { this.$store.commit(types.File.SET_BUFFER_SHEET_HEADERS, value) }
 
-    get conceptMapList (): Array<Array<{id: string, name: string}>> {
+    get conceptMapList (): Array<{id: string, name: string}> {
       return this.$store.getters[types.Terminology.CONCEPT_MAP_LIST].map((_: fhir.ConceptMap) => ({id: _.id, name: _.name}))
     }
     set conceptMapList (value) { this.$store.commit(types.Terminology.SET_CONCEPT_MAP_LIST, value) }
@@ -198,6 +198,12 @@
             .catch(() => {
               this.$q.loading.hide()
               this.$notify.error('Something went wrong while fetching Concept Maps')
+            })
+          this.$store.dispatch(types.Terminology.GET_CODE_SYSTEMS, true)
+            .then(() => this.$q.loading.hide())
+            .catch(() => {
+              this.$q.loading.hide()
+              this.$notify.error('Something went wrong while fetching Code Systems')
             })
         }
       }, 10)
