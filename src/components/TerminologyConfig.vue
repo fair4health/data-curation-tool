@@ -1,21 +1,14 @@
 <template>
-  <q-card flat class="col-xs-12 col-sm-12 col-md-6 bg-grey-1">
+  <q-card flat class="col-xs-12 col-sm-12 col-md-6">
     <q-card-section>
-      <q-item-label class="text-weight-bold q-mb-lg">
-        <span class="text-primary"><q-icon name="fas fa-info" size="xs" class="q-mr-xs" /> Provide Terminology Server URL </span>
+      <q-item-label class="text-weight-bold q-mb-lg text-primary text-h6">
+        Add Terminology Service
       </q-item-label>
-      <q-input outlined square dense type="url" class="col-10" v-model="terminologyBaseUrl" color="primary"
-               @keydown="tBaseVerificationStatus = Status.PENDING"
+      <q-input outlined dense type="url" class="col-10" v-model="terminologyBaseUrl" color="primary"
                placeholder="Terminology Server URL"
                :disable="isInProgress(tBaseVerificationStatus)"
                @keypress.enter="verifyTerminology"
-      >
-        <template v-slot:prepend>
-          <q-avatar>
-            <img src="../assets/fhir-logo.png" />
-          </q-avatar>
-        </template>
-      </q-input>
+      />
       <q-item-label class="text-weight-regular bg-red-1 q-mt-md q-pa-md" v-if="isError(tBaseVerificationStatus) && statusDetail">
         <span class="text-red"><q-icon name="error" size="xs" class="q-mr-xs" /> {{ statusDetail }} </span>
       </q-item-label>
@@ -27,16 +20,13 @@
     <q-card-section class="row">
       <q-space />
       <div class="q-gutter-sm">
-        <q-btn unelevated label="Verify" icon="verified_user" color="grey-2" text-color="primary"
+        <q-btn label="Verify & Save" icon="verified_user" color="positive"
                :disable="!terminologyBaseUrl || isInProgress(tBaseVerificationStatus)" @click="verifyTerminology" no-caps>
               <span class="q-ml-sm">
                 <q-spinner class="q-ml-sm" size="xs" v-show="isInProgress(tBaseVerificationStatus)" />
-                <q-icon name="check" size="xs" color="green" v-show="isSuccess(tBaseVerificationStatus)" />
-                <q-icon name="error_outline" size="xs" color="red" v-show="isError(tBaseVerificationStatus)" />
+                <q-icon name="check" size="xs" v-show="isSuccess(tBaseVerificationStatus)" />
               </span>
         </q-btn>
-        <q-btn unelevated label="Save" color="positive" :disable="!isSuccess(tBaseVerificationStatus)"
-                no-caps />
       </div>
     </q-card-section>
   </q-card>

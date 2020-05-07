@@ -63,6 +63,8 @@ const terminologyStore = {
     [types.Terminology.VERIFY_TERMINOLOGY] ({ commit }, baseUrl: string): Promise<any> {
 
       commit(types.Terminology.UPDATE_TERMINOLOGY_BASE, baseUrl)
+      commit(types.Terminology.SET_CODE_SYSTEM_LIST, [])
+      commit(types.Terminology.SET_CONCEPT_MAP_LIST, [])
 
       return new Promise((resolve, reject) => {
         this._vm.$terminologyService.search('metadata', {}, true)

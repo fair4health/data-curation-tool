@@ -33,8 +33,8 @@
                    :disable="!onfhirBaseUrl || isInProgress(fhirBaseVerificationStatus)" @click="verifyFhir" no-caps>
               <span class="q-ml-sm">
                 <q-spinner class="q-ml-sm" size="xs" v-show="isInProgress(fhirBaseVerificationStatus)" />
-                <q-icon name="check" size="xs" color="green" v-show="isSuccess(fhirBaseVerificationStatus)" />
-                <q-icon name="error_outline" size="xs" color="red" v-show="isError(fhirBaseVerificationStatus)" />
+                <q-icon name="check" size="xs" color="positive" v-show="isSuccess(fhirBaseVerificationStatus)" />
+                <q-icon name="error_outline" size="xs" color="negative" v-show="isError(fhirBaseVerificationStatus)" />
               </span>
             </q-btn>
             <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!isSuccess(fhirBaseVerificationStatus)"
@@ -44,8 +44,13 @@
       </q-card>
     </div>
 
-    <div class="row justify-center q-mx-lg q-mt-lg">
-      <terminology-binding />
+    <div v-if="!terminologyOpen" class="row justify-center q-mx-lg q-mt-lg">
+      <div class="self-end">
+        <q-btn label="Add Terminology Service" color="primary" class="q-pa-sm no-border-radius" icon="add" @click="terminologyOpen = true" no-caps />
+      </div>
+    </div>
+    <div v-if="terminologyOpen" class="row justify-center q-mx-lg q-mt-lg">
+      <terminology-config />
     </div>
   </div>
 </template>
@@ -61,7 +66,7 @@
 
   @Component({
     components: {
-      TerminologyBinding: () => ({
+      TerminologyConfig: () => ({
         component: import('@/components/TerminologyConfig.vue'),
         loading: Loading,
         delay: 0
@@ -72,12 +77,18 @@
     private onfhirBaseUrl: string = ''
     private statusDetail: string = ''
     private Status = Status
+    private terminologyOpen: boolean = false
 
     get fhirBaseVerificationStatus (): status { return this.$store.getters[types.Fhir.FHIR_BASE_VERIFICATION_STATUS] }
     set fhirBaseVerificationStatus (value) { this.$store.commit(types.Fhir.SET_FHIR_BASE_VERIFICATION_STATUS, value) }
 
+    get tBaseVerificationStatus (): status { return this.$store.getters[types.Terminology.T_BASE_VERIFICATION_STATUS] }
+
     mounted () {
       this.onfhirBaseUrl = localStorage.getItem('fhirBaseUrl') || ''
+      if (this.isSuccess(this.tBaseVerificationStatus)) {
+        this.terminologyOpen = true
+      }
     }
 
     verifyFhir () {
