@@ -112,19 +112,24 @@
               <q-select v-if="props.row.target"
                         dense
                         options-dense
+                        use-input
+                        hide-selected
+                        fill-input
                         clearable
-                        class="ellipsis text-size-lg select-input"
+                        input-debounce="0"
                         :outlined="!!props.row.conceptMap"
                         :standout="!props.row.conceptMap ? 'bg-primary text-white' : ''"
+                        class="text-size-lg select-input"
                         :label="!props.row.conceptMap ? 'No mapping' : 'Concept Map'"
                         :ref="props.row.value"
                         v-model="props.row.conceptMap"
-                        :options="conceptMapList"
+                        :options="filteredConceptMapList"
                         option-label="name"
                         option-value="id"
                         :disable="!conceptMapList.length"
                         @clear="removeConceptMap(props.row); $refs[props.row.value].blur()"
                         @input="bufferSheetHeaders = [...bufferSheetHeaders]"
+                        @filter="filterConceptMaps"
               />
 
             </q-td>
@@ -154,6 +159,7 @@
     private pagination = { page: 1, rowsPerPage: 10 }
     private filter: string = ''
     private showMappedFields: boolean = false
+    private filteredConceptMapList: Array<{id: string, name: string}> = []
 
     get dataSourceColumns (): object[] { return sourceDataTableHeaders }
     get fieldTypes (): string[] { return Object.values(cellType) }
@@ -207,6 +213,7 @@
             })
         }
       }, 10)
+      this.filteredConceptMapList = this.conceptMapList
     }
 
     @Watch('currentSource')
@@ -283,6 +290,13 @@
       row.conceptMap = undefined
       delete row.conceptMap
       this.bufferSheetHeaders = this.bufferSheetHeaders.slice()
+    }
+
+    filterConceptMaps (val, update, abort) {
+      update(() => {
+        const needle = val.toLowerCase()
+        this.filteredConceptMapList = this.conceptMapList.filter(v => v.name.toLowerCase().indexOf(needle) > -1)
+      })
     }
 
   }

@@ -7,8 +7,8 @@
             <span><q-icon name="fas fa-fire" size="xs" color="primary" class="q-mr-xs" /> FHIR Resource</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense options-dense v-model="currentFHIRRes" class="ellipsis" :options="fhirResourceOptions" label="FHIR Resource"
-                    @filter="filterFn" use-input input-debounce="0" :loading="loadingResources">
+          <q-select outlined dense options-dense fill-input hide-selected v-model="currentFHIRRes" class="cursor-pointer" :options="fhirResourceOptions"
+                    label="FHIR Resource" @filter="filterFn" use-input input-debounce="0" :loading="loadingResources">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
