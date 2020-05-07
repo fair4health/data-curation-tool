@@ -125,7 +125,7 @@
 <script lang="ts">
   import { Component, Mixins } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
-  import OutcomeCard from '@/components/OutcomeCard.vue'
+  import OutcomeCard from '@/components/modals/OutcomeCard.vue'
   import electronStore from '../common/electron-store'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'

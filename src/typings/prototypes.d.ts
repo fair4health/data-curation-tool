@@ -12,5 +12,6 @@ declare module 'vue/types/vue' {
   interface Vue {
     $notify: Notifier
     $fhirService: FhirService
+    $terminologyService: FhirService
   }
 }

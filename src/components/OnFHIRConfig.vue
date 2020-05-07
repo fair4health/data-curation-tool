@@ -1,7 +1,7 @@
 <template>
   <div class="q-py-xl">
-    <div class="row justify-center">
-      <q-card flat class="col-6">
+    <div class="row justify-center q-mx-lg">
+      <q-card flat class="col-xs-12 col-sm-12 col-md-6">
         <q-card-section>
           <q-item-label class="text-weight-bold q-mb-lg">
             <span class="text-primary"><q-icon name="fas fa-info" size="xs" class="q-mr-xs" /> Provide FHIR Repository URL </span>
@@ -33,8 +33,8 @@
                    :disable="!onfhirBaseUrl || isInProgress(fhirBaseVerificationStatus)" @click="verifyFhir" no-caps>
               <span class="q-ml-sm">
                 <q-spinner class="q-ml-sm" size="xs" v-show="isInProgress(fhirBaseVerificationStatus)" />
-                <q-icon name="check" size="xs" color="green" v-show="isSuccess(fhirBaseVerificationStatus)" />
-                <q-icon name="error_outline" size="xs" color="red" v-show="isError(fhirBaseVerificationStatus)" />
+                <q-icon name="check" size="xs" color="positive" v-show="isSuccess(fhirBaseVerificationStatus)" />
+                <q-icon name="error_outline" size="xs" color="negative" v-show="isError(fhirBaseVerificationStatus)" />
               </span>
             </q-btn>
             <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!isSuccess(fhirBaseVerificationStatus)"
@@ -42,6 +42,15 @@
           </div>
         </q-card-section>
       </q-card>
+    </div>
+
+    <div v-if="!terminologyOpen" class="row justify-center q-mx-lg q-mt-lg">
+      <div class="self-end">
+        <q-btn label="Add Terminology Service" color="primary" class="q-pa-sm no-border-radius" icon="add" @click="terminologyOpen = true" no-caps />
+      </div>
+    </div>
+    <div v-if="terminologyOpen" class="row justify-center q-mx-lg q-mt-lg">
+      <terminology-config />
     </div>
   </div>
 </template>
@@ -53,28 +62,39 @@
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import Status from '@/common/Status'
   import StatusMixin from '@/common/mixins/statusMixin'
+  import Loading from '@/components/Loading.vue'
 
-  @Component
+  @Component({
+    components: {
+      TerminologyConfig: () => ({
+        component: import('@/components/TerminologyConfig.vue'),
+        loading: Loading,
+        delay: 0
+      })
+    } as any
+  })
   export default class OnFHIRConfig extends Mixins(StatusMixin) {
     private onfhirBaseUrl: string = ''
     private statusDetail: string = ''
     private Status = Status
+    private terminologyOpen: boolean = false
 
     get fhirBaseVerificationStatus (): status { return this.$store.getters[types.Fhir.FHIR_BASE_VERIFICATION_STATUS] }
     set fhirBaseVerificationStatus (value) { this.$store.commit(types.Fhir.SET_FHIR_BASE_VERIFICATION_STATUS, value) }
 
+    get tBaseVerificationStatus (): status { return this.$store.getters[types.Terminology.T_BASE_VERIFICATION_STATUS] }
+
     mounted () {
-      const url = localStorage.getItem('fhirBaseUrl')
-      if (url) {
-        this.onfhirBaseUrl = url
+      this.onfhirBaseUrl = localStorage.getItem('fhirBaseUrl') || ''
+      if (this.isSuccess(this.tBaseVerificationStatus)) {
+        this.terminologyOpen = true
       }
     }
 
     verifyFhir () {
       if (this.onfhirBaseUrl) {
         this.fhirBaseVerificationStatus = Status.IN_PROGRESS
-        this.$store.commit(types.Fhir.UPDATE_FHIR_BASE, this.onfhirBaseUrl)
-        this.$store.dispatch(types.Fhir.VERIFY_FHIR)
+        this.$store.dispatch(types.Fhir.VERIFY_FHIR, this.onfhirBaseUrl)
           .then(() => {
             this.statusDetail = 'FHIR Repository URL is verified.'
             this.fhirBaseVerificationStatus = Status.SUCCESS

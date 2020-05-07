@@ -1,8 +1,6 @@
 import { environment } from '@/common/environment'
 import StructureDefinition = fhir.StructureDefinition
 import { FHIRUtil } from '@/common/utils/fhir-util'
-import { ipcRenderer } from 'electron'
-import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
 import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
 const fhirStore = {
@@ -16,8 +14,7 @@ const fhirStore = {
     selectedFhirElements: [],
     fhirBase: '',
     fhirBaseVerificationStatus: '',
-    outcomeDetails: [],
-    conceptMapList: []
+    outcomeDetails: []
   },
   getters: {
     [types.Fhir.RESOURCE_LIST]: state => state.resourceList || [],
@@ -29,8 +26,7 @@ const fhirStore = {
     [types.Fhir.SELECTED_FHIR_ELEMENTS]: state => state.selectedFhirElements || [],
     [types.Fhir.FHIR_BASE]: state => state.fhirBase,
     [types.Fhir.OUTCOME_DETAILS]: state => state.outcomeDetails || [],
-    [types.Fhir.FHIR_BASE_VERIFICATION_STATUS]: state => state.fhirBaseVerificationStatus,
-    [types.Fhir.CONCEPT_MAP_LIST]: state => state.conceptMapList
+    [types.Fhir.FHIR_BASE_VERIFICATION_STATUS]: state => state.fhirBaseVerificationStatus
   },
   mutations: {
     [types.Fhir.SET_RESOURCE_LIST] (state, list) {
@@ -62,13 +58,10 @@ const fhirStore = {
     },
     [types.Fhir.SET_FHIR_BASE_VERIFICATION_STATUS] (state, status: status) {
       state.fhirBaseVerificationStatus = status
-    },
-    [types.Fhir.SET_CONCEPT_MAP_LIST] (state, conceptMapList: fhir.ConceptMap[]) {
-      state.conceptMapList = conceptMapList
     }
   },
   actions: {
-    [types.Fhir.GET_RESOURCES] ({ commit, state }): Promise<boolean> {
+    [types.Fhir.GET_RESOURCES] ({ commit }): Promise<boolean> {
       return new Promise((resolve, reject) => {
         this._vm.$fhirService.search('metadata', null)
           .then(res => {
@@ -88,7 +81,7 @@ const fhirStore = {
           .catch(err => reject(err) )
       })
     },
-    [types.Fhir.GET_PROFILES_BY_RES] ({ commit, state }, resource: string): Promise<boolean> {
+    [types.Fhir.GET_PROFILES_BY_RES] ({ commit }, resource: string): Promise<boolean> {
       return new Promise((resolve, reject) => {
         this._vm.$fhirService.search('StructureDefinition',
           {_summary: 'data', base: `${environment.hl7}/StructureDefinition/${resource}`}, true)
@@ -107,7 +100,7 @@ const fhirStore = {
           .catch(err => reject(err) )
       })
     },
-    [types.Fhir.GET_ELEMENTS] ({ commit, state }, { parameterName, profile }): Promise<boolean> {
+    [types.Fhir.GET_ELEMENTS] ({ commit }, { parameterName, profile }): Promise<boolean> {
       return new Promise((resolve, reject) => {
         FHIRUtil.parseElementDefinitions(this._vm.$fhirService, parameterName, profile)
           .then(res => {
@@ -118,7 +111,10 @@ const fhirStore = {
           .catch(err => reject(err))
       })
     },
-    [types.Fhir.VERIFY_FHIR] ({ state }): Promise<any> {
+    [types.Fhir.VERIFY_FHIR] ({ commit }, onfhirBaseUrl: string): Promise<any> {
+
+      commit(types.Fhir.UPDATE_FHIR_BASE, onfhirBaseUrl)
+
       return new Promise((resolve, reject) => {
         this._vm.$fhirService.search('metadata', {}, true)
           .then(res => {
@@ -130,40 +126,13 @@ const fhirStore = {
                 reject(`FHIR version (${metadata.fhirVersion}) is not supported. FHIR version must be R4.`)
               }
             } else {
-              throw Error()
+              reject('FHIR version couldn\'t be detected for given url.')
             }
           })
           .catch(err => reject('Given url is not verified.'))
       })
     },
-    [types.Fhir.GET_CONCEPT_MAPS] ({ commit, state }, noCache?: boolean): Promise<any> {
-      return new Promise((resolve, reject) => {
-        ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.ElectronStore.GET_ELECTRON_STORE, `${state.fhirBase}-ConceptMapList`)
-        ipcRenderer.on(ipcChannels.ElectronStore.GOT_ELECTRON_STORE, (event, cached) => {
-          if (!noCache && cached && !FHIRUtil.isEmpty(cached)) {
-            commit(types.Fhir.SET_CONCEPT_MAP_LIST, cached)
-            resolve(true)
-          } else {
-            this._vm.$fhirService.search('ConceptMap', {}, true)
-              .then(res => {
-                const bundle = res.data as fhir.Bundle
-                if (bundle.entry?.length) {
-                  const conceptMapList: fhir.ConceptMap[] = bundle.entry.map((bundleEntry: fhir.BundleEntry) => bundleEntry.resource) as fhir.ConceptMap[]
-                  commit(types.Fhir.SET_CONCEPT_MAP_LIST, conceptMapList)
-
-                  // electronStore.set(`${state.fhirBase}-ConceptMapList`, conceptMapList)
-                  ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.ElectronStore.SET_ELECTRON_STORE, {key: `${state.fhirBase}-ConceptMapList`, value: conceptMapList})
-
-                }
-                resolve(true)
-              })
-              .catch(err => reject(err))
-          }
-          ipcRenderer.removeAllListeners(ipcChannels.ElectronStore.GOT_ELECTRON_STORE)
-        })
-      })
-    },
-    [types.Fhir.GET_DATA_TYPES] ({ state }, url: string): Promise<any> {
+    [types.Fhir.GET_DATA_TYPES] ({}, url: string): Promise<any> {
       return new Promise((resolve, reject) => {
         this._vm.$fhirService.search('StructureDefinition', {url}, true)
           .then(res => {
@@ -224,7 +193,7 @@ const fhirStore = {
           .catch(() => reject([]))
       })
     },
-    [types.Fhir.DELETE_ALL] ({ state }, resourceType: string): Promise<boolean> {
+    [types.Fhir.DELETE_ALL] ({}, resourceType: string): Promise<boolean> {
       return new Promise<boolean>((resolve, reject) => {
         this._vm.$fhirService.deleteAll(resourceType)
           .then(_ => resolve(true))

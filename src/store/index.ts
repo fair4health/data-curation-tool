@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import file from './fileStore'
 import fhir from './fhirStore'
+import terminology from './terminologyStore'
 import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
 Vue.use(Vuex)
@@ -9,7 +10,8 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   modules: {
     file,
-    fhir
+    fhir,
+    terminology
   },
   state: {
     drawerOpen: true,

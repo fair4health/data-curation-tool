@@ -39,10 +39,8 @@ export class VuexStoreUtil {
     public static CURRENT_PROFILE = 'currentProfile'
     public static SELECTED_FHIR_ELEMENTS = 'selectedFhirElements'
     public static FHIR_BASE = 'fhirBase'
-    public static FHIR_SERVICE = 'fhirService'
     public static OUTCOME_DETAILS = 'outcomeDetails'
     public static FHIR_BASE_VERIFICATION_STATUS = 'fhirBaseVerificationStatus'
-    public static CONCEPT_MAP_LIST = 'conceptMapList'
 
     // Mutations
     public static SET_RESOURCE_LIST = 'setResourceList'
@@ -54,14 +52,12 @@ export class VuexStoreUtil {
     public static UPDATE_FHIR_BASE = 'updateFhirBase'
     public static SET_OUTCOME_DETAILS = 'setOutcomeDetails'
     public static SET_FHIR_BASE_VERIFICATION_STATUS = 'setFhirBaseVerificationStatus'
-    public static SET_CONCEPT_MAP_LIST = 'setConceptMapList'
 
     // Actions
     public static GET_RESOURCES = 'getResources'
     public static GET_PROFILES_BY_RES = 'getProfilesByRes'
     public static GET_ELEMENTS = 'getElements'
     public static VERIFY_FHIR = 'verifyFhir'
-    public static GET_CONCEPT_MAPS = 'getConceptMaps'
     public static GET_DATA_TYPES = 'getDataTypes'
     public static DELETE_ALL = 'deleteAll'
 
@@ -93,6 +89,27 @@ export class VuexStoreUtil {
     // Actions
     public static INITIALIZE_STORE = 'initializeStore'
     public static DESTROY_STORE = 'destroyStore'
+
+  }
+
+  public static Terminology = class {
+
+    // Getters
+    public static TERMINOLOGY_BASE_URL = 'terminologyBaseUrl'
+    public static CONCEPT_MAP_LIST = 'conceptMapList'
+    public static CODE_SYSTEM_LIST = 'codeSystemList'
+
+    // Mutations
+    public static SET_CONCEPT_MAP_LIST = 'setConceptMapList'
+    public static UPDATE_TERMINOLOGY_BASE = 'updateTerminologyBase'
+    public static T_BASE_VERIFICATION_STATUS = 'tBaseVerificationStatus'
+    public static SET_CODE_SYSTEM_LIST = 'setCodeSystemList'
+
+    // Actions
+    public static GET_CONCEPT_MAPS = 'getConceptMaps'
+    public static VERIFY_TERMINOLOGY = 'verifyTerminology'
+    public static SET_T_BASE_VERIFICATION_STATUS = 'setTBaseVerificationStatus'
+    public static GET_CODE_SYSTEMS = 'getCodeSystems'
 
   }
 

@@ -67,6 +67,13 @@
           </template>
           <template v-slot:header-cell="props">
             <q-th :props="props" class="text-grey-7">
+              <template v-if="props.col.name === 'conceptMap' && !isSuccess(tBaseVerificationStatus)">
+                <q-icon name="help" color="warning" class="cursor-pointer" size="xs">
+                  <q-tooltip>
+                    No terminology service is connected.
+                  </q-tooltip>
+                </q-icon>
+              </template>
               <q-icon v-if="props.col.icon" :name="props.col.icon" />
               <span class="vertical-middle q-ml-xs">{{ props.col.label }}</span>
               <q-tooltip v-if="props.col.description" max-width="200px" anchor="center right" self="center left"
@@ -105,18 +112,24 @@
               <q-select v-if="props.row.target"
                         dense
                         options-dense
+                        use-input
+                        hide-selected
+                        fill-input
                         clearable
-                        class="ellipsis text-size-lg select-input"
+                        input-debounce="0"
                         :outlined="!!props.row.conceptMap"
                         :standout="!props.row.conceptMap ? 'bg-primary text-white' : ''"
+                        class="text-size-lg select-input"
                         :label="!props.row.conceptMap ? 'No mapping' : 'Concept Map'"
                         :ref="props.row.value"
                         v-model="props.row.conceptMap"
-                        :options="conceptMapList"
+                        :options="filteredConceptMapList"
                         option-label="name"
                         option-value="id"
+                        :disable="!conceptMapList.length"
                         @clear="removeConceptMap(props.row); $refs[props.row.value].blur()"
                         @input="bufferSheetHeaders = [...bufferSheetHeaders]"
+                        @filter="filterConceptMaps"
               />
 
             </q-td>
@@ -131,20 +144,22 @@
 </template>
 
 <script lang="ts">
-  import { Component, Vue, Watch } from 'vue-property-decorator'
+  import { Component, Vue, Mixins, Watch } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
   import { SourceDataElement, FileSource, Sheet, BufferElement } from '@/common/model/file-source'
   import { sourceDataTableHeaders, cellType } from '@/common/model/data-table'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+  import StatusMixin from '@/common/mixins/statusMixin'
 
   @Component
-  export default class DataSourceTable extends Vue {
+  export default class DataSourceTable extends Mixins(StatusMixin) {
     private loadingAttr: boolean = false
     private sheetHeaders: SourceDataElement[] = []
     private pagination = { page: 1, rowsPerPage: 10 }
     private filter: string = ''
     private showMappedFields: boolean = false
+    private filteredConceptMapList: Array<{id: string, name: string}> = []
 
     get dataSourceColumns (): object[] { return sourceDataTableHeaders }
     get fieldTypes (): string[] { return Object.values(cellType) }
@@ -167,28 +182,38 @@
     get bufferSheetHeaders (): BufferElement[] { return this.$store.getters[types.File.BUFFER_SHEET_HEADERS] }
     set bufferSheetHeaders (value) { this.$store.commit(types.File.SET_BUFFER_SHEET_HEADERS, value) }
 
-    get conceptMapList (): Array<Array<{id: string, name: string}>> {
-      return this.$store.getters[types.Fhir.CONCEPT_MAP_LIST].map((_: fhir.ConceptMap) => ({id: _.id, name: _.name}))
+    get conceptMapList (): Array<{id: string, name: string}> {
+      return this.$store.getters[types.Terminology.CONCEPT_MAP_LIST].map((_: fhir.ConceptMap) => ({id: _.id, name: _.name}))
     }
-    set conceptMapList (value) { this.$store.commit(types.Fhir.SET_CONCEPT_MAP_LIST, value) }
+    set conceptMapList (value) { this.$store.commit(types.Terminology.SET_CONCEPT_MAP_LIST, value) }
 
     get filteredBufferSheetHeaders (): BufferElement[] {
       return this.bufferSheetHeaders.filter(_ => !this.showMappedFields || _.target)
     }
+    get tBaseVerificationStatus (): status { return this.$store.getters[types.Terminology.T_BASE_VERIFICATION_STATUS] }
 
     created () {
-      this.$q.loading.show({message: 'Fetching Concept Maps...', spinner: undefined})
       setTimeout(() => {
         this.bufferSheetHeaders = []
         if (!this.currentSource) this.currentSource = this.fileSourceList[0]
         if (this.currentSheet) this.onSheetChanged()
-        this.$store.dispatch(types.Fhir.GET_CONCEPT_MAPS, true)
-          .then(() => this.$q.loading.hide())
-          .catch(() => {
-            this.$q.loading.hide()
-            this.$notify.error('Something went wrong while fetching Concept Maps')
-          })
+        if (this.isSuccess(this.tBaseVerificationStatus)) {
+          this.$q.loading.show({message: 'Fetching Concept Maps...', spinner: undefined})
+          this.$store.dispatch(types.Terminology.GET_CONCEPT_MAPS, true)
+            .then(() => this.$q.loading.hide())
+            .catch(() => {
+              this.$q.loading.hide()
+              this.$notify.error('Something went wrong while fetching Concept Maps')
+            })
+          this.$store.dispatch(types.Terminology.GET_CODE_SYSTEMS, true)
+            .then(() => this.$q.loading.hide())
+            .catch(() => {
+              this.$q.loading.hide()
+              this.$notify.error('Something went wrong while fetching Code Systems')
+            })
+        }
       }, 10)
+      this.filteredConceptMapList = this.conceptMapList
     }
 
     @Watch('currentSource')
@@ -265,6 +290,13 @@
       row.conceptMap = undefined
       delete row.conceptMap
       this.bufferSheetHeaders = this.bufferSheetHeaders.slice()
+    }
+
+    filterConceptMaps (val, update, abort) {
+      update(() => {
+        const needle = val.toLowerCase()
+        this.filteredConceptMapList = this.conceptMapList.filter(v => v.name.toLowerCase().indexOf(needle) > -1)
+      })
     }
 
   }

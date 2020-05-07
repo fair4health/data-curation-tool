@@ -33,4 +33,8 @@ export class IpcChannelUtil {
     public static TRANSFORM_RESULT = 'transform-result'
   }
 
+  public static Terminology = class {
+    public static SET_TERMINOLOGY_BASE_URL = 'set-terminology-base-url'
+  }
+
 }

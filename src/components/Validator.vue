@@ -223,7 +223,7 @@
   import { ipcRenderer } from 'electron'
   import { mappingDataTableHeaders } from '@/common/model/data-table'
   import { FHIRUtil } from '@/common/utils/fhir-util'
-  import OutcomeCard from '@/components/OutcomeCard.vue'
+  import OutcomeCard from '@/components/modals/OutcomeCard.vue'
   import electronStore from '@/common/electron-store'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
