@@ -4827,9 +4827,10 @@ declare namespace ResourceGenerator {
 
 declare namespace store {
   interface MappingObject {
-    date: Date
+    date: string
     data: object
     name: string
+    index: number
   }
   interface SavedRecord {
     fileName: string

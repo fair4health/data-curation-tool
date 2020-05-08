@@ -7,99 +7,90 @@
     </q-toolbar>
     <q-card flat bordered class="q-ma-sm">
       <q-card-section>
-        <q-item-label class="text-h5 q-ma-md">Transform</q-item-label>
-        <q-list separator class="rounded-borders">
-          <q-item class="q-py-md text-white bg-primary text-size-lg">
-            <q-item-section top avatar>Status</q-item-section>
-            <q-item-section top class="col-1 gt-sm" />
-            <q-item-section top class="col-7">Resource Type</q-item-section>
-            <q-item-section top>Count</q-item-section>
-            <q-item-section top side class="text-white">Actions</q-item-section>
-          </q-item>
-          <template v-if="transformList.length">
-            <q-item v-for="resource in transformList" :key="resource.resourceType" class="q-py-md bg-grey-1">
-              <q-item-section avatar>
-                <template v-if="isInProgress(resource.status)">
-                  <span>
-                    <q-spinner color="grey-9" />
-                    <q-tooltip>Transforming...</q-tooltip>
-                  </span>
-                </template>
-                <template v-else-if="isSuccess(resource.status)">
-                  <q-icon name="check" color="green">
-                    <q-tooltip>Completed</q-tooltip>
-                  </q-icon>
-                </template>
-                <template v-else-if="isWarning(resource.status)">
-                  <q-icon name="warning" color="orange-6">
-                    <q-tooltip>{{ resource.description }}</q-tooltip>
-                  </q-icon>
-                </template>
-                <template v-else-if="isError(resource.status)">
-                  <q-icon name="error_outline" color="red" class="cursor-pointer">
-                    <q-tooltip content-class="error-tooltip" class="ellipsis-3-lines">{{ resource.validation.description }}</q-tooltip>
-                  </q-icon>
-                </template>
-                <template v-else>
-                  <q-icon name="access_time" color="grey-7">
-                    <q-tooltip>Waiting</q-tooltip>
-                  </q-icon>
-                </template>
-              </q-item-section>
-
-              <q-item-section class="col-1 gt-sm">
-                <template v-if="isInProgress(resource.status)"><q-item-label class="q-mt-sm" caption>In progress</q-item-label></template>
-                <template v-else-if="isSuccess(resource.status)"><q-item-label class="q-mt-sm" caption>Completed</q-item-label></template>
-                <template v-else-if="isError(resource.status)"><q-item-label class="q-mt-sm" caption>Error</q-item-label></template>
-                <template v-else-if="isWarning(resource.status)"><q-item-label class="q-mt-sm" caption>Warning</q-item-label></template>
-                <template v-else><q-item-label class="q-mt-sm" caption>Pending</q-item-label></template>
-              </q-item-section>
-
-              <q-item-section class="col-7">
-                <q-item-label lines="2">
-                  <span class="text-weight-medium text-grey-7 text-size-xxl">{{ resource.resourceType }}</span>
-                </q-item-label>
-              </q-item-section>
-
-              <q-item-section>
-                <div>
-                  <q-chip square class="bg-orange-6 text-white">
-                    {{ resource.count }}
-                  </q-chip>
-                  <q-chip v-if="resource.createdCount" square class="bg-green text-white">
-                    {{ resource.createdCount }}
-                  </q-chip>
-                </div>
-              </q-item-section>
-
-              <q-item-section side>
-                <div class="text-grey-8 q-gutter-xs">
-                  <q-btn class="gt-xs" size="12px" flat dense round icon="delete" color="red-7" @click="removeResourceFromStore(resource.resourceType)"
-                         :disable="isInProgress(transformStatus)">
-                    <q-tooltip content-class="bg-white text-red-7">Remove</q-tooltip>
-                  </q-btn>
-                  <q-btn size="12px" flat dense round icon="more_vert" :disable="isInProgress(transformStatus)">
-                    <q-tooltip content-class="bg-white text-grey-9">More</q-tooltip>
-                    <q-menu transition-show="jump-down" transition-hide="jump-up" auto-close>
-                      <q-list class="menu-list">
-                        <q-item clickable @click="removeResourceFromFHIR(resource.resourceType)">
-                          <q-item-section class="text-size-md">Remove from FHIR</q-item-section>
-                        </q-item>
-                      </q-list>
-                    </q-menu>
-                  </q-btn>
-                </div>
-              </q-item-section>
-            </q-item>
+        <q-table flat binary-state-sort title="Transform" class="full-width" :data="transformList" :columns="columns"
+                 row-key="resourceType" :pagination.sync="pagination" :rows-per-page-options="[0]"
+        >
+          <template v-slot:header="props">
+            <q-tr :props="props">
+              <q-th
+                v-for="col in props.cols"
+                :key="col.name"
+                :props="props"
+                class="bg-primary text-white"
+              >
+                <q-icon v-if="col.icon" :name="col.icon" />
+                <span class="vertical-middle q-ml-xs">{{ col.label }}</span>
+              </q-th>
+            </q-tr>
           </template>
-          <template v-else>
-            <div class="text-grey-9 q-ma-md">
-              <q-icon name="warning" size="sm" />
-              <span class="q-pl-sm text-size-lg">No data available</span>
-            </div>
+          <template v-slot:body="props">
+            <tr :props="props">
+              <q-td key="status" :props="props" class="q-table--col-auto-width">
+                <div class="row items-center q-gutter-md">
+                  <div class="col">
+                    <template v-if="isInProgress(props.row.status)">
+                      <q-spinner color="grey-9" />
+                    </template>
+                    <template v-else-if="isSuccess(props.row.status)">
+                      <q-icon name="check" size="xs" color="green" />
+                    </template>
+                    <template v-else-if="isWarning(props.row.status)">
+                      <q-icon name="warning" size="xs" color="orange-6" />
+                    </template>
+                    <template v-else-if="isError(props.row.status)">
+                      <q-icon name="error_outline" size="xs" color="red" />
+                    </template>
+                    <template v-else>
+                      <q-icon name="access_time" size="xs" color="grey-7" />
+                    </template>
+                  </div>
+
+                  <div class="col q-pr-lg">
+                    <template v-if="isInProgress(props.row.status)"><q-item-label caption>In progress</q-item-label></template>
+                    <template v-else-if="isSuccess(props.row.status)"><q-item-label caption>Completed</q-item-label></template>
+                    <template v-else-if="isError(props.row.status)"><q-item-label caption>Error</q-item-label></template>
+                    <template v-else-if="isWarning(props.row.status)"><q-item-label caption>Warning</q-item-label></template>
+                    <template v-else><q-item-label caption>Pending</q-item-label></template>
+                  </div>
+                </div>
+              </q-td>
+              <q-td key="resourceType" :props="props">
+                {{ props.row.resourceType }}
+              </q-td>
+              <q-td key="count" :props="props">
+                <q-chip square class="bg-grey-3 text-grey-8">
+                  {{ props.row.count }}
+                </q-chip>
+              </q-td>
+              <q-td key="createdCount" :props="props">
+                <q-chip square class="bg-positive text-white">
+                  {{ props.row.createdCount || '-' }}
+                </q-chip>
+              </q-td>
+              <q-td key="action" :props="props" class="q-table--col-auto-width">
+                <div class="row">
+                  <q-space />
+                  <div class="text-grey-8 q-gutter-xs">
+                    <q-btn class="gt-xs" size="12px" flat dense round icon="delete" color="red-7" @click="removeResourceFromStore(props.row.resourceType)"
+                           :disable="isInProgress(transformStatus)">
+                      <q-tooltip content-class="bg-white text-red-7">Remove</q-tooltip>
+                    </q-btn>
+                    <q-btn size="12px" flat dense round icon="more_vert" :disable="isInProgress(transformStatus)">
+                      <q-tooltip content-class="bg-white text-grey-9">More</q-tooltip>
+                      <q-menu auto-close>
+                        <q-list padding class="menu-list">
+                          <q-item clickable dense @click="removeResourceFromFHIR(props.row.resourceType)">
+                            <q-item-section class="text-size-md">Remove from FHIR</q-item-section>
+                          </q-item>
+                        </q-list>
+                      </q-menu>
+                    </q-btn>
+                  </div>
+                </div>
+              </q-td>
+            </tr>
           </template>
-          <q-separator />
-        </q-list>
+        </q-table>
         <div class="row content-end q-gutter-sm">
           <q-space />
           <q-btn unelevated color="primary" label="Details" @click="openOutcomeDetailCard(transformOutcomeDetails)" class="q-mt-lg"
@@ -126,22 +117,17 @@
   import { Component, Mixins } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
   import OutcomeCard from '@/components/modals/OutcomeCard.vue'
-  import electronStore from '../common/electron-store'
+  import electronStore from '@/common/electron-store'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import Status from '@/common/Status'
   import StatusMixin from '@/common/mixins/statusMixin'
+  import { transformerTable } from '@/common/model/data-table'
 
   @Component
   export default class Transformer extends Mixins(StatusMixin) {
-    private pagination = { page: 1, rowsPerPage: 0 }
-    private columns = [
-      { name: 'status', label: 'Status', field: 'status', align: 'center', icon: 'fas fa-info-circle',
-        classes: 'bg-grey-2', headerClasses: 'bg-primary text-white col-1', style: 'width: 50px' },
-      { name: 'resourceType', label: 'Resource', field: 'resourceType', align: 'center', sortable: true,
-        classes: 'bg-grey-1', headerClasses: 'bg-grey-4 text-grey-10 col-1' },
-      { name: 'count', label: 'Count', field: 'count', align: 'center', sortable: true }
-    ]
+    private pagination = transformerTable.pagination
+    private columns = transformerTable.columns
 
     get fhirBase (): string { return this.$store.getters[types.Fhir.FHIR_BASE] }
 
@@ -213,7 +199,7 @@
 
     removeResourceFromStore (resourceType: string) {
       this.$q.dialog({
-        title: '<i class="fas fa-trash text-red-7"> Remove Resource </i>',
+        title: '<span class="text-negative"><i class="fas fa-trash q-pr-sm"></i>Remove Resource</span>',
         message: `Are you sure to remove ${resourceType} resource. ${resourceType} resources will not be transformed.`,
         class: 'text-grey-9',
         cancel: true,

@@ -7,6 +7,7 @@ import { QVueGlobals } from 'quasar'
 import { webFrame } from 'electron'
 import notifier from './common/notifier'
 import { FhirService } from './common/services/fhir.service'
+import _ from 'lodash'
 
 window.process.env.ELECTRON_WEBPACK_APP_F4H_HOMEPAGE = require('./../package.json').homepage
 
@@ -16,6 +17,7 @@ Vue.config.productionTip = false
 
 Vue.prototype.$fhirService = new FhirService()
 Vue.prototype.$terminologyService = new FhirService()
+Vue.prototype.$_ = _
 
 Vue.use(notifier)
 

@@ -103,37 +103,60 @@
       <q-card flat>
         <q-card-section class="bg-white text-white text-subtitle1">
           <div v-if="savedMappings.length" class="row q-mb-sm q-gutter-sm">
-            <q-list separator class="full-width">
-              <q-item v-for="(mapping, index) in savedMappings" :key="index" class="text-grey-9">
-                <q-item-section avatar>
-                  <q-icon name="save" color="primary" />
-                </q-item-section>
-                <q-item-section>
-                  <div class="text-caption text-weight-bold">
-                    {{getISODateString(mapping.date)}}
-                  </div>
-                  <div class="text-body2">
-                    {{mapping.name}}
-                  </div>
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn icon="more_vert" flat round color="grey" no-caps>
-                    <q-menu>
-                      <q-list separator class="menu-list">
-                        <q-item clickable class="text-grey-9" @click="loadFromStorage(mapping)" v-close-popup>
-                          <q-item-section avatar><q-icon name="fas fa-file-download" /></q-item-section>
-                          <q-item-section>Load</q-item-section>
-                        </q-item>
-                        <q-item clickable class="text-red-5" @click="deleteSavedMapping(index)" v-close-popup>
-                          <q-item-section avatar><q-icon name="delete" /></q-item-section>
-                          <q-item-section>Delete</q-item-section>
-                        </q-item>
-                      </q-list>
-                    </q-menu>
-                  </q-btn>
-                </q-item-section>
-              </q-item>
-            </q-list>
+            <q-table flat bordered binary-state-sort class="full-width" :data="savedMappings" :columns="columns"
+                     row-key="index" :pagination.sync="pagination" :rows-per-page-options="[5]"
+            >
+              <template v-slot:header="props">
+                <tr :props="props">
+                  <q-th class="bg-grey-2 q-table--col-auto-width" />
+                  <q-th
+                    v-for="col in props.cols"
+                    :key="col.name"
+                    :props="props"
+                    class="bg-grey-2"
+                  >
+                    <span class="vertical-middle text-grey-9">
+                      <q-icon v-if="col.icon" :name="col.icon" size="xs" />
+                      {{ col.label }}
+                    </span>
+                  </q-th>
+                </tr>
+              </template>
+              <template v-slot:body="props">
+                <tr :props="props">
+                  <q-td class="q-table--col-auto-width">
+                    <q-icon name="save" color="primary" size="sm" />
+                  </q-td>
+                  <q-td key="date" :props="props">
+                    <div class="text-caption">
+                      {{ getISODateString(props.row.date) }}
+                    </div>
+                    <div class="text-body2 text-grey-10 text-weight-bold">
+                      {{ props.row.name }}
+                    </div>
+                  </q-td>
+                  <q-td key="action" :props="props">
+                    <div class="row">
+                      <q-space />
+                      <q-btn icon="more_vert" dense flat round color="grey" no-caps>
+                        <q-menu>
+                          <q-list padding class="menu-list">
+                            <q-item clickable dense class="text-grey-9" @click="loadFromStorage(props.row)" v-close-popup>
+                              <q-item-section avatar><q-icon name="fas fa-file-download" size="xs" /></q-item-section>
+                              <q-item-section>Load</q-item-section>
+                            </q-item>
+                            <q-item clickable dense class="text-red-5" @click="deleteSavedMapping(props.row.index)" v-close-popup>
+                              <q-item-section avatar><q-icon name="delete" size="xs" /></q-item-section>
+                              <q-item-section>Delete</q-item-section>
+                            </q-item>
+                          </q-list>
+                        </q-menu>
+                      </q-btn>
+                    </div>
+                  </q-td>
+                </tr>
+              </template>
+            </q-table>
           </div>
           <div v-else class="text-grey-7">
             No content
@@ -156,11 +179,14 @@
   import { FileSource } from '@/common/model/file-source'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+  import { savedMappingTable } from '@/common/model/data-table'
 
   @Component
   export default class DataSourceAnalyzer extends Vue {
     private isHovering: boolean = false
     private mappingStore: store.MappingObject[] = []
+    private columns = savedMappingTable.columns
+    private pagination = savedMappingTable.pagination
 
     get step (): number { return this.$store.getters[types.CURATION_STEP] }
 
@@ -171,7 +197,8 @@
     get savedMappings (): store.MappingObject[] {
       const savedMappings = localStorage.getItem('store-fileSourceList')
       this.mappingStore = savedMappings ? JSON.parse(savedMappings) : []
-      return this.mappingStore
+      let index = 0
+      return this.mappingStore.map(_ => ({..._, index: index++}))
     }
 
     mounted () {
@@ -203,7 +230,7 @@
     loadFromStorage (mapping: store.MappingObject) {
       if (mapping) {
         this.$q.loading.show()
-        this.$store.dispatch(types.File.INITIALIZE_STORE, mapping.data)
+        this.$store.dispatch(types.File.INITIALIZE_STORE, this.$_.cloneDeep(mapping.data))
           .then(() => this.$q.loading.hide())
           .catch(() => this.$q.loading.hide())
       } else {
@@ -213,7 +240,7 @@
 
     deleteSavedMapping (index: number) {
       this.$q.dialog({
-        title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Delete</span>',
+        title: '<span class="text-negative"><i class="fas fa-trash q-pr-sm"></i>Delete</span>',
         message: `Are you sure to delete mapping <span class="text-weight-bold">${this.mappingStore[index].name}</span>?`,
         class: 'text-grey-9',
         cancel: true,

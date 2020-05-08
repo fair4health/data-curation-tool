@@ -9,8 +9,7 @@
       <q-card-section>
         <q-table flat binary-state-sort title="Validate" :data="mappingList" :columns="columns" row-key="name"
                  :rows-per-page-options="[0]" :pagination.sync="pagination" :filter="filter" class="sticky-header-table"
-                 table-class="validator-table" :loading="loading" color="primary" selection="multiple"
-                 :selected.sync="tablesToValidate"
+                 :loading="loading" color="primary" selection="multiple" :selected.sync="tablesToValidate"
         >
           <template v-slot:top-right>
             <q-input borderless dense v-model="filter" placeholder="Search">
@@ -221,7 +220,7 @@
   import { Component, Vue, Mixins } from 'vue-property-decorator'
   import { FileSource, Record, Sheet, SourceDataElement } from '@/common/model/file-source'
   import { ipcRenderer } from 'electron'
-  import { mappingDataTableHeaders } from '@/common/model/data-table'
+  import { validatorTable } from '@/common/model/data-table'
   import { FHIRUtil } from '@/common/utils/fhir-util'
   import OutcomeCard from '@/components/modals/OutcomeCard.vue'
   import electronStore from '@/common/electron-store'
@@ -234,13 +233,13 @@
   export default class Validator extends Mixins(StatusMixin) {
     // Mapping data grouped by file and sheets
     private mappingObj: Map<string, any> = new Map<string, any>()
-    private pagination = { page: 1, rowsPerPage: 0 }
+    private columns = validatorTable.columns
+    private pagination = validatorTable.pagination
     private filter: string = ''
     private loading: boolean = false
     private Status = Status
     private tablesToValidate = []
 
-    get columns (): object[] { return mappingDataTableHeaders }
     get fileSourceList (): FileSource[] { return this.$store.getters[types.File.SOURCE_LIST] }
     get savedRecords (): store.SavedRecord[] { return this.$store.getters[types.File.SAVED_RECORDS] }
 
@@ -455,6 +454,4 @@
 <style lang="stylus">
   .error-tooltip
     width 250px
-  .validator-table
-    max-height 60vh
 </style>

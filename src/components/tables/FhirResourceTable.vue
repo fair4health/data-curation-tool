@@ -177,19 +177,6 @@
                             </div>
                           </div>
                         </div>
-                        <div class="col text-right ellipsis cursor-pointer">
-                          <span v-if="prop.node.fixedUri || prop.node.selectedUri" class="q-mr-sm">
-                            <a class="text-size-sm bg-grey-3 text-grey-8" @click="openExternal(prop.node.fixedUri || prop.node.selectedUri)">
-                              <u>{{ prop.node.fixedUri || prop.node.selectedUri }}</u>
-                            </a>
-                            <q-tooltip>
-                              <span class="row items-center">
-                                <q-icon name="open_in_new" class="q-mr-xs" />
-                              {{ prop.node.fixedUri || prop.node.selectedUri }}
-                              </span>
-                            </q-tooltip>
-                          </span>
-                        </div>
                         <div class="col-4 text-right">
                           <code-system-popup
                             v-if="!prop.node.fixedUri
@@ -200,6 +187,19 @@
                             @update-prop="(value) => prop = value"
                           />
                           <span v-if="prop.node.type" class="text-caption text-primary">{{ prop.node.type.map(_ => _.value).join(', ') }}</span>
+                          <div class="ellipsis">
+                            <span v-if="prop.node.fixedUri || prop.node.selectedUri" class="cursor-pointer">
+                              <a class="text-size-sm bg-grey-3 text-grey-8" @click="openExternal(prop.node.fixedUri || prop.node.selectedUri)">
+                                <u>{{ prop.node.fixedUri || prop.node.selectedUri }}</u>
+                              </a>
+                              <q-tooltip>
+                                <span class="row items-center">
+                                  <q-icon name="open_in_new" class="q-mr-xs" />
+                                {{ prop.node.fixedUri || prop.node.selectedUri }}
+                                </span>
+                              </q-tooltip>
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </template>

@@ -503,7 +503,7 @@
 
     removeRecordPopup (fileName: string, sheetName: string, recordId: string) {
       this.$q.dialog({
-        title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Delete Record</span>',
+        title: '<span class="text-negative"><i class="fas fa-trash q-pr-sm"></i>Delete Record</span>',
         message: `Delete record with id <span class="text-weight-bolder">#${recordId}</span>.`,
         class: 'text-grey-9',
         cancel: true,

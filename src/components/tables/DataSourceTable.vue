@@ -147,7 +147,7 @@
   import { Component, Vue, Mixins, Watch } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
   import { SourceDataElement, FileSource, Sheet, BufferElement } from '@/common/model/file-source'
-  import { sourceDataTableHeaders, cellType } from '@/common/model/data-table'
+  import { sourceDataTable, cellType } from '@/common/model/data-table'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import StatusMixin from '@/common/mixins/statusMixin'
@@ -156,12 +156,12 @@
   export default class DataSourceTable extends Mixins(StatusMixin) {
     private loadingAttr: boolean = false
     private sheetHeaders: SourceDataElement[] = []
-    private pagination = { page: 1, rowsPerPage: 10 }
+    private dataSourceColumns = sourceDataTable.columns
+    private pagination = sourceDataTable.pagination
     private filter: string = ''
     private showMappedFields: boolean = false
     private filteredConceptMapList: Array<{id: string, name: string}> = []
 
-    get dataSourceColumns (): object[] { return sourceDataTableHeaders }
     get fieldTypes (): string[] { return Object.values(cellType) }
 
     get fileSourceList (): FileSource[] { return this.$store.getters[types.File.SOURCE_LIST] }
