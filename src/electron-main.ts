@@ -177,6 +177,9 @@ app.on('ready', async () => {
 
   ipcMain.on(ipcChannels.TO_ALL_BACKGROUND, (event, channel, arg) => {
     backgroundWindows.map((bg: BrowserWindow) => {
+      if (channel === ipcChannels.Fhir.ABORT_VALIDATION) {
+        taskQueue.length = 0
+      }
       bg.webContents.send(channel, arg)
     })
   })

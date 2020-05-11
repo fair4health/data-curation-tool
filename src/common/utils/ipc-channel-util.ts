@@ -31,6 +31,7 @@ export class IpcChannelUtil {
     public static VALIDATE = 'validate'
     public static TRANSFORM = 'transform'
     public static TRANSFORM_RESULT = 'transform-result'
+    public static ABORT_VALIDATION = 'abort-validation'
   }
 
   public static Terminology = class {

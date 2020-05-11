@@ -21,7 +21,7 @@
           <template v-slot:header="props">
             <q-tr :props="props">
               <q-th class="q-table--col-auto-width">
-                <q-checkbox dense v-model="props.selected" />
+                <q-checkbox dense v-model="props.selected" :disable="isInProgress(validationStatus)" />
               </q-th>
               <q-th
                 v-for="col in props.cols"
@@ -40,7 +40,7 @@
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td class="q-table--col-auto-width">
-                <q-checkbox dense v-model="props.selected"/>
+                <q-checkbox dense v-model="props.selected" :disable="isInProgress(validationStatus)" />
               </q-td>
               <q-td key="status" class="no-padding" :props="props">
                 <template v-if="isInProgress(props.row.validation.status)">
@@ -189,6 +189,8 @@
         </q-table>
         <div class="row content-end q-gutter-sm">
           <q-space />
+          <q-btn v-if="isInProgress(validationStatus)" outline label="Cancel" color="grey-8"
+                 class="q-mt-lg" @click="cancelValidation" no-caps />
           <q-btn v-if="isSuccess(validationStatus)" label="Export Resources" color="green" icon="publish"
                  class="q-mt-lg" @click="exportResources" no-caps />
           <q-btn outline label="Validate" icon="verified_user" :color="isInProgress(validationStatus) ? 'grey-7' : 'green-7'"
@@ -204,7 +206,7 @@
       </q-card-section>
     </q-card>
     <div class="row q-pa-sm">
-      <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
+      <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" :disable="isInProgress(validationStatus)" no-caps />
       <q-space />
       <div class="q-gutter-sm">
         <q-btn outline label="Continue Anyway" icon-right="error_outline" color="primary" v-if="isError(validationStatus)"
@@ -239,6 +241,7 @@
     private loading: boolean = false
     private Status = Status
     private tablesToValidate = []
+    private abortValidation: AbortController
 
     get fileSourceList (): FileSource[] { return this.$store.getters[types.File.SOURCE_LIST] }
     get savedRecords (): store.SavedRecord[] { return this.$store.getters[types.File.SAVED_RECORDS] }
@@ -273,110 +276,176 @@
       } else return []
     }
 
+    cancelValidation () {
+      this.$q.dialog({
+        title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Cancel</span>',
+        message: 'Are you sure you want to cancel validation?',
+        class: 'text-grey-9',
+        cancel: true,
+        html: true
+      }).onOk(() => {
+        if (this.isInProgress(this.validationStatus)) {
+          this.abortValidation.abort()
+          ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.Fhir.ABORT_VALIDATION)
+        }
+      })
+    }
+
     validate () {
-      // Init status
-      this.validationStatus = Status.IN_PROGRESS
-      // If there are resources created, clear them
-      electronStore.set('resources', null)
-      const filePathList = Object.keys(FHIRUtil.groupBy(this.tablesToValidate, 'file'))
+      this.abortValidation = new AbortController()
+      this.validatePromise(this.abortValidation.signal)
+        .then(() => {
+          this.removeAllListeners()
+        })
+        .catch(() => {
+          this.removeAllListeners()
+          this.validationStatus = Status.PENDING
+        })
+    }
 
-      if (!filePathList.length) {
-        this.$notify.error('No mapping available')
-        this.validationStatus = Status.PENDING
-        return
-      }
+    validatePromise (abortSignal: AbortSignal): Promise<any> {
+      return new Promise((resolveValidation, rejectValidation) => {
 
-      // Submit each file to create resources and validate them
-      Promise.all(filePathList.map((filePath: string) => {
-        return new Promise((resolveFile, rejectFile) => {
-          this.$q.loading.show({
-            message: `Loading ${filePath.split('\\').pop()}...`
-          })
-          this.mappingList = this.mappingList.map(_ => {
-            if (_.file === filePath) {
-              _.validation = {status: Status.IN_PROGRESS}
-            }
-            return _
-          })
-          // const sheets = this.mappingObj[filePath]
-          const sheets = this.savedRecords.find((files: store.SavedRecord) => files.fileName === filePath)!.sheets
+        if (abortSignal.aborted) {
+          rejectValidation()
+        }
 
-          ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.VALIDATE, {filePath, sheets})
+        abortSignal.addEventListener( 'abort', () => {
+          rejectValidation()
+          this.setSelectedStatus(Status.PENDING)
+        })
 
-          ipcRenderer.on(`validate-read-file-${filePath}`, (event, result) => {
-            this.$q.loading.hide()
-            ipcRenderer.removeAllListeners(`validate-read-file-${filePath}`)
-          })
+        // Init status
+        this.validationStatus = Status.IN_PROGRESS
+        // If there are resources created, clear them
+        electronStore.set('resources', null)
+        const filePathList = Object.keys(FHIRUtil.groupBy(this.tablesToValidate, 'file'))
 
-          // In case of file reading failure
-          // Delete all other sheets listeners in that file
-          ipcRenderer.on(`validate-error-${filePath}`, (event, result) => {
-            this.$q.loading.hide()
-            ipcRenderer.removeAllListeners(`validate-error-${filePath}`)
-            // Remove all listeners for sheets in the file
-            Object.keys(this.mappingObj[filePath]).map(sheet => {
-              this.mappingList = this.mappingList.map(_ => {
-                if (_.file === filePath && _.sheet === sheet) {
-                  _.validation = result
-                }
-                return _
-              })
-              ipcRenderer.removeAllListeners(`validate-${filePath}-${sheet}`)
+        if (!filePathList.length) {
+          this.$notify.error('No mapping available')
+          this.validationStatus = Status.PENDING
+          return
+        }
+
+        // Submit each file to create resources and validate them
+        Promise.all(filePathList.map((filePath: string) => {
+          return new Promise((resolveFile, rejectFile) => {
+            // this.$q.loading.show({
+            //   message: `Loading ${filePath.split('\\').pop()}...`
+            // })
+
+            this.setSelectedStatus(Status.IN_PROGRESS)
+
+            // const sheets = this.mappingObj[filePath]
+            const sheets = this.savedRecords.find((files: store.SavedRecord) => files.fileName === filePath)!.sheets
+
+            ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.VALIDATE, {filePath, sheets})
+
+            ipcRenderer.on(`validate-read-file-${filePath}`, (event, result) => {
+              this.$q.loading.hide()
+              ipcRenderer.removeAllListeners(`validate-read-file-${filePath}`)
             })
-            rejectFile(false)
-          })
 
-          Promise.all(Object.keys(this.mappingObj[filePath]).map(sheet => {
-            return new Promise((resolveSheet, rejectSheet) => {
-              ipcRenderer.on(`info-${filePath}-${sheet}`, (event, result) => {
-                this.mappingList = this.mappingList.map(item => {
-                  if ((item.file === filePath) && (item.sheet === sheet)) {
-                    if (!item.info) item.info = {}
-                    Object.assign(item.info, result)
-                  }
-                  return item
-                })
-                // TODO:
-                ipcRenderer.removeAllListeners(`info-${filePath}-${sheet}`)
-              })
-              ipcRenderer.on(`generated-resources-${filePath}-${sheet}`, (event, result) => {
-                ipcRenderer.removeAllListeners(`generated-resources-${filePath}-${sheet}`)
-
-                // Update status of mapping entries
+            // In case of file reading failure
+            // Delete all other sheets listeners in that file
+            ipcRenderer.on(`validate-error-${filePath}`, (event, result) => {
+              this.$q.loading.hide()
+              ipcRenderer.removeAllListeners(`validate-error-${filePath}`)
+              // Remove all listeners for sheets in the file
+              Object.keys(this.mappingObj[filePath]).map(sheet => {
                 this.mappingList = this.mappingList.map(_ => {
                   if (_.file === filePath && _.sheet === sheet) {
                     _.validation = result
                   }
                   return _
                 })
-              })
-              ipcRenderer.on(`validate-${filePath}-${sheet}`, (event, result) => {
                 ipcRenderer.removeAllListeners(`validate-${filePath}-${sheet}`)
-
-                // Update status of mapping entries
-                this.mappingList = this.mappingList.map(_ => {
-                  if (_.file === filePath && _.sheet === sheet) {
-                    _.validation = result
-                  }
-                  return _
-                })
-                if (result && this.isSuccess(result.status)) {
-                  // this.$log.success('Validation', `Validation is completed ${sheet} in ${filePath}`)
-                  resolveSheet()
-                } else {
-                  // this.$log.error('Validation', `${result.description}. Validation error for ${sheet} in ${filePath}. For more details see logs`)
-                  // Reject even if a resource has error
-                  rejectSheet()
-                }
               })
+              rejectFile(false)
             })
-          }))
-            .then(() => resolveFile(true))
-            .catch(() => rejectFile(false))
-        }).catch(_ => _)
-      }))
-        .then(_ => this.validationStatus = this.validationStatus = _.includes(false) ? Status.ERROR : Status.SUCCESS)
-        .catch(_ => this.validationStatus = Status.ERROR)
+
+            Promise.all(Object.keys(this.mappingObj[filePath]).map(sheet => {
+              return new Promise((resolveSheet, rejectSheet) => {
+                ipcRenderer.on(`info-${filePath}-${sheet}`, (event, result) => {
+                  this.mappingList = this.mappingList.map(_ => {
+                    if (_.file === filePath && _.sheet === sheet) {
+                      if (!_.info) _.info = {}
+                      Object.assign(_.info, result)
+                    }
+                    return _
+                  })
+                  // TODO:
+                  ipcRenderer.removeAllListeners(`info-${filePath}-${sheet}`)
+                })
+                ipcRenderer.on(`generated-resources-${filePath}-${sheet}`, (event, result) => {
+                  ipcRenderer.removeAllListeners(`generated-resources-${filePath}-${sheet}`)
+
+                  // Update status of mapping entries
+                  this.mappingList = this.mappingList.map(_ => {
+                    if (_.file === filePath && _.sheet === sheet) {
+                      _.validation = result
+                    }
+                    return _
+                  })
+                })
+                ipcRenderer.on(`validate-${filePath}-${sheet}`, (event, result) => {
+                  ipcRenderer.removeAllListeners(`validate-${filePath}-${sheet}`)
+
+                  // Update status of mapping entries
+                  this.mappingList = this.mappingList.map(_ => {
+                    if (_.file === filePath && _.sheet === sheet) {
+                      _.validation = result
+                    }
+                    return _
+                  })
+                  if (result && this.isSuccess(result.status)) {
+                    resolveSheet()
+                  } else {
+                    // Reject even if a resource has error
+                    rejectSheet()
+                  }
+                })
+              })
+            }))
+              .then(() => resolveFile(true))
+              .catch(() => rejectFile(false))
+          }).catch(_ => _)
+        }))
+          .then(_ => {
+            this.validationStatus = this.validationStatus = _.includes(false) ? Status.ERROR : Status.SUCCESS
+            resolveValidation()
+          })
+          .catch(_ => {
+            this.validationStatus = Status.ERROR
+            resolveValidation()
+          })
+      })
+    }
+
+    removeAllListeners () {
+      const filePathList = Object.keys(FHIRUtil.groupBy(this.tablesToValidate, 'file'))
+      filePathList.map((filePath: string) => {
+        ipcRenderer.removeAllListeners(`validate-read-file-${filePath}`)
+        ipcRenderer.removeAllListeners(`validate-error-${filePath}`)
+
+        Object.keys(this.mappingObj[filePath]).map(sheet => {
+          ipcRenderer.removeAllListeners(`validate-${filePath}-${sheet}`)
+          ipcRenderer.removeAllListeners(`info-${filePath}-${sheet}`)
+          ipcRenderer.removeAllListeners(`generated-resources-${filePath}-${sheet}`)
+        })
+      })
+    }
+
+    setSelectedStatus (status: Status) {
+      const filePathList = Object.keys(FHIRUtil.groupBy(this.tablesToValidate, 'file'))
+      filePathList.map((filePath: string) => {
+        this.mappingList = this.mappingList.map(_ => {
+          if (_.file === filePath) {
+            _.validation = { status }
+          }
+          return _
+        })
+      })
     }
 
     getMappings (): Promise<any> {

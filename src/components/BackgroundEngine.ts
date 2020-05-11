@@ -18,6 +18,8 @@ export default class BackgroundEngine extends Vue {
   private fhirBaseUrl: fhir.uri
   private terminologyBaseUrl: fhir.uri
 
+  private abortValidation: AbortController
+
   created () {
 
     // Logger settings
@@ -50,6 +52,7 @@ export default class BackgroundEngine extends Vue {
     // Resource operation listeners (Validate - Transform)
     this.onValidate()
     this.onTransform()
+    this.onAbortValidation()
 
     // Electron-store getter setter listeners
     this.getElectronStore()
@@ -274,12 +277,42 @@ export default class BackgroundEngine extends Vue {
     })
   }
 
+  public onAbortValidation () {
+    ipcRenderer.on(ipcChannels.Fhir.ABORT_VALIDATION, (event, data: any) => {
+      this.abortValidation.abort()
+    })
+  }
+
   /**
    * Create and validate resources
    */
   public onValidate () {
     ipcRenderer.on(ipcChannels.Fhir.VALIDATE, (event, data: any) => {
+      this.abortValidation = new AbortController()
+
+      this.validate(data, this.abortValidation.signal)
+        .then(() => {
+          this.ready()
+        })
+        .catch(err => {
+          // In case of cancellation
+          log.info(err)
+          this.ready()
+        })
+    })
+  }
+
+  public validate (data: any, abortSignal: AbortSignal): Promise<any> {
+    return new Promise((resolveValidation, rejectValidation) => {
       const filePath = data.filePath
+
+      if (abortSignal.aborted) {
+        rejectValidation('Validation has been aborted')
+      }
+
+      abortSignal.addEventListener( 'abort', () => {
+        rejectValidation('Validation has been aborted')
+      })
 
       const getWorkbooks = new Promise<Excel.WorkBook>(((resolve, reject) => {
         try {
@@ -505,18 +538,17 @@ export default class BackgroundEngine extends Vue {
         )
           .then(() => {
             log.info('Validation completed')
-            this.ready()
+            resolveValidation()
           })
           .catch(err => {
             log.error(`Error in Validation. ${err}`)
-            this.ready()
+            resolveValidation()
           })
       })
         .catch(err => {
           ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-error-${filePath}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, message: `File not found : ${filePath}`, resourceType: 'OperationOutcome'}]})
           log.error(`File not found. ${err}`)
-          this.ready()
-          return
+          resolveValidation()
         })
     })
   }
