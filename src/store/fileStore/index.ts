@@ -70,7 +70,9 @@ const fileStore = {
       state.bufferSheetHeaders = list
     },
     [types.File.SETUP_BUFFER_SHEET_HEADERS] (state) {
-      state.bufferSheetHeaders = state.currentFile.currentSheet?.headers?.map(_ => ({type: _.type, value: _.value}))
+      state.bufferSheetHeaders = state.currentFile.currentSheet?.headers?.filter(_ => _.value).map(_ => {
+        return {type: _.type, value: _.value}
+      })
     },
     [types.File.SET_SAVED_RECORDS] (state, value: store.SavedRecord[]) {
       state.savedRecords = value

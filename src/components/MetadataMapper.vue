@@ -45,6 +45,8 @@
           </q-splitter>
           <q-separator />
           <q-card-section class="row">
+            <q-btn :disable="tickedFHIRAttr.length !== 1" outline label="Assign Default Value"
+                   color="grey-8" @click="openDefaultValueAssigner" no-caps />
             <q-space />
             <div class="q-gutter-sm">
               <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" unelevated label="Match"
@@ -176,7 +178,7 @@
 
 <script lang="ts">
   import { Component, Vue, Watch } from 'vue-property-decorator'
-  import { BufferElement, FileSource, Record, Sheet, SourceDataElement } from '@/common/model/file-source'
+  import { BufferElement, FileSource, Record, Sheet, SourceDataElement, TargetResource } from '@/common/model/file-source'
   import { ipcRenderer } from 'electron'
   import { QTree } from 'quasar'
   import Loading from '@/components/Loading.vue'
@@ -185,6 +187,7 @@
   import { environment } from '@/common/environment'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+  import DefaultValueAssigner from '@/components/modals/DefaultValueAssigner.vue'
 
   @Component({
     components: {
@@ -296,7 +299,13 @@
               if (record.target && record.target.length) {
                 currFile[sheet.label][record.recordId] = [
                   ...(currFile[sheet.label][record.recordId] || []),
-                  FHIRUtil.cleanJSON({value: column.value, type: column.type, target: record.target, conceptMap: column.conceptMap})
+                  FHIRUtil.cleanJSON({
+                    value: column.value,
+                    type: column.type,
+                    target: record.target,
+                    conceptMap: column.conceptMap,
+                    defaultValue: column.defaultValue
+                  })
                 ]
               }
             })
@@ -432,24 +441,34 @@
 
       const file = this.fileSourceList.filter(_ => _.path === this.currentSource.path) || []
       if (file.length === 1) {
-        const sheet = file[0].sheets?.filter(_ => _.value === this.currentSheet?.value) || []
-        if (sheet.length === 1) {
+        const filteredSheet = file[0].sheets?.filter(_ => _.value === this.currentSheet?.value) || []
+        if (filteredSheet.length === 1) {
+          const sheet = filteredSheet[0]
+
+          // Remove any default valued fields due to replacements
+          this.$_.remove(sheet.headers, _ => _.defaultValue)
+
           Promise.all(bufferItems.map(buffer => {
-            const filteredHeaders = sheet[0].headers?.filter(_ => _.value === buffer.value) || []
-            if (filteredHeaders.length) {
-              const header = filteredHeaders[0]
-              if (!header.record || !header.record.length) {
-                header.record = []
-              }
-              header.conceptMap = {...buffer.conceptMap}
-              header.type = buffer.type
-              header.record.push(
-                {
-                  recordId,
-                  target: buffer.target?.map(_ => ({..._}))
-                } as Record
-              )
+            const filteredHeaders = sheet.headers?.filter(_ => buffer.value && _.value === buffer.value) || []
+            const header: SourceDataElement = (filteredHeaders.length && filteredHeaders[0]) || {}
+
+            if (!header.record || !header.record.length) {
+              header.record = []
             }
+            header.conceptMap = {...buffer.conceptMap}
+            header.type = buffer.type
+            header.record.push(
+              {
+                recordId,
+                target: buffer.target?.map(_ => ({..._}))
+              } as Record
+            )
+
+            if (!filteredHeaders.length) {
+              header.defaultValue = buffer.defaultValue
+              sheet.headers.push(header)
+            }
+
           })).then(_ => {
             this.editRecordId = ''
             this.$store.commit(types.File.SETUP_BUFFER_SHEET_HEADERS)
@@ -482,13 +501,15 @@
             const record = sheet[0].records?.filter(_ => _.recordId === recordId)
             const sourceAttrs: store.SourceTargetGroup[] = record[0].data || []
             sourceAttrs.map(_ => {
-              const tmp: BufferElement[] = this.bufferSheetHeaders.filter(field => field.value === _.value) || []
+              const tmp: BufferElement[] = this.bufferSheetHeaders.filter(field => _.value && field.value === _.value) || []
               if (tmp.length) {
                 tmp[0].type = _.type
                 tmp[0].target = [..._.target]
                 if (_.conceptMap && !FHIRUtil.isEmpty(_.conceptMap)) {
                   tmp[0].conceptMap = JSON.parse(JSON.stringify(_.conceptMap))
                 }
+              } else {
+                this.bufferSheetHeaders.push(this.$_.cloneDeep(_))
               }
             })
             this.bufferSheetHeaders = [...this.bufferSheetHeaders]
@@ -585,6 +606,58 @@
         // Next step - Validation
         this.$store.commit(types.INCREMENT_STEP)
       })
+    }
+
+    openDefaultValueAssigner () {
+      const fhirTree: QTree = (this.$refs.fhirResourceComp as any)?.$refs.fhirTree as QTree
+      const tickedNodes: fhir.ElementTree[] = fhirTree.getTickedNodes()
+
+      if (this.checkMatchingStatus(tickedNodes) && this.bufferSheetHeaders?.length) {
+        let abstractColumn: BufferElement | undefined = this.bufferSheetHeaders.find((element: BufferElement) => {
+          return element.target?.find((target: TargetResource) => {
+            return target.resource === this.currentFHIRRes
+                  && target.profile === this.currentFHIRProf
+                  && target.value === tickedNodes[0].value
+          })
+        })
+
+        this.$q.dialog({
+          component: DefaultValueAssigner,
+          parent: this,
+          defaultValueProp: abstractColumn?.defaultValue
+        })
+          .onOk(value => {
+            if (!abstractColumn) {
+              abstractColumn = {}
+              this.bufferSheetHeaders.push(abstractColumn)
+            }
+            this.tickedFHIRAttr = tickedNodes.map((node: fhir.ElementTree) => {
+              if (node.error) delete node.error
+              let type: string
+              if (FHIRUtil.isMultiDataTypeForm(node.value) && node.type?.length === 1) {
+                type = node.type[0].value
+              }
+              return {
+                value: node.value,
+                resource: this.currentFHIRRes,
+                profile: this.currentFHIRProf,
+                type: node.selectedType || type,
+                fixedUri: node.fixedUri || node.selectedUri
+              } as store.Target
+            })
+            abstractColumn.defaultValue = value
+            abstractColumn.target = [...this.tickedFHIRAttr]
+
+            this.tickedFHIRAttr = []
+            this.$notify.success('Default value has been assigned successfully')
+          })
+      } else {
+        if (this.bufferSheetHeaders?.length) {
+          this.$notify.error('Choose a type for selected items')
+        } else {
+          this.$notify.error('Select a table')
+        }
+      }
     }
 
   }

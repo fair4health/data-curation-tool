@@ -11,6 +11,7 @@ export interface SourceDataElement {
   value?: string
   record?: Record[]
   conceptMap?: {id: string, name: string}
+  defaultValue?: string
 }
 
 export interface Record {
@@ -31,6 +32,7 @@ export interface BufferElement {
   value?: string
   conceptMap?: {id: string, name: string}
   target?: TargetResource[]
+  defaultValue?: string
 }
 
 export class FileSource implements File {
