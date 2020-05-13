@@ -99,7 +99,7 @@
                   <div class="row text-grey-6 text-weight-bold">{{ sheet.sheetName }}</div>
                   <q-separator spaced />
                   <div class="row">
-                    <div v-for="(record, index) in sheet.records" :key="index" class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                    <div v-for="(record, index) in sheet.records" :key="index" class="col-xs-12 col-sm-6 col-md-4">
                       <q-card class="q-ma-xs" bordered flat>
                         <q-card-section class="text-caption bg-grey-3 text-weight-bold q-pa-xs">
                           <div class="row items-center">
@@ -130,7 +130,17 @@
                         <q-card-section>
                           <q-list separator>
                             <q-item v-for="(column, index) in record.data" :key="index">
-                              <div class="col-3 ellipsis items-center text-size-md">{{ column.value }}</div>
+                              <div class="col-3 ellipsis text-size-md">
+                                <span v-if="column.value">
+                                  {{ column.value }}
+                                </span>
+                                <q-chip v-else-if="column.defaultValue"
+                                        dense square icon="fas fa-thumbtack" size="xs"
+                                        color="grey-4" text-color="grey-8" class="q-pa-sm no-margin">
+                                  <div class="ellipsis text-size-sm">{{ column.defaultValue }}</div>
+                                  <q-tooltip>Default value</q-tooltip>
+                                </q-chip>
+                              </div>
                               <div class="row col">
                                 <q-chip dense removable v-for="(target, targetI) in column.target" :key="targetI"
                                         color="orange" text-color="white" class="cursor-pointer"
@@ -149,6 +159,10 @@
                                   <q-chip v-else dense color="white" text-color="grey-8">
                                     <div class="q-mx-xs ellipsis text-size-md">-</div>
                                   </q-chip>
+                                  <div class="text-size-xs text-grey-7 q-ml-xs ellipsis">
+                                    <u>{{ target.fixedUri }}</u>
+                                    <q-tooltip>{{ target.fixedUri }}</q-tooltip>
+                                  </div>
                                 </div>
                               </div>
                             </q-item>
