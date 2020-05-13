@@ -16,6 +16,7 @@
                  label="Value"
                  class="code-system-popup"
                  v-model="defaultValue"
+                 @keypress.enter="onOKClick"
         />
       </q-card-section>
 
@@ -54,8 +55,10 @@
     }
 
     onOKClick () {
-      this.$emit('ok', this.defaultValue)
-      this.hide()
+      if (this.defaultValue) {
+        this.$emit('ok', this.defaultValue)
+        this.hide()
+      }
     }
 
     onCloseClick () {

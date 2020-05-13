@@ -134,7 +134,7 @@
                               <div class="row col">
                                 <q-chip dense removable v-for="(target, targetI) in column.target" :key="targetI"
                                         color="orange" text-color="white" class="cursor-pointer"
-                                        @remove="removeMatching(file.fileName, sheet.sheetName, record.recordId, column.value, target.value, target.type)">
+                                        @remove="removeMatching(file.fileName, sheet.sheetName, record.recordId, column, target)">
                                   <div class="q-mx-xs ellipsis text-size-md">{{ target.value }}</div>
                                   <q-tooltip>{{ target.value }}</q-tooltip>
                                 </q-chip>
@@ -446,7 +446,9 @@
           const sheet = filteredSheet[0]
 
           // Remove any default valued fields due to replacements
-          this.$_.remove(sheet.headers, _ => _.defaultValue)
+          this.$_.remove(sheet.headers, _ => {
+            return _.defaultValue && _.record?.length && _.record[0].recordId === recordId
+          })
 
           Promise.all(bufferItems.map(buffer => {
             const filteredHeaders = sheet.headers?.filter(_ => buffer.value && _.value === buffer.value) || []
@@ -543,10 +545,12 @@
         const sheet = file[0].sheets?.filter(_ => _.value === sheetName) || []
         if (sheet.length === 1) {
           Promise.all(sheet[0].headers?.map((column: SourceDataElement) => {
-            if (column.record && column.record.length) {
-              for (let i = 0; i < column.record.length; i++) {
-                if (column.record[i].recordId === recordId) column.record.splice(i, 1)
-              }
+            if (column.value && column.record && column.record.length) {
+              this.$_.remove(column.record, _ => _.recordId === recordId)
+            } else if (column.defaultValue) {
+              this.$_.remove(sheet[0].headers, column => {
+                return !column.value && column.defaultValue && column.record.filter(record => record.recordId === recordId).length
+              })
             }
           }) || [])
             .then(() => this.$q.loading.hide())
@@ -561,26 +565,28 @@
       }
     }
 
-    removeMatching (fileName: string, sheetName: string, recordId: string, sourceValue: string, targetValue: string, targetType: string) {
+    removeMatching (fileName: string, sheetName: string, recordId: string, source: store.SourceTargetGroup, target: store.Target) {
       this.$q.loading.show()
       const file = this.fileSourceList.filter(_ => _.path === fileName) || []
       if (file.length === 1) {
         const sheet = file[0].sheets?.filter(_ => _.value === sheetName) || []
         if (sheet.length === 1) {
-          const columns = sheet[0].headers?.filter(_ => _.value === sourceValue) || []
+          const columns = sheet[0].headers?.filter(_ => (_.value && _.value === source.value) || (_.defaultValue && _.defaultValue === source.defaultValue)) || []
           Promise.all(columns.map((column: SourceDataElement) => {
             if (column.record && column.record.length) {
               column.record.map((record: Record) => {
                 if (record.recordId === recordId) {
-                  for (let i = 0; i < (record.target?.length || 0); i++) {
-                    if (record.target![i].value === targetValue && record.target![i].type === targetType)
-                      record.target?.splice(i, 1)
-                  }
+                  this.$_.remove(record.target, _ => _.value === target.value && _.type === target.type)
                 }
               })
             }
           }) || []).then(() => {
             this.$q.loading.hide()
+            if (source.defaultValue) {
+              this.$_.remove(sheet[0].headers, column => {
+                return !column.value && column.defaultValue && column.record.filter(record => !record.target.length).length
+              })
+            }
             this.loadSavedRecords()
           })
         }
@@ -617,6 +623,7 @@
           return element.target?.find((target: TargetResource) => {
             return target.resource === this.currentFHIRRes
                   && target.profile === this.currentFHIRProf
+                  && target.type === tickedNodes[0].selectedType
                   && target.value === tickedNodes[0].value
           })
         })
