@@ -51,21 +51,17 @@ export class Device implements Generator {
       if (resource.has('Device.manufactureDate')) {
         const item = resource.get('Device.manufactureDate')
         try {
-          if (item.sourceType === 'Date') {
-            let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
-            device.manufactureDate = DataTypeFactory.createDateString(date)
-          }
+          let date = item.value
+          if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
+          device.manufactureDate = DataTypeFactory.createDateString(date)
         } catch (e) { log.error('Date insertion error.', e) }
       }
       if (resource.has('Device.expirationDate')) {
         const item = resource.get('Device.expirationDate')
         try {
-          if (item.sourceType === 'Date') {
-            let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
-            device.expirationDate = DataTypeFactory.createDateString(date)
-          }
+          let date = item.value
+          if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
+          device.expirationDate = DataTypeFactory.createDateString(date)
         } catch (e) { log.error('Date insertion error.', e) }
       }
       if (resource.has('Device.serialNumber')) {

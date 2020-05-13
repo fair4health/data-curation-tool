@@ -76,27 +76,18 @@ export class Patient implements Generator {
       }
       if (resource.has('Patient.birthDate')) {
         const item = resource.get('Patient.birthDate')
-
-        if (item.sourceType === 'Date') {
+        try {
           let date = item.value
-          if (!(date instanceof Date)) { date = new Date(String(item.value)) }
-          try {
-
-            patient.birthDate = date.getFullYear() + '-' +
-              ('0' + (date.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + date.getUTCDate()).slice(-2)
-
-          } catch (e) { log.error('Date insertion error.', e) }
-        }
+          if (!(date instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
+          patient.birthDate = DataTypeFactory.createDateString(date)
+        } catch (e) { log.error('Date insertion error.', e) }
       }
       if (resource.has('Patient.deceased[x].dateTime')) {
         const item = resource.get('Patient.deceased[x].dateTime')
-
-        let date = item.value
-        if (!(date instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
         try {
-
-          patient.deceasedDateTime = date
-
+          let date = item.value
+          if (!(date instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
+          patient.deceasedDateTime = DataTypeFactory.createDateString(date)
         } catch (e) { log.error('Date insertion error.', e) }
       }
       if (resource.has('Patient.deceased[x].boolean')) {

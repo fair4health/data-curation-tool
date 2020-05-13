@@ -43,8 +43,7 @@ export class MedicationStatement implements Generator {
       if (resource.has('MedicationStatement.category')) {
         const item = resource.get('MedicationStatement.category')
         if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          medicationStatement.category = targetValue
+          medicationStatement.category = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
         } else {
           medicationStatement.category = DataTypeFactory.createCodeableConcept(
             DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
@@ -76,7 +75,7 @@ export class MedicationStatement implements Generator {
         const item = resource.get('MedicationStatement.dateAsserted')
         try {
           let date = item.value
-          if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+          if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
           medicationStatement.dateAsserted = DataTypeFactory.createDateString(date)
         } catch (e) { log.error('Date insertion error.', e) }
       }
@@ -85,7 +84,7 @@ export class MedicationStatement implements Generator {
         const item = resource.get('MedicationStatement.effective[x].dateTime')
         try {
           let date = item.value
-          if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+          if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
           medicationStatement.effectiveDateTime = DataTypeFactory.createDateString(date)
         } catch (e) { log.error('Date insertion error.', e) }
       }
@@ -97,7 +96,7 @@ export class MedicationStatement implements Generator {
           const item = resource.get('MedicationStatement.effective[x].Period.start')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.start = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
@@ -105,7 +104,7 @@ export class MedicationStatement implements Generator {
           const item = resource.get('MedicationStatement.effective[x].Period.end')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.end = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }

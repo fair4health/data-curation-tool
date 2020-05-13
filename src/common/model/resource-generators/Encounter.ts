@@ -50,7 +50,7 @@ export class Encounter implements Generator {
           const item = resource.get('Encounter.statusHistory.period.Period.start')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.start = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
@@ -58,7 +58,7 @@ export class Encounter implements Generator {
           const item = resource.get('Encounter.statusHistory.period.Period.end')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.end = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
@@ -78,7 +78,7 @@ export class Encounter implements Generator {
           const targetValue: fhir.Coding = FHIRUtil.getConceptMapTargetAsCoding(item.conceptMap, String(item.value))
           if (targetValue) encounter.class = targetValue
         } else {
-          encounter.class = DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode', code: String(item.value)}).toJSON()
+          encounter.class = DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)}).toJSON()
         }
       }
       if (resource.has('Encounter.classHistory.class')) {
@@ -88,7 +88,7 @@ export class Encounter implements Generator {
           const targetValue: fhir.Coding = FHIRUtil.getConceptMapTargetAsCoding(item.conceptMap, String(item.value))
           if (targetValue) _class = targetValue
         } else {
-          _class = DataTypeFactory.createCoding({system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode', code: String(item.value)}).toJSON()
+          _class = DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)}).toJSON()
         }
 
         if (!encounter.classHistory?.length && _class && !FHIRUtil.isEmpty(_class)) {
@@ -103,7 +103,7 @@ export class Encounter implements Generator {
           const item = resource.get('Encounter.classHistory.period.Period.start')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.start = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
@@ -111,7 +111,7 @@ export class Encounter implements Generator {
           const item = resource.get('Encounter.classHistory.period.Period.end')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.end = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
@@ -150,8 +150,7 @@ export class Encounter implements Generator {
       if (resource.has('Encounter.priority')) {
         const item = resource.get('Encounter.priority')
         if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          encounter.priority = targetValue
+          encounter.priority = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
         } else {
           encounter.priority = DataTypeFactory.createCodeableConcept(
             DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
@@ -192,7 +191,7 @@ export class Encounter implements Generator {
           const item = resource.get('Encounter.participant.period.Period.start')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.start = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
@@ -200,7 +199,7 @@ export class Encounter implements Generator {
           const item = resource.get('Encounter.participant.period.Period.end')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.end = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
@@ -231,7 +230,7 @@ export class Encounter implements Generator {
           const item = resource.get('Encounter.period.Period.start')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.start = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
@@ -239,7 +238,7 @@ export class Encounter implements Generator {
           const item = resource.get('Encounter.period.Period.end')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.end = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
@@ -441,7 +440,7 @@ export class Encounter implements Generator {
             const item = resource.get('Encounter.location.period.Period.start')
             try {
               let date = item.value
-              if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+              if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
               period.start = DataTypeFactory.createDateString(date)
             } catch (e) { log.error('Date insertion error.', e) }
           }
@@ -449,7 +448,7 @@ export class Encounter implements Generator {
             const item = resource.get('Encounter.location.period.Period.end')
             try {
               let date = item.value
-              if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+              if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
               period.end = DataTypeFactory.createDateString(date)
             } catch (e) { log.error('Date insertion error.', e) }
           }
