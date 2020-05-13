@@ -59,21 +59,17 @@ export class Observation implements Generator {
       if (resource.has('Observation.effective[x].dateTime')) {
         const item = resource.get('Observation.effective[x].dateTime')!
         try {
-          if (item.sourceType === 'Date') {
-            let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
-            observation.effectiveDateTime = DataTypeFactory.createDateString(date)
-          }
+          let date = item.value
+          if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
+          observation.effectiveDateTime = DataTypeFactory.createDateString(date)
         } catch (e) { log.error('Date insertion error.', e) }
       }
       if (resource.has('Observation.effective[x].instant')) {
         const item = resource.get('Observation.effective[x].instant')!
         try {
-          if (item.sourceType === 'Date') {
-            let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
-            observation.effectiveInstant = date.toISOString()
-          }
+          let date = item.value
+          if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
+          observation.effectiveInstant = date.toISOString()
         } catch (e) { log.error('Date insertion error.', e) }
       }
       const effectivePeriod = keys.filter(_ => _.startsWith('Observation.effective[x].Period'))
@@ -82,21 +78,17 @@ export class Observation implements Generator {
         if (resource.has('Observation.effective[x].Period.start')) {
           const item = resource.get('Observation.effective[x].Period.start')
           try {
-            if (item.sourceType === 'Date') {
-              let date = item.value
-              if (!(item.value instanceof Date)) date = new Date(String(item.value))
-              period.start = DataTypeFactory.createDateString(date)
-            }
+            let date = item.value
+            if (!(item.value instanceof Date)) date = DataTypeFactory.createDate(String(item.value))
+            period.start = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
         if (resource.has('Observation.effective[x].Period.end')) {
           const item = resource.get('Observation.effective[x].Period.end')
           try {
-            if (item.sourceType === 'Date') {
-              let date = item.value
-              if (!(item.value instanceof Date)) date = new Date(String(item.value))
-              period.end = DataTypeFactory.createDateString(date)
-            }
+            let date = item.value
+            if (!(item.value instanceof Date)) date = DataTypeFactory.createDate(String(item.value))
+            period.end = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
 
@@ -112,11 +104,9 @@ export class Observation implements Generator {
         if (resource.has('Observation.effective[x].Timing.event')) {
           const item = resource.get('Observation.effective[x].Timing.event')!
           try {
-            if (item.sourceType === 'Date') {
-              let date = item.value
-              if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
-              timing.event = [DataTypeFactory.createDateString(date)]
-            }
+            let date = item.value
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
+            timing.event = [DataTypeFactory.createDateString(date)]
           } catch (e) { log.error('Date insertion error.', e) }
         }
         if (resource.has('Observation.effective[x].Timing.code')) {
@@ -213,11 +203,9 @@ export class Observation implements Generator {
       if (resource.has('Observation.issued')) {
         const item = resource.get('Observation.issued')
         try {
-          if (item.sourceType === 'Date') {
-            let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
-            observation.issued = date.toISOString()
-          }
+          let date = item.value
+          if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
+          observation.issued = date.toISOString()
         } catch (e) { log.error('Date insertion error.', e) }
       }
 
@@ -234,7 +222,7 @@ export class Observation implements Generator {
         const item = resource.get('Observation.value[x].dateTime')
         try {
           let date = item.value
-          if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+          if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
           observation.valueDateTime = DataTypeFactory.createDateString(date)
         } catch (e) { log.error('Date insertion error.', e) }
       }
@@ -245,7 +233,7 @@ export class Observation implements Generator {
           const item = resource.get('Observation.value[x].Period.start')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.start = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
@@ -253,7 +241,7 @@ export class Observation implements Generator {
           const item = resource.get('Observation.value[x].Period.end')!
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.end = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }

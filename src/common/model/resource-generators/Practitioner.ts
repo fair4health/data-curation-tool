@@ -68,17 +68,11 @@ export class Practitioner implements Generator {
       }
       if (resource.has('Practitioner.birthDate')) {
         const item = resource.get('Practitioner.birthDate')
-
-        if (item.sourceType === 'Date') {
+        try {
           let date = item.value
-          if (!(date instanceof Date)) { date = new Date(String(item.value)) }
-          try {
-
-            practitioner.birthDate = date.getFullYear() + '-' +
-              ('0' + (date.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + date.getUTCDate()).slice(-2)
-
-          } catch (e) { log.error('Date insertion error.', e) }
-        }
+          if (!(date instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
+          practitioner.birthDate = DataTypeFactory.createDateString(date)
+        } catch (e) { log.error('Date insertion error.', e) }
       }
 
       const practitionerName = keys.filter(_ => _.startsWith('Practitioner.name'))

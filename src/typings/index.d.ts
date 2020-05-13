@@ -4851,6 +4851,7 @@ declare namespace store {
     value: string
     target: Target[],
     conceptMap?: {id: string, name: string}
+    defaultValue?: string
   }
   interface Target {
     resource: string

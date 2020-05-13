@@ -89,31 +89,23 @@ export class Condition implements Generator {
 
       if (resource.has('Condition.onset[x]') || resource.has('Condition.onset[x].dateTime')) {
         const item = resource.get('Condition.onset[x]') || resource.get('Condition.onset[x].dateTime')
-        if (item.sourceType === 'Date') {
+        try {
           let date = item.value
-          if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
-          try {
-            condition.onsetDateTime = DataTypeFactory.createDateString(date)
-          } catch (e) { log.error('Date insertion error.', e) }
-        }
+          if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
+          condition.onsetDateTime = DataTypeFactory.createDateString(date)
+        } catch (e) { log.error('Date insertion error.', e) }
       }
       if (resource.has('Condition.abatement[x].dateTime')) {
-        const item = resource.get('Condition.abatement[x].dateTime')!
-
-        if (item.sourceType === 'Date') {
+        const item = resource.get('Condition.abatement[x].dateTime')
+        try {
           let date = item.value
-          if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
+          if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
           condition.abatementDateTime = DataTypeFactory.createDateString(date)
-        }
+        } catch (e) { log.error('Date insertion error.', e) }
       }
       if (resource.has('Condition.abatement[x].string')) {
-        const item = resource.get('Condition.abatement[x].string')!
-
-        if (item.sourceType === 'Date') {
-          let date = item.value
-          if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
-          condition.abatementDateTime = DataTypeFactory.createDateString(date)
-        }
+        const item = resource.get('Condition.abatement[x].string')
+        condition.abatementString = String(item.value)
       }
       const abatementPeriod = keys.filter(_ => _.startsWith('Condition.abatement[x].Period'))
       if (abatementPeriod.length) {
@@ -122,7 +114,7 @@ export class Condition implements Generator {
           const item = resource.get('Condition.abatement[x].Period.start')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) date = new Date(String(item.value))
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.start = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
@@ -130,7 +122,7 @@ export class Condition implements Generator {
           const item = resource.get('Condition.abatement[x].Period.end')
           try {
             let date = item.value
-            if (!(item.value instanceof Date)) date = new Date(String(item.value))
+            if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
             period.end = DataTypeFactory.createDateString(date)
           } catch (e) { log.error('Date insertion error.', e) }
         }
@@ -171,14 +163,12 @@ export class Condition implements Generator {
       }
 
       if (resource.has('Condition.recordedDate')) {
-        const item = resource.get('Condition.recordedDate')!
-        if (item.sourceType === 'Date') {
+        const item = resource.get('Condition.recordedDate')
+        try {
           let date = item.value
-          if (!(item.value instanceof Date)) { date = new Date(String(item.value)) }
-          try {
-            condition.recordedDate = DataTypeFactory.createDateString(date)
-          } catch (e) { log.error('Date insertion error.', e) }
-        }
+          if (!(item.value instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
+          condition.recordedDate = DataTypeFactory.createDateString(date)
+        } catch (e) { log.error('Date insertion error.', e) }
       }
 
       const recorder = FHIRUtil.searchForReference(keys, resource, 'Condition.recorder.Reference.')

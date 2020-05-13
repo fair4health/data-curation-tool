@@ -188,7 +188,7 @@
     set conceptMapList (value) { this.$store.commit(types.Terminology.SET_CONCEPT_MAP_LIST, value) }
 
     get filteredBufferSheetHeaders (): BufferElement[] {
-      return this.bufferSheetHeaders.filter(_ => !this.showMappedFields || _.target)
+      return this.bufferSheetHeaders.filter(_ => _.value && (!this.showMappedFields || _.target))
     }
     get tBaseVerificationStatus (): status { return this.$store.getters[types.Terminology.T_BASE_VERIFICATION_STATUS] }
 
