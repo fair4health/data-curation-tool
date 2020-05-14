@@ -41,6 +41,7 @@ export class VuexStoreUtil {
     public static FHIR_BASE = 'fhirBase'
     public static OUTCOME_DETAILS = 'outcomeDetails'
     public static FHIR_BASE_VERIFICATION_STATUS = 'fhirBaseVerificationStatus'
+    public static FHIR_BASE_VERIFICATION_STATUS_DETAIL = 'fhirBaseVerificationStatusDetail'
 
     // Mutations
     public static SET_RESOURCE_LIST = 'setResourceList'
@@ -52,6 +53,7 @@ export class VuexStoreUtil {
     public static UPDATE_FHIR_BASE = 'updateFhirBase'
     public static SET_OUTCOME_DETAILS = 'setOutcomeDetails'
     public static SET_FHIR_BASE_VERIFICATION_STATUS = 'setFhirBaseVerificationStatus'
+    public static SET_FHIR_BASE_VERIFICATION_STATUS_DETAIL = 'setFhirBaseVerificationStatusDetail'
 
     // Actions
     public static GET_RESOURCES = 'getResources'
@@ -98,17 +100,19 @@ export class VuexStoreUtil {
     public static TERMINOLOGY_BASE_URL = 'terminologyBaseUrl'
     public static CONCEPT_MAP_LIST = 'conceptMapList'
     public static CODE_SYSTEM_LIST = 'codeSystemList'
+    public static T_BASE_VERIFICATION_STATUS = 'tBaseVerificationStatus'
+    public static T_BASE_VERIFICATION_STATUS_DETAIL = 'tBaseVerificationStatusDetail'
 
     // Mutations
     public static SET_CONCEPT_MAP_LIST = 'setConceptMapList'
     public static UPDATE_TERMINOLOGY_BASE = 'updateTerminologyBase'
-    public static T_BASE_VERIFICATION_STATUS = 'tBaseVerificationStatus'
     public static SET_CODE_SYSTEM_LIST = 'setCodeSystemList'
+    public static SET_T_BASE_VERIFICATION_STATUS = 'setTBaseVerificationStatus'
+    public static SET_T_BASE_VERIFICATION_STATUS_DETAIL = 'setTBaseVerificationStatusDetail'
 
     // Actions
     public static GET_CONCEPT_MAPS = 'getConceptMaps'
     public static VERIFY_TERMINOLOGY = 'verifyTerminology'
-    public static SET_T_BASE_VERIFICATION_STATUS = 'setTBaseVerificationStatus'
     public static GET_CODE_SYSTEMS = 'getCodeSystems'
 
   }

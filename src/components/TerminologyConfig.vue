@@ -5,15 +5,16 @@
         Add Terminology Service
       </q-item-label>
       <q-input outlined dense type="url" class="col-10" v-model="terminologyBaseUrl" color="primary"
+               @input="tBaseVerificationStatus = Status.PENDING"
                placeholder="Terminology Server URL"
                :disable="isInProgress(tBaseVerificationStatus)"
                @keypress.enter="verifyTerminology"
       />
-      <q-item-label class="text-weight-regular bg-red-1 q-mt-md q-pa-md" v-if="isError(tBaseVerificationStatus) && statusDetail">
-        <span class="text-red"><q-icon name="error" size="xs" class="q-mr-xs" /> {{ statusDetail }} </span>
+      <q-item-label class="text-weight-regular bg-red-1 q-mt-md q-pa-md" v-if="isError(tBaseVerificationStatus) && tBaseVerificationStatusDetail">
+        <span class="text-red"><q-icon name="error" size="xs" class="q-mr-xs" /> {{ tBaseVerificationStatusDetail }} </span>
       </q-item-label>
-      <q-item-label class="text-weight-regular bg-green-1 q-mt-md q-pa-md" v-if="isSuccess(tBaseVerificationStatus) && statusDetail">
-        <span class="text-green-8"><q-icon name="check" size="xs" class="q-mr-xs" /> {{ statusDetail }} </span>
+      <q-item-label class="text-weight-regular bg-green-1 q-mt-md q-pa-md" v-if="isSuccess(tBaseVerificationStatus) && tBaseVerificationStatusDetail">
+        <span class="text-green-8"><q-icon name="check" size="xs" class="q-mr-xs" /> {{ tBaseVerificationStatusDetail }} </span>
       </q-item-label>
     </q-card-section>
 
@@ -43,11 +44,13 @@
   @Component
   export default class TerminologyConfig extends Mixins(StatusMixin) {
     private terminologyBaseUrl: string = ''
-    private statusDetail: string = ''
     private Status = Status
 
     get tBaseVerificationStatus (): status { return this.$store.getters[types.Terminology.T_BASE_VERIFICATION_STATUS] }
     set tBaseVerificationStatus (value) { this.$store.commit(types.Terminology.SET_T_BASE_VERIFICATION_STATUS, value) }
+
+    get tBaseVerificationStatusDetail (): string { return this.$store.getters[types.Terminology.T_BASE_VERIFICATION_STATUS_DETAIL] }
+    set tBaseVerificationStatusDetail (value) { this.$store.commit(types.Terminology.SET_T_BASE_VERIFICATION_STATUS_DETAIL, value) }
 
     mounted () {
       this.terminologyBaseUrl = localStorage.getItem('terminologyBaseUrl') || ''
@@ -58,12 +61,12 @@
         this.tBaseVerificationStatus = Status.IN_PROGRESS
         this.$store.dispatch(types.Terminology.VERIFY_TERMINOLOGY, this.terminologyBaseUrl)
           .then(() => {
-            this.statusDetail = 'Terminology URL is verified.'
+            this.tBaseVerificationStatusDetail = 'Terminology URL is verified.'
             this.tBaseVerificationStatus = Status.SUCCESS
             ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.Terminology.SET_TERMINOLOGY_BASE_URL, this.terminologyBaseUrl)
           })
           .catch(err => {
-            this.statusDetail = err
+            this.tBaseVerificationStatusDetail = err
             this.tBaseVerificationStatus = Status.ERROR
           })
       }

@@ -7,7 +7,7 @@
             <span class="text-primary"><q-icon name="fas fa-info" size="xs" class="q-mr-xs" /> Provide FHIR Repository URL </span>
           </q-item-label>
           <q-input outlined square dense type="url" class="col-10" v-model="onfhirBaseUrl" color="primary"
-                   @keydown="fhirBaseVerificationStatus = Status.PENDING"
+                   @input="fhirBaseVerificationStatus = Status.PENDING"
                    placeholder="FHIR Repository URL"
                    :disable="isInProgress(fhirBaseVerificationStatus)"
                    @keypress.enter="verifyFhir"
@@ -18,11 +18,11 @@
               </q-avatar>
             </template>
           </q-input>
-          <q-item-label class="text-weight-regular bg-red-1 q-mt-md q-pa-md" v-if="isError(fhirBaseVerificationStatus) && statusDetail">
-            <span class="text-red"><q-icon name="error" size="xs" class="q-mr-xs" /> {{ statusDetail }} </span>
+          <q-item-label class="text-weight-regular bg-red-1 q-mt-md q-pa-md" v-if="isError(fhirBaseVerificationStatus) && fhirBaseVerificationStatusDetail">
+            <span class="text-red"><q-icon name="error" size="xs" class="q-mr-xs" /> {{ fhirBaseVerificationStatusDetail }} </span>
           </q-item-label>
-          <q-item-label class="text-weight-regular bg-green-1 q-mt-md q-pa-md" v-if="isSuccess(fhirBaseVerificationStatus) && statusDetail">
-            <span class="text-green-8"><q-icon name="check" size="xs" class="q-mr-xs" /> {{ statusDetail }} </span>
+          <q-item-label class="text-weight-regular bg-green-1 q-mt-md q-pa-md" v-if="isSuccess(fhirBaseVerificationStatus) && fhirBaseVerificationStatusDetail">
+            <span class="text-green-8"><q-icon name="check" size="xs" class="q-mr-xs" /> {{ fhirBaseVerificationStatusDetail }} </span>
           </q-item-label>
         </q-card-section>
 
@@ -75,12 +75,14 @@
   })
   export default class OnFHIRConfig extends Mixins(StatusMixin) {
     private onfhirBaseUrl: string = ''
-    private statusDetail: string = ''
     private Status = Status
     private terminologyOpen: boolean = false
 
     get fhirBaseVerificationStatus (): status { return this.$store.getters[types.Fhir.FHIR_BASE_VERIFICATION_STATUS] }
     set fhirBaseVerificationStatus (value) { this.$store.commit(types.Fhir.SET_FHIR_BASE_VERIFICATION_STATUS, value) }
+
+    get fhirBaseVerificationStatusDetail (): string { return this.$store.getters[types.Fhir.FHIR_BASE_VERIFICATION_STATUS_DETAIL] }
+    set fhirBaseVerificationStatusDetail (value) { this.$store.commit(types.Fhir.SET_FHIR_BASE_VERIFICATION_STATUS_DETAIL, value) }
 
     get tBaseVerificationStatus (): status { return this.$store.getters[types.Terminology.T_BASE_VERIFICATION_STATUS] }
 
@@ -96,12 +98,12 @@
         this.fhirBaseVerificationStatus = Status.IN_PROGRESS
         this.$store.dispatch(types.Fhir.VERIFY_FHIR, this.onfhirBaseUrl)
           .then(() => {
-            this.statusDetail = 'FHIR Repository URL is verified.'
+            this.fhirBaseVerificationStatusDetail = 'FHIR Repository URL is verified.'
             this.fhirBaseVerificationStatus = Status.SUCCESS
             ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.Fhir.SET_FHIR_BASE, this.onfhirBaseUrl)
           })
           .catch(err => {
-            this.statusDetail = err
+            this.fhirBaseVerificationStatusDetail = err
             this.fhirBaseVerificationStatus = Status.ERROR
           })
       }

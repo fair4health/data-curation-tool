@@ -14,6 +14,7 @@ const fhirStore = {
     selectedFhirElements: [],
     fhirBase: '',
     fhirBaseVerificationStatus: '',
+    fhirBaseVerificationStatusDetail: '',
     outcomeDetails: []
   },
   getters: {
@@ -26,7 +27,8 @@ const fhirStore = {
     [types.Fhir.SELECTED_FHIR_ELEMENTS]: state => state.selectedFhirElements || [],
     [types.Fhir.FHIR_BASE]: state => state.fhirBase,
     [types.Fhir.OUTCOME_DETAILS]: state => state.outcomeDetails || [],
-    [types.Fhir.FHIR_BASE_VERIFICATION_STATUS]: state => state.fhirBaseVerificationStatus
+    [types.Fhir.FHIR_BASE_VERIFICATION_STATUS]: state => state.fhirBaseVerificationStatus,
+    [types.Fhir.FHIR_BASE_VERIFICATION_STATUS_DETAIL]: state => state.fhirBaseVerificationStatusDetail
   },
   mutations: {
     [types.Fhir.SET_RESOURCE_LIST] (state, list) {
@@ -58,6 +60,9 @@ const fhirStore = {
     },
     [types.Fhir.SET_FHIR_BASE_VERIFICATION_STATUS] (state, status: status) {
       state.fhirBaseVerificationStatus = status
+    },
+    [types.Fhir.SET_FHIR_BASE_VERIFICATION_STATUS_DETAIL] (state, details: string) {
+      state.fhirBaseVerificationStatusDetail = details
     }
   },
   actions: {

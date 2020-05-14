@@ -9,12 +9,14 @@ const terminologyStore = {
     terminologyBaseUrl: '',
     conceptMapList: [],
     tBaseVerificationStatus: '',
+    tBaseVerificationStatusDetail: '',
     codeSystemList: []
   },
   getters: {
     [types.Terminology.TERMINOLOGY_BASE_URL]: state => state.terminologyBaseUrl,
     [types.Terminology.CONCEPT_MAP_LIST]: state => state.conceptMapList || [],
     [types.Terminology.T_BASE_VERIFICATION_STATUS]: state => state.tBaseVerificationStatus,
+    [types.Terminology.T_BASE_VERIFICATION_STATUS_DETAIL]: state => state.tBaseVerificationStatusDetail,
     [types.Terminology.CODE_SYSTEM_LIST]: state => state.codeSystemList || []
   },
   mutations: {
@@ -28,6 +30,9 @@ const terminologyStore = {
     },
     [types.Terminology.SET_T_BASE_VERIFICATION_STATUS] (state, status: status) {
       state.tBaseVerificationStatus = status
+    },
+    [types.Terminology.SET_T_BASE_VERIFICATION_STATUS_DETAIL] (state, details: string) {
+      state.tBaseVerificationStatusDetail = details
     },
     [types.Terminology.SET_CODE_SYSTEM_LIST] (state, codeSystemList: string[]) {
       state.codeSystemList = codeSystemList
