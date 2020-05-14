@@ -535,6 +535,9 @@
           this.$notify.error('Something went wrong.')
         }
         this.$q.loading.hide()
+
+        // Scroll to the top of this component
+        this.$el.scrollIntoView()
       })
     }
 
