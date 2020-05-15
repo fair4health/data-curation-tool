@@ -41,7 +41,7 @@
           </q-select>
         </div>
       </q-card-section>
-      <div class="q-px-sm bg-grey-1">
+      <div class="row q-px-md bg-grey-1">
         <q-btn unelevated stretch label="Options" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>
           <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>
             {{ filterCount }}
@@ -75,19 +75,16 @@
             </q-list>
           </q-menu>
         </q-btn>
+        <q-space />
+        <q-input borderless dense v-model.lazy.trim="filterText" placeholder="Search" @keydown.esc="filterText = ''">
+          <template v-slot:append>
+            <q-icon v-if="!filterText" name="search" />
+            <q-icon v-else name="clear" class="cursor-pointer" @click="filterText = ''" />
+          </template>
+        </q-input>
       </div>
       <q-card-section>
         <div>
-          <q-item-section class="q-px-xs">
-            <q-input borderless dense v-model="filter" label="Filter">
-              <template v-slot:prepend>
-                <q-icon name="sort" />
-              </template>
-              <template v-slot:append>
-                <q-icon v-if="filter" name="clear" class="cursor-pointer" @click="filter=''" />
-              </template>
-            </q-input>
-          </q-item-section>
           <q-separator />
           <div class="overflow-auto">
             <q-splitter v-model="splitterModel" :limits="[50, 98]">
@@ -101,7 +98,7 @@
                           tick-strategy="strict"
                           :ticked.sync="tickedFHIRAttr"
                           :expanded.sync="expanded"
-                          :filter="filter"
+                          :filter="filterText"
                           no-nodes-label="Please select a resource"
                           no-results-label="No result found"
                           selected-color="primary"
@@ -318,7 +315,7 @@
     private selectedStr: string = ''
     private selectedElem: any = null
     private expanded: string[] = []
-    private filter: string = ''
+    private filterText: string = ''
     private fhirResourceOptions: string[] = []
     private showMandatoryElements: boolean = false
     private env = environment

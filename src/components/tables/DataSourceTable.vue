@@ -39,7 +39,7 @@
           </q-select>
         </div>
       </q-card-section>
-      <div class="q-px-sm bg-grey-1">
+      <div class="row q-px-md bg-grey-1">
         <q-btn unelevated stretch label="Options" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>
           <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>
             {{ filterCount }}
@@ -61,30 +61,31 @@
             </q-list>
           </q-menu>
         </q-btn>
+        <q-btn v-if="currentSheet"
+               flat
+               stretch
+               label="Reload File"
+               icon="sync"
+               color="grey-1"
+               text-color="grey-8"
+               class="text-size-lg"
+               @click="fetchHeaders(true)"
+               no-caps
+        />
+        <q-space />
+        <q-input borderless dense v-model.lazy.trim="filterText" placeholder="Search" @keydown.esc="filterText = ''">
+          <template v-slot:append>
+            <q-icon v-if="!filterText" name="search" />
+            <q-icon v-else name="clear" class="cursor-pointer" @click="filterText = ''" />
+          </template>
+        </q-input>
       </div>
       <q-card-section>
-        <q-table flat class="sticky-header-table q-mb-lg table-card-section" title="Data Source" :data="filteredBufferSheetHeaders" binary-state-sort
+        <q-table flat class="sticky-header-table q-mb-lg table-card-section" :data="filteredBufferSheetHeaders" binary-state-sort
                  :columns="dataSourceColumns" row-key="value" selection="multiple" :selected.sync="selectedAttr"
                  :loading="loadingAttr" :grid="$q.screen.lt.sm" :rows-per-page-options="[10, 20, 0]" :pagination.sync="pagination"
-                 color="primary" table-class="data-source-table" :filter="filter" :filter-method="filterTable"
+                 color="primary" table-class="data-source-table" :filter="filterText" :filter-method="filterTable"
         >
-          <template v-slot:top="props">
-            <q-card flat class="full-width">
-              <div class="row items-center q-gutter-xs">
-                <q-item-label class="text-h5 text-grey-10">Data Source</q-item-label>
-                <q-space />
-                <q-btn v-if="currentSheet" unelevated rounded label="Reload File" icon="sync" color="grey-1" text-color="grey-8" @click="fetchHeaders(true)" no-caps />
-                <q-input dense rounded standout="bg-grey-3" v-model.lazy.trim="filter" class="cursor-pointer"
-                         input-class="text-grey-8" placeholder="Search..." @keydown.esc="filter = ''"
-                >
-                  <template v-slot:append>
-                    <q-icon v-if="!filter" name="search" color="grey-8" />
-                    <q-icon v-else name="clear" color="grey-8" class="cursor-pointer" @click="filter=''" />
-                  </template>
-                </q-input>
-              </div>
-            </q-card>
-          </template>
           <template v-slot:header-cell="props">
             <q-th :props="props" class="text-grey-7">
               <template v-if="props.col.name === 'conceptMap' && !isSuccess(tBaseVerificationStatus)">
@@ -178,7 +179,7 @@
     private sheetHeaders: SourceDataElement[] = []
     private dataSourceColumns = sourceDataTable.columns
     private pagination = sourceDataTable.pagination
-    private filter: string = ''
+    private filterText: string = ''
     private showMappedFields: boolean = false
     private filteredConceptMapList: Array<{id: string, name: string}> = []
 
