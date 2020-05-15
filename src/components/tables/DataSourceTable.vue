@@ -39,8 +39,28 @@
           </q-select>
         </div>
       </q-card-section>
-      <div class="q-px-sm bg-grey-2">
-        <q-toggle v-model="showMappedFields" checked-icon="star" size="xs" color="green" label="Show mapped fields only" class="text-grey-8" unchecked-icon="clear" />
+      <div class="q-px-sm bg-grey-1">
+        <q-btn unelevated stretch label="Options" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>
+          <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>
+            {{ filterCount }}
+          </q-badge>
+          <q-menu>
+            <q-list padding class="menu-list">
+              <q-item clickable dense>
+                <q-item-section>
+                  <q-toggle v-model="showMappedFields"
+                            checked-icon="check"
+                            size="xs"
+                            color="primary"
+                            label="Show mapped fields only"
+                            class="text-grey-8 text-size-lg"
+                            unchecked-icon="clear"
+                  />
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
       </div>
       <q-card-section>
         <q-table flat class="sticky-header-table q-mb-lg table-card-section" title="Data Source" :data="filteredBufferSheetHeaders" binary-state-sort
@@ -191,6 +211,11 @@
       return this.bufferSheetHeaders.filter(_ => _.value && (!this.showMappedFields || _.target))
     }
     get tBaseVerificationStatus (): status { return this.$store.getters[types.Terminology.T_BASE_VERIFICATION_STATUS] }
+    get filterCount (): number {
+      let count: number = 0
+      if (this.showMappedFields) count++
+      return count
+    }
 
     created () {
       setTimeout(() => {

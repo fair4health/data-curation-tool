@@ -41,8 +41,40 @@
           </q-select>
         </div>
       </q-card-section>
-      <div class="q-px-sm bg-grey-2">
-        <q-toggle v-model="showMustFields" checked-icon="star" size="xs" color="red" label="Show mandatory fields only" class="text-grey-8" unchecked-icon="clear" />
+      <div class="q-px-sm bg-grey-1">
+        <q-btn unelevated stretch label="Options" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>
+          <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>
+            {{ filterCount }}
+          </q-badge>
+          <q-menu>
+            <q-list padding class="menu-list">
+              <q-item clickable dense>
+                <q-item-section>
+                  <q-toggle v-model="showMandatoryElements"
+                            checked-icon="check"
+                            size="xs"
+                            color="primary"
+                            label="Show mandatory elements only"
+                            class="text-grey-8 text-size-lg"
+                            unchecked-icon="clear"
+                  />
+                </q-item-section>
+              </q-item>
+              <q-item clickable dense>
+                <q-item-section>
+                  <q-toggle v-model="hideBaseElements"
+                            checked-icon="check"
+                            size="xs"
+                            color="primary"
+                            label="Hide base resource elements"
+                            class="text-grey-8 text-size-lg"
+                            unchecked-icon="clear"
+                  />
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
       </div>
       <q-card-section>
         <div>
@@ -288,9 +320,10 @@
     private expanded: string[] = []
     private filter: string = ''
     private fhirResourceOptions: string[] = []
-    private showMustFields: boolean = false
+    private showMandatoryElements: boolean = false
     private env = environment
     private loadingResources: boolean = false
+    private hideBaseElements: boolean = true
 
     get fhirResourceList (): string[] { return this.$store.getters[types.Fhir.RESOURCE_LIST] }
     get fhirProfileList (): any[] { return this.$store.getters[types.Fhir.PROFILE_LIST].map(_ => _.url) }
@@ -303,7 +336,10 @@
     set currentFHIRProf (value) { this.$store.commit(types.Fhir.SET_CURRENT_PROFILE, value) }
 
     get filteredFhirElementList (): fhir.ElementTree[] {
-      return this.$store.getters[types.Fhir.ELEMENT_LIST].filter(child => !this.showMustFields || child.min)
+      return this.$store.getters[types.Fhir.ELEMENT_LIST]
+        .filter((element: fhir.ElementTree) => {
+          return (!this.hideBaseElements || !this.isFhirBaseResourceContent(element)) && (!this.showMandatoryElements || element.min)
+        })
     }
     get fhirElementList (): fhir.ElementTree[] { return this.$store.getters[types.Fhir.ELEMENT_LIST] }
     set fhirElementList (value) { this.$store.commit(types.Fhir.SET_ELEMENT_LIST, value) }
@@ -313,6 +349,16 @@
 
     get tickedFHIRAttr (): any { return this.$store.getters[types.Fhir.SELECTED_FHIR_ELEMENTS] }
     set tickedFHIRAttr (value) { this.$store.commit(types.Fhir.SET_SELECTED_FHIR_ELEMENTS, value) }
+
+    get baseElementList (): string[] {
+      return ['meta', 'implicitRules', 'language', 'text', 'contained', 'extension', 'modifierExtension']
+    }
+    get filterCount (): number {
+      let count: number = 0
+      if (this.showMandatoryElements) count++
+      if (this.hideBaseElements) count++
+      return count
+    }
 
     created () {
       this.loadingResources = true
@@ -433,6 +479,10 @@
 
     openExternal (url: string) {
       shell.openExternal(url)
+    }
+
+    isFhirBaseResourceContent (element: fhir.ElementTree): boolean {
+      return this.$_.includes(this.baseElementList, element.label)
     }
 
   }
