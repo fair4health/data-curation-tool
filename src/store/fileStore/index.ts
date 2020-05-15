@@ -41,13 +41,14 @@ const fileStore = {
       if (state.currentFile?.currentSheet) {
         if (state.currentFile.currentSheet.headers) {
           const currentSheet = state.currentFile.currentSheet
+          const defaultValuedItems: SourceDataElement[] = state.currentFile.currentSheet.headers.filter(_ => !_.value && _.defaultValue)
           state.currentFile.currentSheet.headers = headers.map((header: SourceDataElement) => {
             const existingHeader = currentSheet.headers.find(_ => _.value === header.value)
             if (existingHeader) {
               header = existingHeader
             }
             return header
-          })
+          }).concat(defaultValuedItems)
         } else {
           state.currentFile.currentSheet.headers = headers
         }
