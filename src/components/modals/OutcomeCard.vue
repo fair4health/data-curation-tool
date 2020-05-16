@@ -96,12 +96,12 @@
 
 <script lang="ts">
   import { Component, Mixins } from 'vue-property-decorator'
-  import { QDialog } from 'quasar'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import StatusMixin from '@/common/mixins/statusMixin'
+  import ModalMixin from '@/common/mixins/modalMixin'
 
   @Component
-  export default class OutcomeCard extends Mixins(StatusMixin) {
+  export default class OutcomeCard extends Mixins(StatusMixin, ModalMixin) {
     private columns = [
       { name: 'status', label: 'Status', field: 'status', align: 'center', icon: 'fas fa-info-circle',
         classes: 'bg-grey-2', headerClasses: 'bg-primary text-white col-1 outcome-table-column' },
@@ -132,22 +132,10 @@
       }, {}))
     }
 
-    show () {
-      (this.$refs.dialog as QDialog).show()
-    }
-
-    hide () {
-      (this.$refs.dialog as QDialog).hide()
+    beforeDestroy () {
       this.$store.commit(types.Fhir.SET_OUTCOME_DETAILS, [])
     }
 
-    onDialogHide () {
-      this.$emit('hide')
-    }
-
-    onCloseClick () {
-      this.hide()
-    }
   }
 </script>
 
