@@ -132,18 +132,18 @@
                         <q-card class="q-ma-xs" bordered flat>
                           <q-card-section class="text-caption bg-grey-3 text-weight-bold q-pa-xs">
                             <div class="row items-center">
-                              <q-chip class="text-white text-size-md" color="blue-grey-4">#{{record.recordId}}</q-chip>
+                              <q-chip square class="text-grey-7 text-size-md" color="grey-4">#{{record.recordId}}</q-chip>
                             </div>
                             <div class="row ellipsis no-wrap">
                               <div class="text-grey-8 ellipsis no-wrap text-weight-regular">
                                 <div class="row no-wrap">
-                                  <q-chip class="text-grey-8 cursor-pointer text-size-sm" color="white">
+                                  <q-chip square class="text-grey-8 text-size-sm" color="white">
                                     <span class="text-weight-bold ellipsis"> {{ record.resource }}</span>
                                     <q-tooltip content-class="bg-grey-2 text-primary">{{record.resource}}</q-tooltip>
                                   </q-chip>
-                                  <q-chip class="text-grey-8 ellipsis cursor-pointer text-size-sm" color="white">
+                                  <q-chip square class="text-grey-8 ellipsis text-size-sm" color="white">
                                     <span class="ellipsis">{{ record.profile || '-' }}</span>
-                                    <q-tooltip content-class="bg-grey-2 text-primary">{{record.profile}}</q-tooltip>
+                                    <q-tooltip content-class="bg-grey-2 text-primary">{{ record.profile }}</q-tooltip>
                                   </q-chip>
                                 </div>
                               </div>
@@ -156,16 +156,18 @@
                                   <span v-if="column.value">
                                     {{ column.value }}
                                   </span>
-                                  <q-chip v-else-if="column.defaultValue"
-                                          dense square icon="fas fa-thumbtack" size="xs"
+                                  <q-chip v-else-if="column.defaultValue" dense square
                                           color="grey-4" text-color="grey-8" class="q-pa-sm no-margin">
-                                    <div class="ellipsis text-size-sm">{{ column.defaultValue }}</div>
-                                    <q-tooltip>Default value</q-tooltip>
+                                    <div class="ellipsis text-size-sm">
+                                      <q-icon name="fas fa-thumbtack" class="q-mr-xs" />
+                                      {{ column.defaultValue }}
+                                    </div>
+                                    <q-tooltip>{{ column.defaultValue }}</q-tooltip>
                                   </q-chip>
                                 </div>
                                 <div class="row col">
                                   <q-chip dense v-for="(target, targetI) in column.target" :key="targetI"
-                                          color="primary" text-color="white" class="cursor-pointer">
+                                          color="primary" text-color="white">
                                     <div class="q-mx-xs ellipsis text-size-sm">{{ target.value }}</div>
                                     <q-tooltip>{{ target.value }}</q-tooltip>
                                   </q-chip>
@@ -173,7 +175,7 @@
                                 <div class="row col q-pl-xs">
                                   <div v-for="(target, targetI) in column.target" :key="targetI" class="full-width">
                                     <q-chip dense v-if="!!target.type"
-                                            color="grey-2" text-color="grey-8" class="cursor-pointer">
+                                            color="grey-2" text-color="grey-8">
                                       <div class="q-mx-xs ellipsis text-size-sm">{{ target.type }}</div>
                                       <q-tooltip>{{ target.type }}</q-tooltip>
                                     </q-chip>

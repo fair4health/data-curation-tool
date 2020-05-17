@@ -48,3 +48,15 @@ export const transformerTable: QTable = {
   ],
   pagination: { page: 1, rowsPerPage: 0 }
 } as QTable
+
+export const mappingDetailTable: QTable = {
+  columns: [
+    { name: 'sourceField', label: 'Source Field', field: 'value', align: 'left', sortable: true },
+    { name: 'targetField', label: 'Target Field', field: 'targetField', align: 'left', sortable: true },
+    { name: 'targetType', label: 'Target Type', field: 'targetType', align: 'left', sortable: true },
+    { name: 'defaultValue', label: 'Default Value', field: 'defaultValue', align: 'left', sortable: true },
+    { name: 'fixedUri', label: 'Fixed Url', field: 'fixedUri', align: 'left', sortable: true },
+    { name: 'conceptMap', label: 'Concept Map', field: 'conceptMap', align: 'left', sortable: true }
+  ],
+  pagination: { page: 1, rowsPerPage: 5 }
+} as QTable

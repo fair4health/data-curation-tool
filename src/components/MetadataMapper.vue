@@ -103,9 +103,11 @@
                       <q-card class="q-ma-xs" bordered flat>
                         <q-card-section class="text-caption bg-grey-3 text-weight-bold q-pa-xs">
                           <div class="row items-center">
-                            <q-chip class="text-white text-size-md" color="blue-grey-4">#{{ record.recordId }}</q-chip>
+                            <q-chip square class="text-grey-7 text-size-md" color="grey-4">#{{ record.recordId }}</q-chip>
                             <q-space />
                             <div class="q-gutter-xs">
+                              <q-btn flat round dense size="sm" icon="visibility" color="grey-9"
+                                     @click="openMappingDetail(file.fileName, sheet.sheetName, record)" />
                               <q-btn flat round dense size="sm" icon="edit" color="grey-9"
                                      @click="editRecord(file.fileName, sheet.sheetName, record.recordId)" />
                               <q-btn unelevated round dense size="sm" icon="close" color="white" text-color="grey-9"
@@ -115,13 +117,13 @@
                           <div class="row ellipsis no-wrap">
                             <div class="text-grey-8 ellipsis no-wrap text-weight-regular">
                               <div class="row no-wrap">
-                                <q-chip class="text-grey-8 cursor-pointer text-size-sm" color="white">
+                                <q-chip square class="text-grey-8 text-size-sm" color="white">
                                   <span class="text-weight-bold ellipsis"> {{ record.resource }}</span>
                                   <q-tooltip content-class="bg-grey-2 text-primary">{{record.resource}}</q-tooltip>
                                 </q-chip>
-                                <q-chip class="text-grey-8 ellipsis cursor-pointer text-size-sm" color="white">
+                                <q-chip square class="text-grey-8 ellipsis text-size-sm" color="white">
                                   <span class="ellipsis">{{ record.profile || '-' }}</span>
-                                  <q-tooltip content-class="bg-grey-2 text-primary">{{record.profile}}</q-tooltip>
+                                  <q-tooltip content-class="bg-grey-2 text-primary">{{ record.profile }}</q-tooltip>
                                 </q-chip>
                               </div>
                             </div>
@@ -134,16 +136,18 @@
                                 <span v-if="column.value">
                                   {{ column.value }}
                                 </span>
-                                <q-chip v-else-if="column.defaultValue"
-                                        dense square icon="fas fa-thumbtack" size="xs"
+                                <q-chip v-else-if="column.defaultValue" dense square
                                         color="grey-4" text-color="grey-8" class="q-pa-sm no-margin">
-                                  <div class="ellipsis text-size-sm">{{ column.defaultValue }}</div>
-                                  <q-tooltip>Default value</q-tooltip>
+                                  <div class="ellipsis text-size-md">
+                                    <q-icon name="fas fa-thumbtack" class="q-mr-xs" />
+                                    {{ column.defaultValue }}
+                                  </div>
+                                  <q-tooltip>{{ column.defaultValue }}</q-tooltip>
                                 </q-chip>
                               </div>
                               <div class="row col">
                                 <q-chip dense removable v-for="(target, targetI) in column.target" :key="targetI"
-                                        color="orange" text-color="white" class="cursor-pointer"
+                                        color="orange" text-color="white"
                                         @remove="removeMatching(file.fileName, sheet.sheetName, record.recordId, column, target)">
                                   <div class="q-mx-xs ellipsis text-size-md">{{ target.value }}</div>
                                   <q-tooltip>{{ target.value }}</q-tooltip>
@@ -152,7 +156,7 @@
                               <div class="row col q-pl-xs">
                                 <div v-for="(target, targetI) in column.target" :key="targetI" class="full-width">
                                   <q-chip dense v-if="!!target.type"
-                                          color="grey-2" text-color="grey-8" class="cursor-pointer">
+                                          color="grey-2" text-color="grey-8">
                                     <div class="q-mx-xs ellipsis text-size-sm">{{ target.type }}</div>
                                     <q-tooltip>{{ target.type }}</q-tooltip>
                                   </q-chip>
@@ -202,6 +206,7 @@
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import DefaultValueAssigner from '@/components/modals/DefaultValueAssigner.vue'
+  import MappingDetailCard from '@/components/modals/MappingDetailCard.vue'
 
   @Component({
     components: {
@@ -682,6 +687,17 @@
           this.$notify.error('Select a table')
         }
       }
+    }
+
+    openMappingDetail (fileName: string, sheetName: string, mappingRecord: store.Record) {
+      this.$q.dialog({
+        component: MappingDetailCard,
+        parent: this,
+        mapping: mappingRecord
+      })
+        .onOk(() => {
+          this.editRecord(fileName, sheetName, mappingRecord.recordId)
+        })
     }
 
   }
