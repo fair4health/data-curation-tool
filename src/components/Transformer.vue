@@ -64,7 +64,7 @@
               </q-td>
               <q-td key="createdCount" :props="props">
                 <q-chip square class="bg-positive text-white">
-                  {{ props.row.createdCount || '-' }}
+                  {{ (isInProgress(props.row.status) || isPending(props.row.status)) ? '-' : props.row.createdCount }}
                 </q-chip>
               </q-td>
               <q-td key="action" :props="props" class="q-table--col-auto-width">
@@ -95,7 +95,7 @@
           <q-space />
           <q-btn unelevated color="primary" label="Details" @click="openOutcomeDetailCard(transformOutcomeDetails)" class="q-mt-lg"
                  v-show="!isInProgress(transformStatus) && !isPending(transformStatus)" no-caps />
-          <q-btn outline color="primary" @click="transform" class="q-mt-lg"
+          <q-btn outline color="primary" @click="transform" class="q-mt-lg" v-if="isInProgress(transformStatus) || isPending(transformStatus)"
                  :disable="isInProgress(transformStatus) || !transformList.length" no-caps>
             <span v-if="!isPending(transformStatus)" class="q-mr-sm">
               <q-spinner size="xs" v-show="isInProgress(transformStatus)" />

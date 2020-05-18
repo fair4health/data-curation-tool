@@ -620,8 +620,9 @@ export default class BackgroundEngine extends Vue {
           Promise.all(batchPromiseList)
             .then(res => {
               const concatResult: OutcomeDetail[] = [].concat.apply([], res)
+              const status = !concatResult.length || !!concatResult.find(_ => _.status === Status.ERROR) ? Status.ERROR : Status.SUCCESS
               log.info(`Batch process completed for Resource: ${resourceType}`)
-              ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: Status.SUCCESS, outcomeDetails: concatResult} as OutcomeDetail)
+              ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status, outcomeDetails: concatResult} as OutcomeDetail)
               resolve(concatResult)
             })
             .catch(err => {
