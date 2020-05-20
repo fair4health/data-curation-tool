@@ -8,6 +8,7 @@ import { webFrame } from 'electron'
 import notifier from './common/notifier'
 import { FhirService } from './common/services/fhir.service'
 import _ from 'lodash'
+import i18n from './i18n'
 
 window.process.env.ELECTRON_WEBPACK_APP_F4H_HOMEPAGE = require('./../package.json').homepage
 
@@ -24,5 +25,6 @@ Vue.use(notifier)
 new Vue({
   router,
   store,
+  i18n,
   render: h => h(App),
 }).$mount('#app')
