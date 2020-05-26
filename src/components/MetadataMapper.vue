@@ -2,7 +2,7 @@
   <div>
     <q-toolbar class="bg-grey-4 top-fix-column">
       <q-toolbar-title class="text-grey-8">
-        Curation - <span class="text-subtitle1">Metadata Mapper</span>
+        {{ $t('TITLES.CURATION') }} - <span class="text-subtitle1">{{ $t('TITLES.METADATA_MAPPER') }}</span>
       </q-toolbar-title>
     </q-toolbar>
     <div class="q-ma-sm">
@@ -10,7 +10,6 @@
         default-opened
         class="q-mt-md col-12"
         icon="add"
-        label="New Mapping"
         header-class="bg-primary text-white"
         expand-icon-class="text-white"
         :expand-icon-toggle="true"
@@ -21,7 +20,7 @@
           </q-item-section>
 
           <q-item-section>
-            New Mapping
+            {{ $t('LABELS.NEW_MAPPING') }}
           </q-item-section>
         </template>
         <q-card bordered class="bg-white">
@@ -45,15 +44,15 @@
           </q-splitter>
           <q-separator />
           <q-card-section class="row">
-            <q-btn :disable="tickedFHIRAttr.length !== 1" outline label="Assign Default Value"
+            <q-btn :disable="tickedFHIRAttr.length !== 1" outline :label="$t('BUTTONS.ASSIGN_DEFAULT_VALUE')"
                    color="grey-8" @click="openDefaultValueAssigner" no-caps />
             <q-space />
             <div class="q-gutter-sm">
-              <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" unelevated label="Match"
+              <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" unelevated :label="$t('BUTTONS.MATCH')"
                      color="grey-2" text-color="primary" @click="matchFields" no-caps />
-              <q-btn unelevated v-show="!editRecordId" color="positive" label="Add Mapping" icon="check" @click="addRecord" no-caps />
-              <q-btn unelevated v-show="editRecordId" color="primary" label="Update" icon="edit" @click="addRecord" no-caps />
-              <q-btn unelevated v-show="editRecordId" color="negative" label="Close Edit Mode" @click="closeEditMode" no-caps />
+              <q-btn unelevated v-show="!editRecordId" color="positive" :label="$t('BUTTONS.ADD_MAPPING')" icon="check" @click="addRecord" no-caps />
+              <q-btn unelevated v-show="editRecordId" color="primary" :label="$t('BUTTONS.UPDATE')" icon="edit" @click="addRecord" no-caps />
+              <q-btn unelevated v-show="editRecordId" color="negative" :label="$t('BUTTONS.CLOSE_EDIT_MODE')" @click="closeEditMode" no-caps />
             </div>
           </q-card-section>
         </q-card>
@@ -62,7 +61,6 @@
         default-opened
         class="q-mt-md col-12"
         icon="list"
-        label="Mappings"
         header-class="bg-primary text-white"
         expand-icon-class="text-white"
         :expand-icon-toggle="true"
@@ -73,13 +71,13 @@
           </q-item-section>
 
           <q-item-section>
-            Mappings
+            {{ $t('LABELS.MAPPINGS') }}
           </q-item-section>
 
           <q-item-section side>
             <div class="row q-gutter-sm">
-              <q-btn unelevated label="Export" color="negative" text-color="white" @click="exportState" icon="publish" no-caps />
-              <q-btn unelevated label="Save" color="secondary" text-color="white" @click="saveState" icon="save" no-caps />
+              <q-btn unelevated :label="$t('BUTTONS.EXPORT')" color="negative" text-color="white" @click="exportState" icon="publish" no-caps />
+              <q-btn unelevated :label="$t('BUTTONS.SAVE')" color="secondary" text-color="white" @click="saveState" icon="save" no-caps />
             </div>
           </q-item-section>
         </template>
@@ -186,9 +184,9 @@
       </q-expansion-item>
     </div>
     <div class="row q-pa-sm">
-      <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
+      <q-btn unelevated :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" no-caps />
       <q-space />
-      <q-btn v-if="fileSourceList.length" unelevated label="Next" icon-right="chevron_right" :disable="!savedRecords.length"
+      <q-btn v-if="fileSourceList.length" unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" :disable="!savedRecords.length"
              color="primary" @click="nextStep" no-caps />
     </div>
   </div>
@@ -299,7 +297,7 @@
           this.$store.commit(types.File.SET_SAVED_RECORDS, this.savedRecords)
         })
       })
-        .catch(err => this.$notify.error('Cannot get saved mappings'))
+        .catch(err => this.$notify.error(String(this.$t('ERROR.CANNOT_GET_SAVED_MAPPINGS'))))
     }
 
     getMappings (): Promise<any> {
@@ -354,7 +352,7 @@
       )
       ipcRenderer.on(ipcChannels.File.EXPORT_DONE, (event, result) => {
         if (result) {
-          this.$notify.success('File is exported successfully')
+          this.$notify.success(String(this.$t('SUCCESS.FILE_IS_EXPORTED')))
         }
         this.$q.loading.hide()
         ipcRenderer.removeAllListeners(ipcChannels.File.EXPORT_DONE)
@@ -363,13 +361,14 @@
 
     saveState () {
       this.$q.dialog({
-        title: 'Save Mapping',
+        title: `${this.$t('TITLES.SAVE_MAPPING')}`,
         prompt: {
           model: '',
           isValid: val => val.length > 0,
           type: 'text'
         },
-        cancel: true,
+        ok: this.$t('BUTTONS.OK'),
+        cancel: this.$t('BUTTONS.CANCEL'),
         persistent: true
       }).onOk(mappingName => {
         let fileStore: any = localStorage.getItem('store-fileSourceList')
@@ -380,16 +379,17 @@
           fileStore = [{date: new Date(), name: mappingName, data: this.$store.state.file}]
         }
         localStorage.setItem('store-fileSourceList', JSON.stringify(fileStore))
-        this.$notify.success('Saved')
+        this.$notify.success(String(this.$t('SUCCESS.MAPPINGS_HAVE_BEEN_SAVED')))
       })
     }
 
     previousStep () {
       this.$q.dialog({
-        title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Previous Step</span>',
-        message: 'If you go back and make any change, the changes you have made in this section will be lost.',
+        title: `<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>${this.$t('TITLES.PREVIOUS_STEP')}</span>`,
+        message: `${this.$t('WARNING.IF_YOU_GO_BACK')}`,
         class: 'text-grey-9',
-        cancel: true,
+        ok: this.$t('BUTTONS.OK'),
+        cancel: this.$t('BUTTONS.CANCEL'),
         html: true
       }).onOk(() => {
         this.$store.dispatch(types.File.DESTROY_STORE)
@@ -443,9 +443,9 @@
         }
 
         ([this.selectedAttr, this.tickedFHIRAttr] = [[], []])
-        this.$notify.success('Target value is matched successfully')
+        this.$notify.success(String(this.$t('SUCCESS.TARGET_VALUE_MATCHED')))
       } else {
-        this.$notify.error('Choose a type for selected items')
+        this.$notify.error(String(this.$t('ERROR.CHOOSE_A_TYPE')))
       }
     }
 
@@ -493,12 +493,12 @@
           })).then(_ => {
             this.editRecordId = ''
             this.$store.commit(types.File.SETUP_BUFFER_SHEET_HEADERS)
-            this.$notify.success('Mapping is added successfully')
+            this.$notify.success(String(this.$t('SUCCESS.MAPPING_IS_ADDED')))
             this.loadSavedRecords()
           })
         }
       } else {
-        this.$notify.error('Something went wrong during saving the record')
+        this.$notify.error(String(this.$t('ERROR.ST_WRONG_SAVING_RECORD')))
       }
     }
 
@@ -537,7 +537,7 @@
           }
         } else {
           this.$q.loading.hide()
-          this.$notify.error('Something went wrong.')
+          this.$notify.error(String(this.$t('ERROR.SOMETHING_WENT_WRONG')))
         }
         this.$q.loading.hide()
 
@@ -548,12 +548,12 @@
 
     removeRecordPopup (fileName: string, sheetName: string, recordId: string) {
       this.$q.dialog({
-        title: '<span class="text-negative"><i class="fas fa-trash q-pr-sm"></i>Delete Record</span>',
-        message: `Delete record with id <span class="text-weight-bolder">#${recordId}</span>.`,
+        title: `<span class="text-negative"><i class="fas fa-trash q-pr-sm"></i>${this.$t('TITLES.DELETE_RECORD')}</span>`,
+        message: `${this.$t('WARNING.DELETE_RECORD_WITH_ID', {id: recordId})}`,
         class: 'text-grey-9',
-        cancel: true,
+        cancel: this.$t('BUTTONS.CANCEL'),
         html: true,
-        ok: 'Delete'
+        ok: this.$t('BUTTONS.DELETE')
       }).onOk(() => {
         this.removeRecord(fileName, sheetName, recordId)
         this.loadSavedRecords()
@@ -578,12 +578,12 @@
             .then(() => this.$q.loading.hide())
             .catch(() => {
               this.$q.loading.hide()
-              this.$notify.error('Something went wrong.')
+              this.$notify.error(String(this.$t('ERROR.SOMETHING_WENT_WRONG')))
             })
         } else this.$q.loading.hide()
       } else {
         this.$q.loading.hide()
-        this.$notify.error('Something went wrong.')
+        this.$notify.error(String(this.$t('ERROR.SOMETHING_WENT_WRONG')))
       }
     }
 
@@ -614,7 +614,7 @@
         }
       } else {
         this.$q.loading.hide()
-        this.$notify.error('Something went wrong during deletion.')
+        this.$notify.error(String(this.$t('ERROR.SOMETHING_WENT_WRONG')))
       }
     }
 
@@ -678,13 +678,13 @@
             abstractColumn.target = [...this.tickedFHIRAttr]
 
             this.tickedFHIRAttr = []
-            this.$notify.success('Default value has been assigned successfully')
+            this.$notify.success(String(this.$t('SUCCESS.DEFAULT_VALUE_HAS_BEEN_ASSIGNED')))
           })
       } else {
         if (this.bufferSheetHeaders?.length) {
-          this.$notify.error('Choose a type for selected items')
+          this.$notify.error(String(this.$t('ERROR.CHOOSE_A_TYPE')))
         } else {
-          this.$notify.error('Select a table')
+          this.$notify.error(String(this.$t('ERROR.SELECT_A_TABLE')))
         }
       }
     }

@@ -4897,5 +4897,6 @@ declare interface MenuItem {
   submenu?: MenuItem[]
   separate?: boolean
   icon?: string
+  afterIcon?: any
   action? (): void
 }

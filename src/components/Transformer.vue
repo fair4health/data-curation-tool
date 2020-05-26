@@ -2,12 +2,12 @@
   <div>
     <q-toolbar class="bg-grey-4 top-fix-column">
       <q-toolbar-title class="text-grey-8">
-        Curation - <span class="text-subtitle1">Transformer</span>
+        {{ $t('TITLES.CURATION') }} - <span class="text-subtitle1">{{ $t('TITLES.TRANSFORMER') }}</span>
       </q-toolbar-title>
     </q-toolbar>
     <q-card flat bordered class="q-ma-sm">
       <q-card-section>
-        <q-table flat binary-state-sort title="Transform" class="full-width" :data="transformList" :columns="columns"
+        <q-table flat binary-state-sort :title="$t('COMMON.TRANSFORM')" class="full-width" :data="transformList" :columns="columns"
                  row-key="resourceType" :pagination.sync="pagination" :rows-per-page-options="[0]"
         >
           <template v-slot:header="props">
@@ -19,7 +19,7 @@
                 class="bg-primary text-white"
               >
                 <q-icon v-if="col.icon" :name="col.icon" />
-                <span class="vertical-middle q-ml-xs">{{ col.label }}</span>
+                <span class="vertical-middle q-ml-xs">{{ $t(col.label) }}</span>
               </q-th>
             </q-tr>
           </template>
@@ -27,30 +27,27 @@
             <tr :props="props">
               <q-td key="status" :props="props" class="q-table--col-auto-width">
                 <div class="row items-center q-gutter-md">
-                  <div class="col">
+                  <div>
                     <template v-if="isInProgress(props.row.status)">
-                      <q-spinner color="grey-9" />
+                      <q-spinner color="grey-9" class="q-mr-sm" />
+                      <span class="text-caption">{{ $t('COMMON.IN_PROGRESS') }}</span>
                     </template>
                     <template v-else-if="isSuccess(props.row.status)">
-                      <q-icon name="check" size="xs" color="green" />
+                      <q-icon name="check" size="xs" color="green" class="q-mr-sm" />
+                      <span class="text-caption">{{ $t('COMMON.COMPLETED') }}</span>
                     </template>
                     <template v-else-if="isWarning(props.row.status)">
-                      <q-icon name="warning" size="xs" color="orange-6" />
+                      <q-icon name="warning" size="xs" color="orange-6" class="q-mr-sm" />
+                      <span class="text-caption">{{ $t('COMMON.WARNING') }}</span>
                     </template>
                     <template v-else-if="isError(props.row.status)">
-                      <q-icon name="error_outline" size="xs" color="red" />
+                      <q-icon name="error_outline" size="xs" color="red" class="q-mr-sm" />
+                      <span class="text-caption">{{ $t('COMMON.ERROR') }}</span>
                     </template>
                     <template v-else>
-                      <q-icon name="access_time" size="xs" color="grey-7" />
+                      <q-icon name="access_time" size="xs" color="grey-7" class="q-mr-sm" />
+                      <span class="text-caption">{{ $t('COMMON.PENDING') }}</span>
                     </template>
-                  </div>
-
-                  <div class="col q-pr-lg">
-                    <template v-if="isInProgress(props.row.status)"><q-item-label caption>In progress</q-item-label></template>
-                    <template v-else-if="isSuccess(props.row.status)"><q-item-label caption>Completed</q-item-label></template>
-                    <template v-else-if="isError(props.row.status)"><q-item-label caption>Error</q-item-label></template>
-                    <template v-else-if="isWarning(props.row.status)"><q-item-label caption>Warning</q-item-label></template>
-                    <template v-else><q-item-label caption>Pending</q-item-label></template>
                   </div>
                 </div>
               </q-td>
@@ -73,14 +70,13 @@
                   <div class="text-grey-8 q-gutter-xs">
                     <q-btn class="gt-xs" size="12px" flat dense round icon="delete" color="red-7" @click="removeResourceFromStore(props.row.resourceType)"
                            :disable="isInProgress(transformStatus)">
-                      <q-tooltip content-class="bg-white text-red-7">Remove</q-tooltip>
+                      <q-tooltip content-class="bg-white text-red-7">{{ $t('BUTTONS.REMOVE') }}</q-tooltip>
                     </q-btn>
                     <q-btn size="12px" flat dense round icon="more_vert" :disable="isInProgress(transformStatus)">
-                      <q-tooltip content-class="bg-white text-grey-9">More</q-tooltip>
                       <q-menu auto-close>
                         <q-list padding class="menu-list">
                           <q-item clickable dense @click="removeResourceFromFHIR(props.row.resourceType)">
-                            <q-item-section class="text-size-md">Remove from FHIR</q-item-section>
+                            <q-item-section class="text-size-md">{{ $t('BUTTONS.REMOVE_FROM_FHIR') }}</q-item-section>
                           </q-item>
                         </q-list>
                       </q-menu>
@@ -93,7 +89,7 @@
         </q-table>
         <div class="row content-end q-gutter-sm">
           <q-space />
-          <q-btn unelevated color="primary" label="Details" @click="openOutcomeDetailCard(transformOutcomeDetails)" class="q-mt-lg"
+          <q-btn unelevated color="primary" :label="$t('BUTTONS.DETAILS')" @click="openOutcomeDetailCard(transformOutcomeDetails)" class="q-mt-lg"
                  v-show="!isInProgress(transformStatus) && !isPending(transformStatus)" no-caps />
           <q-btn outline color="primary" @click="transform" class="q-mt-lg" v-if="isInProgress(transformStatus) || isPending(transformStatus)"
                  :disable="isInProgress(transformStatus) || !transformList.length" no-caps>
@@ -102,13 +98,13 @@
               <q-icon name="check" size="xs" color="green" v-show="isSuccess(transformStatus)" />
               <q-icon name="error_outline" size="xs" color="red" v-show="isError(transformStatus)" />
             </span>
-            <span>Transform</span>
+            <span>{{ $t('BUTTONS.TRANSFORM') }}</span>
           </q-btn>
         </div>
       </q-card-section>
     </q-card>
     <div class="row q-pa-sm">
-      <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
+      <q-btn unelevated :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" :disable="isInProgress(transformStatus)" no-caps />
     </div>
   </div>
 </template>
@@ -187,10 +183,11 @@
 
     previousStep () {
       this.$q.dialog({
-        title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Previous Step</span>',
-        message: 'If you go back and make any change, the changes you have made in this section will be lost.',
+        title: `<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>${this.$t('TITLES.PREVIOUS_STEP')}</span>`,
+        message: `${this.$t('WARNING.IF_YOU_GO_BACK')}`,
         class: 'text-grey-9',
-        cancel: true,
+        ok: this.$t('BUTTONS.OK'),
+        cancel: this.$t('BUTTONS.CANCEL'),
         html: true
       }).onOk(() => {
         this.$store.commit(types.DECREMENT_STEP)
@@ -199,10 +196,11 @@
 
     removeResourceFromStore (resourceType: string) {
       this.$q.dialog({
-        title: '<span class="text-negative"><i class="fas fa-trash q-pr-sm"></i>Remove Resource</span>',
-        message: `Are you sure to remove ${resourceType} resource. ${resourceType} resources will not be transformed.`,
+        title: `<span class="text-negative"><i class="fas fa-trash q-pr-sm"></i>${this.$t('TITLES.REMOVE_RESOURCE')}</span>`,
+        message: `${this.$t('WARNING.ARE_YOU_SURE_TO_REMOVE_RESOURCE', {resourceType})}`,
         class: 'text-grey-9',
-        cancel: true,
+        ok: this.$t('BUTTONS.OK'),
+        cancel: this.$t('BUTTONS.CANCEL'),
         html: true
       }).onOk(() => {
         electronStore.delete(`resources.${resourceType}`)
@@ -215,11 +213,11 @@
       this.$store.dispatch(types.Fhir.DELETE_ALL, resourceType)
         .then(() => {
           this.$q.loading.hide()
-          this.$notify.success(`${resourceType} Resources have been removed successfully`)
+          this.$notify.success(String(this.$t('SUCCESS.X_RESOURCES_REMOVED', {resourceType})))
         })
       .catch(() => {
         this.$q.loading.hide()
-        this.$notify.error('Something went wrong')
+        this.$notify.error(String(this.$t('ERROR.SOMETHING_WENT_WRONG')))
       })
     }
 

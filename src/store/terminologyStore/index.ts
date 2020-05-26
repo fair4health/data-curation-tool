@@ -3,6 +3,7 @@ import { ipcRenderer } from 'electron'
 import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
 import { FHIRUtil } from '@/common/utils/fhir-util'
 import { environment } from '@/common/environment'
+import i18n from '@/i18n'
 
 const terminologyStore = {
   state: {
@@ -79,13 +80,13 @@ const terminologyStore = {
               if (environment.server.compatibleFhirVersions.includes(metadata.fhirVersion)) {
                 resolve(res)
               } else {
-                reject(`FHIR version (${metadata.fhirVersion}) is not supported. FHIR version must be R4.`)
+                reject(i18n.t('ERROR.FHIR_VERSION_NOT_SUPPORTED', {version: metadata.fhirVersion}))
               }
             } else {
-              reject('FHIR version couldn\'t be detected for given url.')
+              reject(i18n.t('ERROR.FHIR_VERSION_COULDNT_DETECTED'))
             }
           })
-          .catch(err => reject('Given terminology url is not verified.'))
+          .catch(err => reject(i18n.t('ERROR.TERMINOLOGY_URL_NOT_VERIFIED')))
       })
     },
     [types.Terminology.GET_CODE_SYSTEMS] ({ commit, state }, noCache?: boolean): Promise<any> {

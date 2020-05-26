@@ -3,7 +3,7 @@
     <q-card class="mapping-detail-card">
       <q-card-section class="row items-center">
         <div class="text-h6">
-          Mapping Details
+          {{ $t('TITLES.MAPPING_DETAILS') }}
         </div>
         <q-space />
         <q-btn flat v-close-popup round dense icon="close" />
@@ -20,8 +20,13 @@
         <div class="row">
           <q-table flat binary-state-sort :data="mapping.data" :columns="columns" row-key="name"
                    :rows-per-page-options="[5, 10, 0]" :pagination.sync="pagination" :filter="filterText" class="sticky-header-table full-width"
-                   color="primary" table-class="mapping-detail-table"
+                   color="primary" table-class="mapping-detail-table" :rows-per-page-label="$t('TABLE.RECORDS_PER_PAGE')"
           >
+            <template v-slot:header-cell="props">
+              <th :props="props" :class="props.col.headerClasses" :align="props.col.align">
+                {{ $t(props.col.label) }}
+              </th>
+            </template>
             <template v-slot:body="props">
               <tr :props="props">
                 <q-td key="sourceField" :props="props">
@@ -97,7 +102,7 @@
 
       <q-separator />
       <q-card-actions align="right" class="col-auto">
-        <q-btn outline class="q-px-md" color="primary" label="Edit" icon="edit" @click="onOKClick(mapping)" />
+        <q-btn outline class="q-px-md" color="primary" :label="$t('BUTTONS.EDIT')" icon="edit" @click="onOKClick(mapping)" />
       </q-card-actions>
     </q-card>
   </q-dialog>

@@ -3,7 +3,7 @@
     <q-card class="assigner-card">
       <q-card-section>
         <div class="text-h6">
-          Default Value Assignment
+          {{ $t('TITLES.ASSIGN_DEFAULT_VALUE') }}
         </div>
       </q-card-section>
 
@@ -13,7 +13,7 @@
         <q-input outlined
                  dense
                  clearable
-                 label="Value"
+                 :label="$t('LABELS.VALUE')"
                  class="code-system-popup"
                  v-model="defaultValue"
                  @keypress.enter="onOKClick(defaultValue)"
@@ -22,8 +22,8 @@
 
       <q-separator />
       <q-card-actions align="right">
-        <q-btn flat color="primary" label="OK" @click="onOKClick(defaultValue)" :disable="!defaultValue" />
-        <q-btn flat color="primary" label="Close" @click="onCloseClick" />
+        <q-btn flat color="primary" :label="$t('BUTTONS.OK')" @click="onOKClick(defaultValue)" :disable="!defaultValue" />
+        <q-btn flat color="primary" :label="$t('BUTTONS.CLOSE')" @click="onCloseClick" />
       </q-card-actions>
     </q-card>
   </q-dialog>

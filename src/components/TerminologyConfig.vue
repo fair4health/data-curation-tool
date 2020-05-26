@@ -2,11 +2,11 @@
   <q-card flat class="col-xs-12 col-sm-12 col-md-6">
     <q-card-section>
       <q-item-label class="text-weight-bold q-mb-lg text-primary text-h6">
-        Add Terminology Service
+        {{ $t('LABELS.ADD_TERMINOLOGY_SERVICE') }}
       </q-item-label>
       <q-input outlined dense type="url" class="col-10" v-model="terminologyBaseUrl" color="primary"
                @input="tBaseVerificationStatus = Status.PENDING"
-               placeholder="Terminology Server URL"
+               :placeholder="$t('LABELS.TERMINOLOGY_SERVICE_URL')"
                :disable="isInProgress(tBaseVerificationStatus)"
                @keypress.enter="verifyTerminology"
       />
@@ -21,7 +21,7 @@
     <q-card-section class="row">
       <q-space />
       <div class="q-gutter-sm">
-        <q-btn label="Verify & Save" icon="verified_user" color="positive"
+        <q-btn :label="$t('BUTTONS.VERIFY_AND_SAVE')" icon="verified_user" color="positive"
                :disable="!terminologyBaseUrl || isInProgress(tBaseVerificationStatus)" @click="verifyTerminology" no-caps>
               <span class="q-ml-sm">
                 <q-spinner class="q-ml-sm" size="xs" v-show="isInProgress(tBaseVerificationStatus)" />
@@ -61,7 +61,7 @@
         this.tBaseVerificationStatus = Status.IN_PROGRESS
         this.$store.dispatch(types.Terminology.VERIFY_TERMINOLOGY, this.terminologyBaseUrl)
           .then(() => {
-            this.tBaseVerificationStatusDetail = 'Terminology URL is verified.'
+            this.tBaseVerificationStatusDetail = String(this.$t('SUCCESS.TERMINOLOGY_URL_VERIFIED'))
             this.tBaseVerificationStatus = Status.SUCCESS
             ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.Terminology.SET_TERMINOLOGY_BASE_URL, this.terminologyBaseUrl)
           })

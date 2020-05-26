@@ -6,11 +6,16 @@
          class="q-px-sm q-mr-sm"
          no-caps
   >
-    <span class="text-size-sm">System</span>
-    <q-popup-edit v-model="propModel.node.selectedUri" buttons @save="updateElementList()">
+    <span class="text-size-sm">{{ $t('BUTTONS.SYSTEM') }}</span>
+    <q-popup-edit buttons
+                  v-model="propModel.node.selectedUri"
+                  :label-set="$t('BUTTONS.SET')"
+                  :label-cancel="$t('BUTTONS.CANCEL')"
+                  @save="updateElementList()"
+    >
       <template>
         <q-item-label class="text-size-xxl text-weight-bold">
-          Code System
+          {{ $t('LABELS.CODE_SYSTEM') }}
         </q-item-label>
         <q-separator spaced />
         <q-select outlined
@@ -20,7 +25,7 @@
                   hide-selected
                   fill-input
                   clearable
-                  placeholder="Code System"
+                  :placeholder="$t('LABELS.CODE_SYSTEM')"
                   class="code-system-popup"
                   v-model="propModel.node.selectedUri"
                   input-debounce="0"
@@ -31,7 +36,7 @@
           <template v-slot:no-option>
             <q-item>
               <q-item-section class="text-grey">
-                No results
+                {{ $t('LABELS.NO_RESULT') }}
               </q-item-section>
             </q-item>
           </template>
@@ -42,12 +47,13 @@
 </template>
 
 <script lang="ts">
-  import { Component, Vue, Prop } from 'vue-property-decorator'
+  import { Component, Prop, Mixins } from 'vue-property-decorator'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import { environment } from '@/common/environment'
+  import StatusMixin from '@/common/mixins/statusMixin'
 
   @Component
-  export default class Test extends Vue {
+  export default class CodeSystemPopup extends Mixins(StatusMixin) {
     @Prop() prop: any
     private systems: string[] = []
 
@@ -56,9 +62,10 @@
     get fhirElementList (): fhir.ElementTree[] { return this.$store.getters[types.Fhir.ELEMENT_LIST] }
     get codeSystemList (): string[] { return this.$store.getters[types.Terminology.CODE_SYSTEM_LIST] }
     get terminologyBaseUrl (): string { return this.$store.getters[types.Terminology.TERMINOLOGY_BASE_URL] }
+    get tBaseVerificationStatus (): status { return this.$store.getters[types.Terminology.T_BASE_VERIFICATION_STATUS] }
     get hintCodeSystem (): string {
-      if (this.terminologyBaseUrl) return 'Terminology server: ' + this.terminologyBaseUrl
-      else return 'No terminology service is connected'
+      if (this.isSuccess(this.tBaseVerificationStatus)) return String(this.$t('LABELS.TERMINOLOGY_SERVICE_X', {url: this.terminologyBaseUrl}))
+      else return String(this.$t('ERROR.NO_TERMINOLOGY_SERVICE_IS_CONNECTED'))
     }
     get mergedCodeSystems (): string[] {
       const envCodeSystems = Object.values(environment.codesystems).map(_ => _)

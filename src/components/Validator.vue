@@ -2,19 +2,21 @@
   <div>
     <q-toolbar class="bg-grey-4 top-fix-column">
       <q-toolbar-title class="text-grey-8">
-        Curation - <span class="text-subtitle1">Validator</span>
+        {{ $t('TITLES.CURATION') }} - <span class="text-subtitle1">{{ $t('TITLES.VALIDATOR') }}</span>
       </q-toolbar-title>
     </q-toolbar>
     <q-card flat bordered class="q-ma-sm">
       <q-card-section>
-        <q-table flat binary-state-sort title="Validate" :data="mappingList" :columns="columns" row-key="name"
-                 :rows-per-page-options="[0]" :pagination.sync="pagination" :filter="filter" class="sticky-header-table"
+        <q-table flat binary-state-sort :title="$t('COMMON.VALIDATE')" :data="mappingList" :columns="columns" row-key="name"
+                 :rows-per-page-options="[0]" :pagination.sync="pagination" :filter="filterText" class="sticky-header-table"
                  :loading="loading" color="primary" selection="multiple" :selected.sync="tablesToValidate"
+                 :no-data-label="$t('LABELS.NO_RESULT')" :no-results-label="$t('LABELS.NO_RESULT')"
         >
           <template v-slot:top-right>
-            <q-input borderless dense v-model="filter" placeholder="Search">
+            <q-input borderless dense v-model="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
               <template v-slot:append>
-                <q-icon name="search" />
+                <q-icon v-if="!filterText" name="search" />
+                <q-icon v-else name="clear" class="cursor-pointer" @click="filterText = ''" />
               </template>
             </q-input>
           </template>
@@ -30,10 +32,10 @@
                 class="bg-primary text-white"
               >
                 <q-icon v-if="col.icon" :name="col.icon" />
-                <span class="vertical-middle q-ml-xs">{{ col.label }}</span>
+                <span class="vertical-middle q-ml-xs">{{ $t(col.label) }}</span>
               </q-th>
               <q-th class="bg-primary text-white" auto-width>
-                Details
+                {{ $t('TABLE.DETAILS') }}
               </q-th>
             </q-tr>
           </template>
@@ -43,36 +45,20 @@
                 <q-checkbox dense v-model="props.selected" :disable="isInProgress(validationStatus)" />
               </q-td>
               <q-td key="status" class="no-padding" :props="props">
-                <template v-if="isInProgress(props.row.validation.status)">
-                  <span>
+                <template v-if="isInProgress(props.row.validation.status) || isValidating(props.row.validation.status)">
                     <q-spinner color="grey-9" />
-                    <q-tooltip content-class="bg-white text-grey-8">Generating resources...</q-tooltip>
-                  </span>
-                </template>
-                <template v-else-if="isValidating(props.row.validation.status)">
-                  <span>
-                    <q-spinner color="grey-9" />
-                    <q-tooltip content-class="bg-white text-grey-8">Validating...</q-tooltip>
-                  </span>
                 </template>
                 <template v-else-if="isSuccess(props.row.validation.status)">
-                  <q-icon name="check" color="positive">
-                    <q-tooltip content-class="bg-white text-green">Completed</q-tooltip>
-                  </q-icon>
+                  <q-icon name="check" color="positive" />
                 </template>
                 <template v-else-if="isWarning(props.row.validation.status)">
-                  <q-icon name="warning" color="orange-6">
-                    <q-tooltip content-class="bg-white text-orange-6">Warning</q-tooltip>
-                  </q-icon>
+                  <q-icon name="warning" color="orange-6" />
                 </template>
                 <template v-else-if="isError(props.row.validation.status)">
-                  <q-icon name="error" color="negative">
-                  </q-icon>
+                  <q-icon name="error" color="negative" />
                 </template>
                 <template v-else>
-                  <q-icon name="access_time" color="grey-9">
-                    <q-tooltip content-class="bg-white text-grey-8">Pending</q-tooltip>
-                  </q-icon>
+                  <q-icon name="access_time" color="grey-9" />
                 </template>
               </q-td>
               <q-td key="file" :props="props">
@@ -87,21 +73,21 @@
               </q-td>
               <q-td>
                 <template v-if="isInProgress(props.row.validation.status)">
-                  <span class="text-grey-8 q-pl-sm text-size-sm">Creating...</span>
+                  <span class="text-grey-8 q-pl-sm text-size-sm">{{ $t('COMMON.CREATING') }}...</span>
                 </template>
                 <template v-else-if="isValidating(props.row.validation.status)">
-                  <span class="text-grey-8 q-pl-sm text-size-sm">Validating...</span>
+                  <span class="text-grey-8 q-pl-sm text-size-sm">{{ $t('COMMON.VALIDATING') }}...</span>
                 </template>
                 <q-btn v-else-if="isSuccess(props.row.validation.status) || isWarning(props.row.validation.status)" flat rounded icon="receipt"
-                       color="primary" label="Details" size="sm" class="text-center"
+                       color="primary" :label="$t('BUTTONS.DETAILS')" size="sm" class="text-center"
                        @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)" no-caps
                 />
                 <q-btn v-else-if="isError(props.row.validation.status)" flat rounded icon="error" color="negative"
-                       label="Details" size="sm" class="text-center" no-caps
+                       :label="$t('BUTTONS.DETAILS')" size="sm" class="text-center" no-caps
                        @click="openOutcomeDetailCard(props.row.validation.outcomeDetails)"
                 />
                 <template v-else>
-                  <span class="text-grey-8 q-pl-sm text-size-sm">Pending</span>
+                  <span class="text-grey-8 q-pl-sm text-size-sm">{{ $t('COMMON.PENDING') }}</span>
                 </template>
               </q-td>
             </q-tr>
@@ -195,7 +181,7 @@
                       </div>
                     </q-list>
                     <div v-else class="text-grey-7">
-                      No content
+                      {{ $t('LABELS.NO_CONTENT') }}
                     </div>
                   </q-card-section>
                 </q-card>
@@ -205,11 +191,11 @@
         </q-table>
         <div class="row content-end q-gutter-sm">
           <q-space />
-          <q-btn v-if="isInProgress(validationStatus)" outline label="Cancel" color="grey-8"
+          <q-btn v-if="isInProgress(validationStatus)" outline :label="$t('BUTTONS.CANCEL')" color="grey-8"
                  class="q-mt-lg" @click="cancelValidation" no-caps />
-          <q-btn v-if="isSuccess(validationStatus)" label="Export Resources" color="green" icon="publish"
+          <q-btn v-if="isSuccess(validationStatus)" :label="$t('BUTTONS.EXPORT_RESOURCES')" color="green" icon="publish"
                  class="q-mt-lg" @click="exportResources" no-caps />
-          <q-btn outline label="Validate" icon="verified_user" :color="isInProgress(validationStatus) ? 'grey-7' : 'green-7'"
+          <q-btn outline :label="$t('BUTTONS.VALIDATE')" icon="verified_user" :color="isInProgress(validationStatus) ? 'grey-7' : 'green-7'"
                  :disable="isInProgress(validationStatus)" @click="validate" class="q-mt-lg" no-caps>
               <span class="q-ml-sm">
                 <q-spinner class="q-ml-sm" size="xs" v-show="isInProgress(validationStatus)" />
@@ -222,12 +208,12 @@
       </q-card-section>
     </q-card>
     <div class="row q-pa-sm">
-      <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" :disable="isInProgress(validationStatus)" no-caps />
+      <q-btn unelevated :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" :disable="isInProgress(validationStatus)" no-caps />
       <q-space />
       <div class="q-gutter-sm">
-        <q-btn outline label="Continue Anyway" icon-right="error_outline" color="primary" v-if="isError(validationStatus)"
+        <q-btn outline :label="$t('BUTTONS.CONTINUE_ANYWAY')" icon-right="error_outline" color="primary" v-if="isError(validationStatus)"
                @click="nextStep" no-caps />
-        <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!isSuccess(validationStatus)"
+        <q-btn unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" color="primary" :disable="!isSuccess(validationStatus)"
                @click="nextStep" no-caps />
       </div>
     </div>
@@ -253,7 +239,7 @@
     private mappingObj: Map<string, any> = new Map<string, any>()
     private columns = validatorTable.columns
     private pagination = validatorTable.pagination
-    private filter: string = ''
+    private filterText: string = ''
     private loading: boolean = false
     private Status = Status
     private tablesToValidate = []
@@ -294,10 +280,11 @@
 
     cancelValidation () {
       this.$q.dialog({
-        title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Cancel</span>',
-        message: 'Are you sure you want to cancel validation?',
+        title: `<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>${this.$t('TITLES.CANCEL_VALIDATION')}</span>`,
+        message: `${this.$t('WARNING.ARE_YOU_SURE_TO_CANCEL_VALIDATION')}`,
         class: 'text-grey-9',
-        cancel: true,
+        ok: this.$t('BUTTONS.OK'),
+        cancel: this.$t('BUTTONS.CANCEL'),
         html: true
       }).onOk(() => {
         if (this.isInProgress(this.validationStatus)) {
@@ -338,7 +325,7 @@
         const filePathList = Object.keys(FHIRUtil.groupBy(this.tablesToValidate, 'file'))
 
         if (!filePathList.length) {
-          this.$notify.error('No mapping available')
+          this.$notify.error(String(this.$t('ERROR.NO_MAPPING_AVAILABLE')))
           this.validationStatus = Status.PENDING
           return
         }
@@ -490,10 +477,11 @@
 
     previousStep () {
       this.$q.dialog({
-        title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Previous Step</span>',
-        message: 'If you go back and make any change, the changes you have made in this section will be lost.',
+        title: `<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>${this.$t('TITLES.PREVIOUS_STEP')}</span>`,
+        message: `${this.$t('WARNING.IF_YOU_GO_BACK')}`,
         class: 'text-grey-9',
-        cancel: true,
+        ok: this.$t('BUTTONS.OK'),
+        cancel: this.$t('BUTTONS.CANCEL'),
         html: true
       }).onOk(() => {
         this.$store.commit(types.DECREMENT_STEP)
@@ -515,7 +503,7 @@
       ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.EXPORT_FILE, JSON.stringify(resources))
       ipcRenderer.on(ipcChannels.File.EXPORT_DONE, (event, result) => {
         if (result) {
-          this.$notify.success('File is successfully exported')
+          this.$notify.success(String(this.$t('SUCCESS.FILE_IS_EXPORTED')))
         }
         this.$q.loading.hide()
         ipcRenderer.removeAllListeners(ipcChannels.File.EXPORT_DONE)
@@ -529,7 +517,7 @@
         this.$store.commit(types.SET_TRANSFORM_STATUS, Status.PENDING)
         this.$store.commit(types.INCREMENT_STEP)
       } catch (e) {
-        this.$notify.error('Cannot load created resources. Try again')
+        this.$notify.error(String(this.$t('ERROR.CANNOT_LOAD_CREATED_RESOURCES')))
       }
     }
 

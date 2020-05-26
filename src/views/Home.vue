@@ -4,10 +4,10 @@
     <div class="top-fix-column">
       <q-toolbar class="bg-grey-4">
         <q-toolbar-title class="text-grey-8">
-          Welcome to <span class="text-primary text-weight-bold">FAIR4Health Data Curation Tool</span>
+          {{ $t('LABELS.WELCOME_TO') }} <span class="text-primary text-weight-bold">{{ $t('COMMON.APP_NAME') }}</span>
         </q-toolbar-title>
         <q-space />
-        <q-btn unelevated rounded to="/curation" color="primary" label="Quick Start" icon-right="fas fa-angle-right" />
+        <q-btn unelevated rounded to="/curation" color="primary" :label="$t('BUTTONS.QUICK_START')" icon-right="fas fa-angle-right" />
       </q-toolbar>
       <q-separator />
     </div>
@@ -15,12 +15,12 @@
     <!--OVERALL STEPS-->
     <q-item class="q-pa-lg text-weight-bold text-grey-8">
       <q-item-section>
-        <q-item-label class="text-h4 text-weight-bold">Overall Steps</q-item-label>
+        <q-item-label class="text-h4 text-weight-bold">{{ $t('LABELS.OVERALL_STEPS') }}</q-item-label>
         <q-stepper flat v-model="step" ref="stepper" alternative-labels color="primary" class="bg-grey-3">
-          <q-step :name="1" title="Analyze Data Source" icon="fas fa-database" />
-          <q-step :name="2" title="Map Metadata" icon="fas fa-list-ul" />
-          <q-step :name="3" title="Validate" icon="fas fa-check-circle" />
-          <q-step :name="4" title="Transform" icon="fas fa-exchange-alt" />
+          <q-step :name="1" :title="$t('COMMON.ANALYZE_DATA_SOURCE')" icon="fas fa-database" />
+          <q-step :name="2" :title="$t('COMMON.MAP_METADATA')" icon="fas fa-list-ul" />
+          <q-step :name="3" :title="$t('COMMON.VALIDATE')" icon="fas fa-check-circle" />
+          <q-step :name="4" :title="$t('COMMON.TRANSFORM')" icon="fas fa-exchange-alt" />
         </q-stepper>
       </q-item-section>
     </q-item>
@@ -29,7 +29,7 @@
     <q-item class="q-pa-lg text-weight-bold text-grey-8">
       <q-item-section>
         <q-item-label class="text-h7 text-grey-8">
-          <q-icon name="fas fa-database" /> Analyze Data Source
+          <q-icon name="fas fa-database" /> {{ $t('COMMON.ANALYZE_DATA_SOURCE') }}
         </q-item-label>
         <q-card flat class="q-ma-md">
           <q-card-section>
@@ -43,7 +43,7 @@
     <q-item class="q-pa-lg text-weight-bold text-grey-8">
       <q-item-section>
         <q-item-label class="text-h7 text-grey-8">
-          <q-icon name="fas fa-list-ul" /> Map Metadata
+          <q-icon name="fas fa-list-ul" /> {{ $t('COMMON.MAP_METADATA') }}
         </q-item-label>
         <q-card flat class="q-ma-md">
           <q-card-section>
@@ -57,7 +57,7 @@
     <q-item class="q-pa-lg text-weight-bold text-grey-8">
       <q-item-section>
         <q-item-label class="text-h7 text-grey-8">
-          <q-icon name="fas fa-check-circle" /> Validate
+          <q-icon name="fas fa-check-circle" /> {{ $t('COMMON.VALIDATE') }}
         </q-item-label>
         <q-card flat class="q-ma-md">
           <q-card-section>
@@ -71,7 +71,7 @@
     <q-item class="q-pa-lg text-weight-bold text-grey-8">
       <q-item-section>
         <q-item-label class="text-h7 text-grey-8">
-          <q-icon name="fas fa-exchange-alt" /> Transform
+          <q-icon name="fas fa-exchange-alt" /> {{ $t('COMMON.TRANSFORM') }}
         </q-item-label>
         <q-card flat class="q-ma-md">
           <q-card-section>
@@ -89,7 +89,7 @@
 
   @Component
   export default class Home extends Vue {
-    private step: number = 0;
+    private step: number = 0
   }
 
 </script>

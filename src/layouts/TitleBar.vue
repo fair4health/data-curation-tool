@@ -5,7 +5,7 @@
              @click="$q.screen.lt.lg || !drawerOpen ? (drawerOpen = !drawerOpen) : (drawerMiniState = !drawerMiniState)"
       />
       <img class="flex flex-center" src="../assets/FAIR4Health-logo.png" width="80px">
-      <div class="text-weight-bold text-size-xl">Data Curation Tool</div>
+      <div class="text-weight-bold text-size-xl">{{ $t('COMMON.APP_NAME') }}</div>
       <q-space />
       <div class="q-mx-none q-px-none">
         <q-btn flat square icon="remove" class="title-bar-btn" @click="minimizeApp" />
@@ -18,6 +18,27 @@
         {{ menuItem.label }}
         <menu-tree :menu="menuItem.submenu" :offset="[0, 8]" />
       </div>
+      <q-space />
+      <q-btn-dropdown dense
+                      flat
+                      :label="$i18n.locale"
+                      :menu-offset="[0, 4]"
+                      size="9px"
+                      icon="language"
+      >
+        <q-list padding>
+          <q-item dense
+                  clickable
+                  v-close-popup
+                  v-for="lang in langs"
+                  :key="lang"
+                  class="flex flex-center"
+                  @click="$i18n.locale = lang"
+          >
+            <span class="text-size-xs text-uppercase">{{ lang }}</span>
+          </q-item>
+        </q-list>
+      </q-btn-dropdown>
     </div>
   </div>
 </template>
@@ -27,6 +48,7 @@
   import { remote, shell } from 'electron'
   import MenuTree from '@/layouts/MenuTree.vue'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+  import { environment } from '@/common/environment'
 
   @Component({
     components: {
@@ -36,46 +58,59 @@
   export default class TitleBar extends Vue {
     private currentWindow = remote.getCurrentWindow()
     private isMaximized = this.currentWindow.isMaximized()
-    private menu: MenuItem[] = [
-      {
-        label: 'File',
-        submenu: [
-          {
-            label: 'Exit',
-            action: () => this.closeApp()
-          }
-        ]
-      },
-      {
-        label: 'View',
-        submenu: [
-          {
-            label: 'Toggle Full Screen',
-            action: () => this.toggleFullScreen()
-          }
-        ]
-      },
-      {
-        label: 'Tool',
-        submenu: [
-          {
-            label: 'Toggle Developer Tools',
-            action: () => this.toggleDevTools()
-          }
-        ]
-      },
-      {
-        label: 'Help',
-        submenu: [
-          {
-            label: 'Help',
-            icon: 'fas fa-question',
-            action: () => this.openExternal(this.projectHomePage)
-          }
-        ]
-      }
-    ]
-
+    private langs = environment.langs
+    get menu (): MenuItem[] {
+      return [
+        {
+          label: this.$tc('MENU.FILE'),
+          submenu: [
+            {
+              label: this.$tc('MENU.EXIT'),
+              action: () => this.closeApp()
+            }
+          ]
+        },
+        {
+          label: this.$tc('MENU.VIEW'),
+          submenu: [
+            {
+              label: this.$tc('MENU.TOGGLE_FULL_SCREEN'),
+              action: () => this.toggleFullScreen()
+            }
+          ]
+        },
+        {
+          label: this.$tc('MENU.TOOL'),
+          submenu: [
+            {
+              label: this.$tc('MENU.LANGUAGE'),
+              icon: 'language',
+              submenu: [
+                {
+                  label: 'EN',
+                  afterIcon: this.isLang('en') ? 'check' : '',
+                  action: () => this.updateLang('en')
+                }
+              ]
+            },
+            {
+              label: this.$tc('MENU.TOGGLE_DEVELOPER_TOOLS'),
+              action: () => this.toggleDevTools()
+            }
+          ]
+        },
+        {
+          label: this.$tc('MENU.HELP'),
+          submenu: [
+            {
+              label: this.$tc('MENU.HELP'),
+              icon: 'fas fa-question',
+              action: () => this.openExternal(this.projectHomePage)
+            }
+          ]
+        }
+      ]
+    }
     get projectHomePage (): string { return window.process.env.ELECTRON_WEBPACK_APP_F4H_HOMEPAGE }
 
     get drawerOpen (): boolean { return this.$store.getters[types.DRAWER_OPEN] }
@@ -97,6 +132,14 @@
     closeApp () { this.currentWindow.destroy() }
     toggleDevTools () { remote.getCurrentWebContents().toggleDevTools() }
     openExternal (url: string) { shell.openExternal(url) }
+
+    isLang (lang: string): boolean {
+      return this.$i18n.locale === lang
+    }
+
+    updateLang (lang: string) {
+      this.$i18n.locale = lang
+    }
   }
 </script>
 
