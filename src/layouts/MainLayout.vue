@@ -18,19 +18,19 @@
         <q-item to="/" exact active-class="text-primary bg-grey-3">
           <q-item-section avatar class="items-center">
             <q-icon name="home" />
-            <span v-show="$q.screen.lt.lg || drawerMiniState" class="text-size-xs">Home</span>
+            <span v-show="$q.screen.lt.lg || drawerMiniState" class="text-size-xs">{{ $t('MENU.HOME') }}</span>
           </q-item-section>
           <q-item-section>
-            <q-item-label>Home</q-item-label>
+            <q-item-label>{{ $t('MENU.HOME') }}</q-item-label>
           </q-item-section>
         </q-item>
         <q-item to="/curation" exact active-class="text-primary bg-grey-3">
           <q-item-section avatar class="items-center">
             <q-icon name="device_hub" />
-            <span v-show="$q.screen.lt.lg || drawerMiniState" class="text-size-xs">Curation</span>
+            <span v-show="$q.screen.lt.lg || drawerMiniState" class="text-size-xs">{{ $t('MENU.CURATION') }}</span>
           </q-item-section>
           <q-item-section>
-            <q-item-label>Curation</q-item-label>
+            <q-item-label>{{ $t('MENU.CURATION') }}</q-item-label>
           </q-item-section>
         </q-item>
         <q-item v-if="$route.name==='curation'" animation>
@@ -41,7 +41,7 @@
                     :class="{'step-item cursor-pointer': currentStep > step.stepId}"
                     @click="changeStep(step.stepId)"
                     :name="step.stepId"
-                    :title="step.title"
+                    :title="$t(step.title)"
                     :icon="step.icon"
                     :done-icon="step.icon"
                     :done="currentStep > step.stepId"
@@ -54,10 +54,10 @@
         <q-item to="/about" exact active-class="text-primary bg-grey-3">
           <q-item-section avatar class="items-center">
             <q-icon name="info" />
-            <span v-show="$q.screen.lt.lg || drawerMiniState" class="text-size-xs">About</span>
+            <span v-show="$q.screen.lt.lg || drawerMiniState" class="text-size-xs">{{ $t('MENU.ABOUT') }}</span>
           </q-item-section>
           <q-item-section>
-            <q-item-label>About</q-item-label>
+            <q-item-label>{{ $t('MENU.ABOUT') }}</q-item-label>
           </q-item-section>
         </q-item>
       </q-list>
@@ -70,7 +70,7 @@
             </q-avatar>
           </q-item-section>
           <q-item-section class="text-grey-7">
-            <span>View on <span class="text-weight-bold">GitHub</span></span>
+            <span>{{ $t('MENU.VIEW_ON') }} <span class="text-weight-bold">GitHub</span></span>
           </q-item-section>
         </q-item>
       </q-list>
@@ -98,11 +98,11 @@
   })
   export default class MainLayout extends Vue {
     private steps: StepItem[] = [
-      { title: 'Verify FHIR Repo', icon: 'fas fa-fire', stepId: 1 },
-      { title: 'Analyze Data Source', icon: 'fas fa-database', stepId: 2 },
-      { title: 'Map Metadata', icon: 'fas fa-list-ul', stepId: 3 },
-      { title: 'Validate', icon: 'fas fa-check-circle', stepId: 4 },
-      { title: 'Confirm and Transform', icon: 'fas fa-exchange-alt', stepId: 5 },
+      { title: 'MENU.VERIFY_FHIR_REPO', icon: 'fas fa-fire', stepId: 1 },
+      { title: 'MENU.ANALYZE_DATA_SOURCE', icon: 'fas fa-database', stepId: 2 },
+      { title: 'MENU.MAP_METADATA', icon: 'fas fa-list-ul', stepId: 3 },
+      { title: 'MENU.VALIDATE', icon: 'fas fa-check-circle', stepId: 4 },
+      { title: 'MENU.CONFIRM_AND_TRANSFORM', icon: 'fas fa-exchange-alt', stepId: 5 },
     ]
 
     get drawerOpen (): boolean { return this.$store.getters[types.DRAWER_OPEN] }
@@ -119,13 +119,13 @@
 
     changeStep (newStep: number) {
       if (this.currentStep > newStep) {
-        const message = `<span class="text-weight-bold text-grey-9 text-size-xxl">The changes you have made will be lost.</span> <br><br>` +
-          `Are you sure you want to go to ` +
-          `<span class="text-weight-bold text-primary">${this.steps[newStep - 1].title}</span> step?`
+        const message = `<span class="text-weight-bold text-grey-9 text-size-xxl">${this.$t('WARNING.CHANGES_WILL_BE_LOST')}</span> <br><br>` +
+          this.$t('WARNING.ARE_YOU_SURE_TO_GO_TO_STEP', {step: this.$t(this.steps[newStep - 1].title)})
         this.$q.dialog({
-          title: '<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>Previous Step</span>',
+          title: `<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>${this.$t('TITLES.PREVIOUS_STEP')}</span>`,
           message,
-          cancel: true,
+          ok: this.$t('BUTTONS.OK'),
+          cancel: this.$t('BUTTONS.CANCEL'),
           html: true
         }).onOk(() => {
           if (newStep < 3) this.$store.dispatch(types.File.DESTROY_STORE)

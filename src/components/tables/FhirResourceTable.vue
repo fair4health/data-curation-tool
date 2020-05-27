@@ -4,11 +4,11 @@
       <q-card-section class="row q-col-gutter-sm">
         <div class="col-xs-12 col-sm-12 col-md-6">
           <q-item-label class="text-weight-bold">
-            <span><q-icon name="fas fa-fire" size="xs" color="primary" class="q-mr-xs" /> FHIR Resource</span>
+            <span><q-icon name="fas fa-fire" size="xs" color="primary" class="q-mr-xs" /> {{ $t('LABELS.FHIR_RESOURCE') }}</span>
           </q-item-label>
           <q-separator spaced />
           <q-select outlined dense options-dense fill-input hide-selected v-model="currentFHIRRes" class="cursor-pointer" :options="fhirResourceOptions"
-                    label="FHIR Resource" @filter="filterFn" use-input input-debounce="0" :loading="loadingResources">
+                    :label="$t('LABELS.FHIR_RESOURCE')" @filter="filterFn" use-input input-debounce="0" :loading="loadingResources">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -23,11 +23,11 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-6">
           <q-item-label class="text-weight-bold">
-            <span><q-icon name="far fa-file-alt" size="xs" color="primary" class="q-mr-xs" /> Profiles</span>
+            <span><q-icon name="far fa-file-alt" size="xs" color="primary" class="q-mr-xs" /> {{ $t('LABELS.PROFILES') }}</span>
           </q-item-label>
           <q-separator spaced />
           <q-select outlined dense options-dense v-model="currentFHIRProf" class="ellipsis" :options="fhirProfileList"
-                     :option-label="item => item.split('/').pop()" label="Profiles" :disable="!fhirProfileList.length">
+                     :option-label="item => item.split('/').pop()" :label="$t('LABELS.PROFILES')" :disable="!fhirProfileList.length">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -42,7 +42,7 @@
         </div>
       </q-card-section>
       <div class="row q-px-md bg-grey-1">
-        <q-btn unelevated stretch label="Options" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>
+        <q-btn unelevated stretch :label="$t('BUTTONS.OPTIONS')" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>
           <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>
             {{ filterCount }}
           </q-badge>
@@ -54,7 +54,7 @@
                             checked-icon="check"
                             size="xs"
                             color="primary"
-                            label="Show mandatory elements only"
+                            :label="$t('BUTTONS.SHOW_MANDATORY_ELEMENTS_ONLY')"
                             class="text-grey-8 text-size-lg"
                             unchecked-icon="clear"
                   />
@@ -66,7 +66,7 @@
                             checked-icon="check"
                             size="xs"
                             color="primary"
-                            label="Hide base resource elements"
+                            :label="$t('BUTTONS.HIDE_BASE_RESOURCE_ELEMENTS')"
                             class="text-grey-8 text-size-lg"
                             unchecked-icon="clear"
                   />
@@ -76,7 +76,7 @@
           </q-menu>
         </q-btn>
         <q-space />
-        <q-input borderless dense v-model.lazy.trim="filterText" placeholder="Search" @keydown.esc="filterText = ''">
+        <q-input borderless dense v-model.lazy.trim="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
           <template v-slot:append>
             <q-icon v-if="!filterText" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="filterText = ''" />
@@ -99,8 +99,8 @@
                           :ticked.sync="tickedFHIRAttr"
                           :expanded.sync="expanded"
                           :filter="filterText"
-                          no-nodes-label="Please select a resource"
-                          no-results-label="No result found"
+                          :no-nodes-label="$t('LABELS.PLEASE_SELECT_A_RESOURCE')"
+                          :no-results-label="$t('LABELS.NO_RESULT')"
                           selected-color="primary"
                           default-expand-all
                   >
@@ -366,7 +366,7 @@
         })
         .catch(err => {
           this.loadingResources = false
-          this.$notify.error('Something went wrong while fetching resources')
+          this.$notify.error(String(this.$t('ERROR.ST_WRONG_FETCHING_X', {name: 'resources'})))
         })
       if (this.currentFHIRRes) this.onFHIRResourceChanged()
     }
@@ -385,7 +385,7 @@
                 .then(() => this.loadingFhir = false )
                 .catch(() => {
                   this.loadingFhir = false
-                  this.$notify.error('Resource elements couldn\'t be loaded')
+                  this.$notify.error(String(this.$t('ERROR.RESOURCE_ELEMENTS_COULDNT_BE_LOADED')))
                 })
             } else this.loadingFhir = false
           }
@@ -407,7 +407,7 @@
           })
           .catch(() => {
             this.loadingFhir = false
-            this.$notify.error('Resource elements couldn\'t be loaded')
+            this.$notify.error(String(this.$t('ERROR.RESOURCE_ELEMENTS_COULDNT_BE_LOADED')))
           })
       }
     }

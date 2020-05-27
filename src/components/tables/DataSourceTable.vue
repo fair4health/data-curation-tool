@@ -4,10 +4,11 @@
       <q-card-section class="row q-col-gutter-sm">
         <div class="col-xs-12 col-sm-12 col-md-6">
           <q-item-label class="text-weight-bold">
-            <span><q-icon name="fas fa-file" size="xs" color="primary" class="q-mr-xs" /> Source File</span>
+            <span><q-icon name="fas fa-file" size="xs" color="primary" class="q-mr-xs" /> {{ $t('LABELS.SOURCE_FILE') }}</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense options-dense v-model="currentSource" class="ellipsis" :options="fileSourceList" option-value="path" label="Source File">
+          <q-select outlined dense options-dense v-model="currentSource" class="ellipsis" :options="fileSourceList" option-value="path"
+                    :label="$t('LABELS.SOURCE_FILE')">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -22,10 +23,10 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-6">
           <q-item-label class="text-weight-bold">
-            <span><q-icon name="far fa-file-alt" size="xs" color="primary" class="q-mr-xs" /> Sheets</span>
+            <span><q-icon name="far fa-file-alt" size="xs" color="primary" class="q-mr-xs" /> {{ $t('LABELS.SHEETS') }}</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense options-dense v-model="currentSheet" class="ellipsis" :options="sheets" label="Sheets" :disable="!sheets.length">
+          <q-select outlined dense options-dense v-model="currentSheet" class="ellipsis" :options="sheets" :label="$t('LABELS.SHEETS')" :disable="!sheets.length">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -40,7 +41,7 @@
         </div>
       </q-card-section>
       <div class="row q-px-md bg-grey-1">
-        <q-btn unelevated stretch label="Options" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>
+        <q-btn unelevated stretch :label="$t('BUTTONS.OPTIONS')" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>
           <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>
             {{ filterCount }}
           </q-badge>
@@ -52,7 +53,7 @@
                             checked-icon="check"
                             size="xs"
                             color="primary"
-                            label="Show mapped fields only"
+                            :label="$t('BUTTONS.SHOW_MAPPED_FIELDS_ONLY')"
                             class="text-grey-8 text-size-lg"
                             unchecked-icon="clear"
                   />
@@ -64,7 +65,7 @@
         <q-btn v-if="currentSheet"
                flat
                stretch
-               label="Reload File"
+               :label="$t('BUTTONS.RELOAD_FILE')"
                icon="sync"
                color="grey-1"
                text-color="grey-8"
@@ -73,7 +74,7 @@
                no-caps
         />
         <q-space />
-        <q-input borderless dense v-model.lazy.trim="filterText" placeholder="Search" @keydown.esc="filterText = ''">
+        <q-input borderless dense v-model.lazy.trim="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
           <template v-slot:append>
             <q-icon v-if="!filterText" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="filterText = ''" />
@@ -85,6 +86,7 @@
                  :columns="dataSourceColumns" row-key="value" selection="multiple" :selected.sync="selectedAttr"
                  :loading="loadingAttr" :grid="$q.screen.lt.sm" :rows-per-page-options="[10, 20, 0]" :pagination.sync="pagination"
                  color="primary" table-class="data-source-table" :filter="filterText" :filter-method="filterTable"
+                 :rows-per-page-label="$t('TABLE.RECORDS_PER_PAGE')"
         >
           <template v-slot:header-cell="props">
             <q-th :props="props" class="text-grey-7">
@@ -96,7 +98,7 @@
                 </q-icon>
               </template>
               <q-icon v-if="props.col.icon" :name="props.col.icon" />
-              <span class="vertical-middle q-ml-xs">{{ props.col.label }}</span>
+              <span class="vertical-middle q-ml-xs">{{ $t(props.col.label) }}</span>
               <q-tooltip v-if="props.col.description" max-width="200px" anchor="center right" self="center left"
                          :offset="[0, 5]" transition-show="scale" transition-hide="scale"
               >
@@ -156,7 +158,7 @@
             </q-td>
           </template>
           <template v-slot:no-data="{ icon, message, filter }">
-            {{message === 'Loading...' ? message : (currentSheet ? 'No data available' : 'Please select a sheet')}}
+            {{message === 'Loading...' ? message : (currentSheet ? $t('LABELS.NO_DATA_AVAILABLE') : $t('LABELS.PLEASE_SELECT_A_SHEET'))}}
           </template>
         </q-table>
       </q-card-section>
@@ -229,13 +231,13 @@
             .then(() => this.$q.loading.hide())
             .catch(() => {
               this.$q.loading.hide()
-              this.$notify.error('Something went wrong while fetching Concept Maps')
+              this.$notify.error(String(this.$t('ERROR.ST_WRONG_FETCHING_X', {name: 'Concept Maps'})))
             })
           this.$store.dispatch(types.Terminology.GET_CODE_SYSTEMS, true)
             .then(() => this.$q.loading.hide())
             .catch(() => {
               this.$q.loading.hide()
-              this.$notify.error('Something went wrong while fetching Code Systems')
+              this.$notify.error(String(this.$t('ERROR.ST_WRONG_FETCHING_X', {name: 'Code Systems'})))
             })
         }
       }, 10)
@@ -289,7 +291,7 @@
       ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.GET_TABLE_HEADERS, {path: this.currentSource?.path, sheet: this.currentSheet?.value, noCache})
       ipcRenderer.on(ipcChannels.File.READY_TABLE_HEADERS, (event, headers) => {
         if (!headers.length) {
-          this.$notify.error('Headers couldn\'t be detected')
+          this.$notify.error(String(this.$t('ERROR.HEADERS_COULDNT_BE_DETECTED')))
         }
         // this.bufferSheetHeaders = headers.map(_ => ({type: _.type, value: _.value}))
         this.$store.commit(types.File.SET_SHEET_HEADERS, headers)

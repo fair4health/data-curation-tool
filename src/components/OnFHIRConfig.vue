@@ -4,11 +4,11 @@
       <q-card flat class="col-xs-12 col-sm-12 col-md-6">
         <q-card-section>
           <q-item-label class="text-weight-bold q-mb-lg">
-            <span class="text-primary"><q-icon name="fas fa-info" size="xs" class="q-mr-xs" /> Provide FHIR Repository URL </span>
+            <span class="text-primary"><q-icon name="fas fa-info" size="xs" class="q-mr-xs" /> {{ $t('LABELS.PROVIDE_FHIR_URL') }} </span>
           </q-item-label>
           <q-input outlined square dense type="url" class="col-10" v-model="onfhirBaseUrl" color="primary"
                    @input="fhirBaseVerificationStatus = Status.PENDING"
-                   placeholder="FHIR Repository URL"
+                   :placeholder="$t('LABELS.FHIR_REPOSITORY_URL')"
                    :disable="isInProgress(fhirBaseVerificationStatus)"
                    @keypress.enter="verifyFhir"
           >
@@ -29,7 +29,7 @@
         <q-card-section class="row">
           <q-space />
           <div class="q-gutter-sm">
-            <q-btn unelevated label="Verify" icon="verified_user" color="grey-2" text-color="primary"
+            <q-btn unelevated :label="$t('BUTTONS.VERIFY')" icon="verified_user" color="grey-2" text-color="primary"
                    :disable="!onfhirBaseUrl || isInProgress(fhirBaseVerificationStatus)" @click="verifyFhir" no-caps>
               <span class="q-ml-sm">
                 <q-spinner class="q-ml-sm" size="xs" v-show="isInProgress(fhirBaseVerificationStatus)" />
@@ -37,7 +37,7 @@
                 <q-icon name="error_outline" size="xs" color="negative" v-show="isError(fhirBaseVerificationStatus)" />
               </span>
             </q-btn>
-            <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!isSuccess(fhirBaseVerificationStatus)"
+            <q-btn unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" color="primary" :disable="!isSuccess(fhirBaseVerificationStatus)"
                    @click="nextStep" no-caps />
           </div>
         </q-card-section>
@@ -46,7 +46,8 @@
 
     <div v-if="!terminologyOpen" class="row justify-center q-mx-lg q-mt-lg">
       <div class="self-end">
-        <q-btn label="Add Terminology Service" color="primary" class="q-pa-sm no-border-radius" icon="add" @click="terminologyOpen = true" no-caps />
+        <q-btn :label="$t('BUTTONS.ADD_TERMINOLOGY_SERVICE')" color="primary" class="q-pa-sm no-border-radius" icon="add"
+               @click="terminologyOpen = true" no-caps />
       </div>
     </div>
     <div v-if="terminologyOpen" class="row justify-center q-mx-lg q-mt-lg">
@@ -98,7 +99,7 @@
         this.fhirBaseVerificationStatus = Status.IN_PROGRESS
         this.$store.dispatch(types.Fhir.VERIFY_FHIR, this.onfhirBaseUrl)
           .then(() => {
-            this.fhirBaseVerificationStatusDetail = 'FHIR Repository URL is verified.'
+            this.fhirBaseVerificationStatusDetail = String(this.$t('SUCCESS.FHIR_URL_VERIFIED'))
             this.fhirBaseVerificationStatus = Status.SUCCESS
             ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.Fhir.SET_FHIR_BASE, this.onfhirBaseUrl)
           })

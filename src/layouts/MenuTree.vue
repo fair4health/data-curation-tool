@@ -10,6 +10,7 @@
             </span>
           </q-item-section>
           <q-item-section side class="q-ml-md">
+            <q-icon v-if="menuItem.afterIcon" size="xs" :name="menuItem.afterIcon" />
             <q-icon v-if="menuItem.submenu && menuItem.submenu.length" size="xs" name="keyboard_arrow_right" />
           </q-item-section>
           <menu-tree :menu="menuItem.submenu" anchorPosition="top right" selfPosition="top left" />
@@ -23,7 +24,7 @@
 <script lang="ts">
   import { Component, Vue, Prop } from 'vue-property-decorator'
 
-  @Component
+  @Component({name: 'MenuTree'})
   export default class MenuTree extends Vue {
     @Prop({required: true}) menu: MenuItem[]
     @Prop() offset: number[]

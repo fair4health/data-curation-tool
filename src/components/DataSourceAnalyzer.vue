@@ -2,7 +2,7 @@
   <div>
     <q-toolbar class="bg-grey-4 top-fix-column">
       <q-toolbar-title class="text-grey-8">
-        Curation - <span class="text-subtitle1">Data Source Analyzer</span>
+        {{ $t('TITLES.CURATION') }} - <span class="text-subtitle1">{{ $t('TITLES.DATA_SOURCE_ANALYZER') }}</span>
       </q-toolbar-title>
     </q-toolbar>
     <div class="q-ma-sm row q-gutter-sm">
@@ -10,7 +10,7 @@
         default-opened
         class="overflow-hidden q-my-md col-xs-12 col-sm-12 col-md-6"
         icon="fas fa-file-medical"
-        label="File (Excel or CSV)"
+        :label="$t('LABELS.FILE')"
         header-class="bg-primary text-white"
         expand-icon-class="text-white"
       >
@@ -22,17 +22,17 @@
                 <template v-if="!fileSourceList.length">
                   <div class="text-center">
                     <q-icon name="save_alt" color="primary" size="72px" />
-                    <p class="text-grey-9">Drag your files here</p>
-                    <q-btn unelevated label="Browse" color="grey-2" text-color="primary" @click="browseFile" no-caps />
+                    <p class="text-grey-9">{{ $t('LABELS.DRAG_YOUR_FILES_HERE') }}</p>
+                    <q-btn unelevated :label="$t('BUTTONS.BROWSE')" color="grey-2" text-color="primary" @click="browseFile" no-caps />
                   </div>
                 </template>
                 <template v-else>
                   <q-item>
                     <q-item-section class="text-weight-bold">
-                      {{fileSourceList.length === 1 ? '1 file' : `${fileSourceList.length} files`}} selected
+                      {{ $tc('LABELS.X_FILES_SELECTED', fileSourceList.length) }}
                     </q-item-section>
                     <q-item-section side>
-                      <q-btn outline label="Add" icon="add" color="primary" @click="browseFile" no-caps />
+                      <q-btn outline :label="$t('BUTTONS.ADD')" icon="add" color="primary" @click="browseFile" no-caps />
                     </q-item-section>
                   </q-item>
                   <q-separator inset />
@@ -52,7 +52,7 @@
                   </q-list>
                   <div class="row justify-end">
                     <q-item-section side>
-                      <q-btn unelevated label="Remove" color="grey-3" text-color="grey-8" @click="fileSourceList=[]" no-caps />
+                      <q-btn unelevated :label="$t('BUTTONS.REMOVE')" color="grey-3" text-color="grey-8" @click="fileSourceList=[]" no-caps />
                     </q-item-section>
                   </div>
                 </template>
@@ -64,7 +64,7 @@
       <q-expansion-item
         class="overflow-hidden q-my-md col"
         icon="fas fa-database"
-        label="Database"
+        :label="$t('LABELS.DATABASE')"
         header-class="bg-primary text-white"
         expand-icon-class="text-white"
       >
@@ -92,11 +92,11 @@
         </q-item-section>
 
         <q-item-section>
-          Saved Mappings
+          {{ $t('LABELS.SAVED_MAPPINGS') }}
         </q-item-section>
 
         <q-item-section side>
-          <q-btn unelevated label="Import" color="white" text-color="primary"
+          <q-btn unelevated :label="$t('BUTTONS.IMPORT')" color="white" text-color="primary"
                  @click="importSavedMapping" icon="fas fa-file-import" no-caps />
         </q-item-section>
       </template>
@@ -117,7 +117,7 @@
                   >
                     <span class="vertical-middle text-grey-9">
                       <q-icon v-if="col.icon" :name="col.icon" size="xs" />
-                      {{ col.label }}
+                      {{ $t(col.label) }}
                     </span>
                   </q-th>
                 </tr>
@@ -143,11 +143,11 @@
                           <q-list padding class="menu-list">
                             <q-item clickable dense class="text-grey-9" @click="loadFromStorage(props.row)" v-close-popup>
                               <q-item-section avatar><q-icon name="fas fa-file-download" size="xs" /></q-item-section>
-                              <q-item-section>Load</q-item-section>
+                              <q-item-section>{{ $t('BUTTONS.LOAD') }}</q-item-section>
                             </q-item>
                             <q-item clickable dense class="text-red-5" @click="deleteSavedMapping(props.row.index)" v-close-popup>
                               <q-item-section avatar><q-icon name="delete" size="xs" /></q-item-section>
-                              <q-item-section>Delete</q-item-section>
+                              <q-item-section>{{ $t('BUTTONS.DELETE') }}</q-item-section>
                             </q-item>
                           </q-list>
                         </q-menu>
@@ -165,9 +165,9 @@
       </q-card>
     </q-expansion-item>
     <div class="row q-pa-sm">
-      <q-btn unelevated label="Back" color="primary" icon="chevron_left" @click="previousStep" no-caps />
+      <q-btn unelevated :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" no-caps />
       <q-space />
-      <q-btn unelevated label="Next" icon-right="chevron_right" color="primary" :disable="!fileSourceList.length"
+      <q-btn unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" color="primary" :disable="!fileSourceList.length"
              @click="nextStep" no-caps />
     </div>
   </div>
@@ -234,18 +234,18 @@
           .then(() => this.$q.loading.hide())
           .catch(() => this.$q.loading.hide())
       } else {
-        this.$notify.error('Empty mapping sheet')
+        this.$notify.error(String(this.$t('ERROR.EMPTY_MAPPING_SHEET')))
       }
     }
 
     deleteSavedMapping (index: number) {
       this.$q.dialog({
-        title: '<span class="text-negative"><i class="fas fa-trash q-pr-sm"></i>Delete</span>',
-        message: `Are you sure to delete mapping <span class="text-weight-bold">${this.mappingStore[index].name}</span>?`,
+        title: `<span class="text-negative"><i class="fas fa-trash q-pr-sm"></i>${this.$t('TITLES.DELETE')}</span>`,
+        message: `${this.$t('WARNING.ARE_YOU_SURE_TO_DELETE_MAPPING', {mapping: this.mappingStore[index].name})}`,
         class: 'text-grey-9',
-        cancel: true,
+        cancel: this.$t('BUTTONS.CANCEL'),
         html: true,
-        ok: 'Delete'
+        ok: this.$t('BUTTONS.DELETE')
       }).onOk(() => {
         this.mappingStore.splice(index, 1)
         localStorage.setItem('store-fileSourceList', JSON.stringify(this.mappingStore))
@@ -258,12 +258,8 @@
       ipcRenderer.on(ipcChannels.File.SELECTED_MAPPING, (event, data) => {
         if (data) {
           this.$store.dispatch(types.File.INITIALIZE_STORE, data)
-            .then(() => {
-              // this.$log.info('Import Mapping', `Found ${this.fileSourceList.length} mapped file(s)`)
-            })
             .catch(() => {
-              this.$notify.error('Data could\'t be imported')
-              // this.$log.error('Import Mapping', 'Data could\'t be imported')
+              this.$notify.error(String(this.$t('ERROR.DATA_COULDNT_BE_IMPORTED')))
             })
         }
         this.$q.loading.hide()

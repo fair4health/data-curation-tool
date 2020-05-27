@@ -2,6 +2,7 @@ import { environment } from '@/common/environment'
 import StructureDefinition = fhir.StructureDefinition
 import { FHIRUtil } from '@/common/utils/fhir-util'
 import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+import i18n from '@/i18n'
 
 const fhirStore = {
   state: {
@@ -128,13 +129,13 @@ const fhirStore = {
               if (environment.server.compatibleFhirVersions.includes(metadata.fhirVersion)) {
                 resolve(res)
               } else {
-                reject(`FHIR version (${metadata.fhirVersion}) is not supported. FHIR version must be R4.`)
+                reject(i18n.t('ERROR.FHIR_VERSION_NOT_SUPPORTED', {version: metadata.fhirVersion}))
               }
             } else {
-              reject('FHIR version couldn\'t be detected for given url.')
+              reject(i18n.t('ERROR.FHIR_VERSION_COULDNT_DETECTED'))
             }
           })
-          .catch(err => reject('Given url is not verified.'))
+          .catch(err => reject(i18n.t('ERROR.FHIR_URL_NOT_VERIFIED')))
       })
     },
     [types.Fhir.GET_DATA_TYPES] ({}, url: string): Promise<any> {
@@ -187,11 +188,7 @@ const fhirStore = {
                   })).then(() => resolveElement()).catch(() => resolveElement())
                 })
               }) || [])
-                .then(() => {
-                  // electronStore.set(`${url}`, list)
-                  // ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.ElectronStore.SET_ELECTRON_STORE, {key: `${url}`, value: list})
-                  resolve(list)
-                })
+                .then(() => resolve(list))
                 .catch(() => reject([]))
             } else { resolve([]) }
           })

@@ -59,7 +59,8 @@ import {
   QToggle,
   QBar,
   QFooter,
-  QCheckbox
+  QCheckbox,
+  QBtnDropdown
 } from 'quasar'
 
 Vue.use(Quasar, {
@@ -126,7 +127,8 @@ Vue.use(Quasar, {
     QToggle,
     QBar,
     QFooter,
-    QCheckbox
+    QCheckbox,
+    QBtnDropdown
   },
   directives: {
     ClosePopup

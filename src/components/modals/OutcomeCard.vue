@@ -1,35 +1,31 @@
 <template>
   <q-dialog ref="dialog" @hide="onDialogHide" :full-width="fullscreen" :full-height="fullscreen">
     <q-card class="dialog-card">
-      <q-card-section>
-        <div class="text-h6 row items-center">
-          <div>
-            <q-icon name="feedback" color="primary" size="sm" class="q-mx-sm" />
-            Outcome Details
-          </div>
-          <q-space />
-          <div v-if="outcomeDetails.length" class="row q-gutter-sm">
-            <div>
-              <q-chip square class="bg-grey-3">
-                <q-avatar color="positive" text-color="white" icon="check" />
-                {{ successTransformCount.toLocaleString() }}
-              </q-chip>
-            </div>
-            <div>
-              <q-chip square class="bg-grey-3">
-                <q-avatar color="negative" text-color="white" icon="warning" />
-                {{ errorTransformCount.toLocaleString() }}
-              </q-chip>
-            </div>
-          </div>
-          <q-btn flat dense :icon="fullscreen ? 'fullscreen_exit' : 'fullscreen'"
-                 @click="fullscreen = !fullscreen" class="q-ml-md">
-            <q-tooltip content-class="bg-white text-primary">{{ fullscreen ? 'Minimize' : 'Maximize'}}</q-tooltip>
-          </q-btn>
-          <q-btn unelevated dense icon="close" color="grey-3" text-color="grey-10" @click="onCloseClick">
-            <q-tooltip content-class="bg-white text-primary">Close</q-tooltip>
-          </q-btn>
+      <q-card-section class="row items-center">
+        <div class="text-h6">
+          <q-icon name="feedback" color="primary" size="sm" class="q-mx-sm" />
+          {{ $t('TITLES.OUTCOME_DETAILS') }}
         </div>
+        <q-space />
+        <div v-if="outcomeDetails.length" class="row q-gutter-sm">
+          <div>
+            <q-chip square class="bg-grey-3">
+              <q-avatar color="positive" text-color="white" icon="check" />
+              {{ successTransformCount.toLocaleString() }}
+            </q-chip>
+          </div>
+          <div>
+            <q-chip square class="bg-grey-3">
+              <q-avatar color="negative" text-color="white" icon="warning" />
+              {{ errorTransformCount.toLocaleString() }}
+            </q-chip>
+          </div>
+        </div>
+        <q-btn flat round dense :icon="fullscreen ? 'fullscreen_exit' : 'fullscreen'"
+               @click="fullscreen = !fullscreen" class="q-ml-md">
+          <q-tooltip content-class="bg-white text-primary">{{ $t(fullscreen ? 'BUTTONS.MINIMIZE' : 'BUTTONS.MAXIMIZE') }}</q-tooltip>
+        </q-btn>
+        <q-btn flat round dense icon="close" @click="onCloseClick" />
       </q-card-section>
 
       <q-separator />
@@ -37,13 +33,13 @@
       <q-card-section class="scroll">
         <div class="row q-gutter-sm">
           <div class="bg-grey-2 q-mb-sm col">
-            <div class="text-subtitle1 text-weight-bold text-grey-7 q-pa-sm">Status</div>
+            <div class="text-subtitle1 text-weight-bold text-grey-7 q-pa-sm">{{ $t('LABELS.STATUS') }}</div>
             <q-separator />
-            <q-toggle v-model="successDetails" checked-icon="check" color="positive" label="Success" unchecked-icon="clear"/>
-            <q-toggle v-model="errorDetails" checked-icon="warning" color="negative" label="Error" unchecked-icon="clear"/>
+            <q-toggle v-model="successDetails" checked-icon="check" color="positive" :label="$t('COMMON.SUCCESS')" unchecked-icon="clear"/>
+            <q-toggle v-model="errorDetails" checked-icon="warning" color="negative" :label="$t('COMMON.ERROR')" unchecked-icon="clear"/>
           </div>
           <div class="bg-grey-2 q-mb-sm col">
-            <div class="text-subtitle1 text-weight-bold text-grey-7 q-pa-sm">Resources</div>
+            <div class="text-subtitle1 text-weight-bold text-grey-7 q-pa-sm">{{ $t('LABELS.RESOURCES') }}</div>
             <q-separator />
             <q-toggle
               v-model="selectedResources"
@@ -59,8 +55,13 @@
         </div>
         <q-table flat binary-state-sort :data="filteredOutcomeDetails" :columns="columns" row-key="name" color="primary"
                  :rows-per-page-options="[10, 20, 50]" :pagination.sync="pagination" class="sticky-header-table"
-                 table-class="outcome-table"
+                 table-class="outcome-table" :rows-per-page-label="$t('TABLE.RECORDS_PER_PAGE')"
         >
+          <template v-slot:header-cell="props">
+            <th :props="props" :class="props.col.headerClasses" :align="props.col.align">
+              {{ $t(props.col.label) }}
+            </th>
+          </template>
           <template v-slot:body="props">
             <q-tr :props="props">
               <q-td key="status" :props="props">
@@ -88,7 +89,7 @@
 
       <q-separator />
       <q-card-actions align="right">
-        <q-btn flat color="primary" label="Close" @click="onCloseClick" />
+        <q-btn flat color="primary" :label="$t('BUTTONS.CLOSE')" @click="onCloseClick" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -99,17 +100,12 @@
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import StatusMixin from '@/common/mixins/statusMixin'
   import ModalMixin from '@/common/mixins/modalMixin'
+  import { outcomeDetailTable } from '@/common/model/data-table'
 
   @Component
   export default class OutcomeCard extends Mixins(StatusMixin, ModalMixin) {
-    private columns = [
-      { name: 'status', label: 'Status', field: 'status', align: 'center', icon: 'fas fa-info-circle',
-        classes: 'bg-grey-2', headerClasses: 'bg-primary text-white col-1 outcome-table-column' },
-      { name: 'resourceType', label: 'Resource', field: 'resourceType', align: 'center', sortable: true,
-        classes: 'bg-grey-1', headerClasses: 'bg-grey-4 text-grey-10 col-1 outcome-table-column' },
-      { name: 'message', label: 'Detail', field: 'message', align: 'left', sortable: true }
-    ]
-    private pagination = { page: 1, rowsPerPage: 10 }
+    private columns = outcomeDetailTable.columns
+    private pagination = outcomeDetailTable.pagination
     private successDetails: boolean = true
     private errorDetails: boolean = true
     private selectedResources: string[] = []
