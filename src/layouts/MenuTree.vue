@@ -24,7 +24,7 @@
 <script lang="ts">
   import { Component, Vue, Prop } from 'vue-property-decorator'
 
-  @Component
+  @Component({name: 'MenuTree'})
   export default class MenuTree extends Vue {
     @Prop({required: true}) menu: MenuItem[]
     @Prop() offset: number[]
