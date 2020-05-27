@@ -80,15 +80,16 @@
           ]
         },
         {
-          label: this.$tc('MENU.TOOL'),
+          label: this.$tc('MENU.TOOLS'),
           submenu: [
             {
               label: this.$tc('MENU.LANGUAGE'),
               icon: 'language',
+              separate: true,
               submenu: [
                 {
-                  label: 'EN',
-                  afterIcon: this.isLang('en') ? 'check' : '',
+                  label: 'English',
+                  icon: this.isLang('en') ? 'check' : '',
                   action: () => this.updateLang('en')
                 }
               ]

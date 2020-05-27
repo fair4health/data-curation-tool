@@ -122,7 +122,7 @@
     "MAP_METADATA": "@:COMMON.MAP_METADATA",
     "TOGGLE_DEVELOPER_TOOLS": "Toggle Developer Tools",
     "TOGGLE_FULL_SCREEN": "Toggle Full Screen",
-    "TOOL": "Tool",
+    "TOOLS": "Tools",
     "VALIDATE": "@:COMMON.VALIDATE",
     "VERIFY_FHIR_REPO": "Verify FHIR Repo",
     "VIEW": "View",
