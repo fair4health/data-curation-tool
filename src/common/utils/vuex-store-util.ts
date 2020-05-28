@@ -117,4 +117,20 @@ export class VuexStoreUtil {
 
   }
 
+  public static IDB = class {
+
+    // Getters
+    // ..
+
+    // Mutations
+    // ..
+
+    // Actions
+    public static DELETE_RESOURCE = 'deleteResource'
+    public static CLEAR_RESOURCES = 'clearResources'
+    public static GET_SAVED_RESOURCES = 'getSavedResources'
+    public static SAVE_RESOURCE = 'saveResource'
+
+  }
+
 }

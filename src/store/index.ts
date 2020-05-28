@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import file from './fileStore'
 import fhir from './fhirStore'
 import terminology from './terminologyStore'
+import iDB from './iDBStore'
 import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
 Vue.use(Vuex)
@@ -11,7 +12,8 @@ export default new Vuex.Store({
   modules: {
     file,
     fhir,
-    terminology
+    terminology,
+    iDB
   },
   state: {
     drawerOpen: true,
