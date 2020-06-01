@@ -117,4 +117,21 @@ export class VuexStoreUtil {
 
   }
 
+  public static IDB = class {
+
+    // Getters
+    // ..
+
+    // Mutations
+    // ..
+
+    // Actions
+    public static DELETE = 'idbDelete'
+    public static CLEAR_ALL = 'idbClearAll'
+    public static GET = 'idbGet'
+    public static GET_ALL = 'idbGetAll'
+    public static SAVE = 'idbSave'
+
+  }
+
 }

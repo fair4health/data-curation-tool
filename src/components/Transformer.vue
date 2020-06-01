@@ -113,7 +113,6 @@
   import { Component, Mixins } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
   import OutcomeCard from '@/components/modals/OutcomeCard.vue'
-  import electronStore from '@/common/electron-store'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import Status from '@/common/Status'
@@ -140,8 +139,15 @@
     set transformOutcomeDetails (value) { this.$store.commit(types.SET_TRANSFORM_OUTCOME_DETAILS, value) }
 
     onInit () {
-      this.resources = new Map(Object.entries(electronStore.get('resources') || {}))
-      this.transformList = Array.from(this.resources.entries()).map(resource => ({resourceType: resource[0], count: resource[1].length, status: Status.PENDING}))
+      this.$store.dispatch(types.IDB.GET_ALL)
+        .then((resources: any[]) => {
+          const map: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
+          resources.forEach(obj => {
+            map.set(obj.resource, obj.data)
+          })
+          this.resources = map
+          this.transformList = Array.from(this.resources.entries()).map(resource => ({resourceType: resource[0], count: resource[1].length, status: Status.PENDING}))
+        })
     }
 
     transform () {
@@ -203,8 +209,8 @@
         cancel: this.$t('BUTTONS.CANCEL'),
         html: true
       }).onOk(() => {
-        electronStore.delete(`resources.${resourceType}`)
-        this.onInit()
+        this.$store.dispatch(types.IDB.DELETE, resourceType)
+          .then(() => this.onInit())
       })
     }
 
