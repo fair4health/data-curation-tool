@@ -6,14 +6,14 @@ export class IDBService {
   private db: IDBDatabase
 
   constructor () {
-    this.getDB()
+    this.initDB()
       .then(db => this.db = db)
   }
 
   /**
    * Opens and returns the database
    */
-  getDB (): Promise<IDBDatabase> {
+  initDB (): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
       const request: IDBOpenDBRequest = indexedDB.open(this.DB_NAME, this.DB_VERSION)
 
@@ -34,7 +34,7 @@ export class IDBService {
    * Deletes the record with given key (resourceType)
    * @param resourceType
    */
-  deleteResource (resourceType: string): Promise<any> {
+  delete (resourceType: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const transaction: IDBTransaction = this.db.transaction(['resources'], 'readwrite')
 
@@ -45,13 +45,12 @@ export class IDBService {
       store.delete(resourceType)
 
     })
-
   }
 
   /**
    * Clears the db - object store
    */
-  clearResources (): Promise<any> {
+  clearAll (): Promise<any> {
     return new Promise((resolve, reject) => {
       const transaction: IDBTransaction = this.db.transaction(['resources'], 'readwrite')
 
@@ -62,13 +61,34 @@ export class IDBService {
       store.clear()
 
     })
+  }
 
+  /**
+   * Returns resource value by resource type
+   * @param resourceType
+   */
+  get (resourceType: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const transaction: IDBTransaction = this.db.transaction(['resources'], 'readonly')
+
+      transaction.onerror = () => reject(`Error getting ${resourceType} resources`)
+      transaction.oncomplete = () => resolve(result)
+
+      const store: IDBObjectStore = transaction.objectStore('resources')
+      let result: any
+
+      const request: IDBRequest = store.get(resourceType)
+
+      request.onerror = () => reject(`Error getting ${resourceType} resources`)
+      request.onsuccess = () => result = request.result
+
+    })
   }
 
   /**
    * Returns all resources in the db
    */
-  getResources (): Promise<any> {
+  getAll (): Promise<any> {
     return new Promise((resolve, reject) => {
       const transaction: IDBTransaction = this.db.transaction(['resources'], 'readonly')
 
@@ -76,15 +96,12 @@ export class IDBService {
       transaction.oncomplete = () => resolve(resources)
 
       const store: IDBObjectStore = transaction.objectStore('resources')
-      const resources: any[] = []
+      let resources: any[] = []
 
-      store.openCursor().onsuccess = e => {
-        const cursor = (e.target as IDBRequest).result
-        if (cursor) {
-          resources.push(cursor.value)
-          cursor.continue()
-        }
-      }
+      const request: IDBRequest = store.getAll()
+
+      request.onerror = () => reject('Error getting resources')
+      request.onsuccess = () => resources = request.result || []
 
     })
   }
@@ -93,7 +110,7 @@ export class IDBService {
    * Puts resource data into the db
    * @param resource
    */
-  saveResource (resource: any): Promise<any> {
+  save (resource: any): Promise<any> {
     return new Promise((resolve, reject) => {
       const transaction: IDBTransaction = this.db.transaction(['resources'], 'readwrite')
 
@@ -104,7 +121,6 @@ export class IDBService {
       store.put(resource)
 
     })
-
   }
 
 }

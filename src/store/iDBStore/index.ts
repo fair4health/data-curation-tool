@@ -6,30 +6,37 @@ const iDBStore = {
     iDbService: new IDBService()
   },
   actions: {
-    [types.IDB.DELETE_RESOURCE] ({ state }, resourceType: string): Promise<any> {
+    [types.IDB.DELETE] ({ state }, resourceType: string): Promise<any> {
       return new Promise((resolve, reject) => {
-        state.iDbService.deleteResource(resourceType)
+        state.iDbService.delete(resourceType)
           .then(() => resolve(true))
           .catch(err => reject(err))
       })
     },
-    [types.IDB.CLEAR_RESOURCES] ({ state }): Promise<any> {
+    [types.IDB.CLEAR_ALL] ({ state }): Promise<any> {
       return new Promise((resolve, reject) => {
-        state.iDbService.clearResources()
+        state.iDbService.clearAll()
           .then(() => resolve(true))
           .catch(err => reject(err))
       })
     },
-    [types.IDB.GET_SAVED_RESOURCES] ({ state }): Promise<any> {
+    [types.IDB.GET] ({ state }, resourceType: string): Promise<any> {
       return new Promise((resolve, reject) => {
-        state.iDbService.getResources()
+        state.iDbService.get(resourceType)
           .then(_ => resolve(_))
           .catch(err => reject(err))
       })
     },
-    [types.IDB.SAVE_RESOURCE] ({ state }, resource: any): Promise<any> {
+    [types.IDB.GET_ALL] ({ state }): Promise<any> {
       return new Promise((resolve, reject) => {
-        state.iDbService.saveResource(resource)
+        state.iDbService.getAll()
+          .then(_ => resolve(_))
+          .catch(err => reject(err))
+      })
+    },
+    [types.IDB.SAVE] ({ state }, resource: any): Promise<any> {
+      return new Promise((resolve, reject) => {
+        state.iDbService.save(resource)
           .then(() => resolve(true))
           .catch(err => reject(err))
       })

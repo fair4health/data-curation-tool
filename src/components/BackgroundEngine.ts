@@ -436,7 +436,7 @@ export default class BackgroundEngine extends Vue {
                       const resourceList = resources.get(resourceType) || []
 
                       return new Promise((resolve, reject) => {
-                        this.$store.dispatch(types.IDB.SAVE_RESOURCE, {resource: resourceType, data: resourceList})
+                        this.$store.dispatch(types.IDB.SAVE, {resource: resourceType, data: resourceList})
                           .then(() => {
                             // Batch upload resources
                             // Max capacity 1000 resources
@@ -562,7 +562,7 @@ export default class BackgroundEngine extends Vue {
    */
   public onTransform () {
     ipcRenderer.on(ipcChannels.Fhir.TRANSFORM, (event) => {
-      this.$store.dispatch(types.IDB.GET_SAVED_RESOURCES)
+      this.$store.dispatch(types.IDB.GET_ALL)
         .then((resources: any[]) => {
           const map: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
           resources.forEach(obj => {

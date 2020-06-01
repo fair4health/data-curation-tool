@@ -322,7 +322,7 @@
         this.validationStatus = Status.IN_PROGRESS
 
         // If there are resources created, clear them
-        this.$store.dispatch(types.IDB.CLEAR_RESOURCES)
+        this.$store.dispatch(types.IDB.CLEAR_ALL)
           .then(() => {
             const filePathList = Object.keys(FHIRUtil.groupBy(this.tablesToValidate, 'file'))
 
@@ -498,7 +498,7 @@
 
     exportResources () {
       this.$q.loading.show({spinner: undefined})
-      this.$store.dispatch(types.IDB.GET_SAVED_RESOURCES)
+      this.$store.dispatch(types.IDB.GET_ALL)
         .then((resources: any[]) => {
           ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.EXPORT_FILE, JSON.stringify(resources))
           ipcRenderer.on(ipcChannels.File.EXPORT_DONE, (event, result) => {
@@ -517,7 +517,7 @@
     }
 
     nextStep () {
-      this.$store.dispatch(types.IDB.GET_SAVED_RESOURCES)
+      this.$store.dispatch(types.IDB.GET_ALL)
         .then((resources: any[]) => {
           const map: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
           resources.forEach(obj => {

@@ -139,7 +139,7 @@
     set transformOutcomeDetails (value) { this.$store.commit(types.SET_TRANSFORM_OUTCOME_DETAILS, value) }
 
     onInit () {
-      this.$store.dispatch(types.IDB.GET_SAVED_RESOURCES)
+      this.$store.dispatch(types.IDB.GET_ALL)
         .then((resources: any[]) => {
           const map: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
           resources.forEach(obj => {
@@ -209,7 +209,7 @@
         cancel: this.$t('BUTTONS.CANCEL'),
         html: true
       }).onOk(() => {
-        this.$store.dispatch(types.IDB.DELETE_RESOURCE, resourceType)
+        this.$store.dispatch(types.IDB.DELETE, resourceType)
           .then(() => this.onInit())
       })
     }

@@ -126,10 +126,11 @@ export class VuexStoreUtil {
     // ..
 
     // Actions
-    public static DELETE_RESOURCE = 'deleteResource'
-    public static CLEAR_RESOURCES = 'clearResources'
-    public static GET_SAVED_RESOURCES = 'getSavedResources'
-    public static SAVE_RESOURCE = 'saveResource'
+    public static DELETE = 'idbDelete'
+    public static CLEAR_ALL = 'idbClearAll'
+    public static GET = 'idbGet'
+    public static GET_ALL = 'idbGetAll'
+    public static SAVE = 'idbSave'
 
   }
 
