@@ -10,8 +10,13 @@ export interface SourceDataElement {
   type?: string
   value?: string
   record?: Record[]
-  conceptMap?: {id: string, name: string}
+  conceptMap?: SourceDataElementConceptMap
   defaultValue?: string
+}
+
+export interface SourceDataElementConceptMap {
+  source: string
+  target: string
 }
 
 export interface Record {
@@ -30,7 +35,7 @@ export interface TargetResource {
 export interface BufferElement {
   type?: string
   value?: string
-  conceptMap?: {id: string, name: string}
+  conceptMap?: SourceDataElementConceptMap
   target?: TargetResource[]
   defaultValue?: string
 }

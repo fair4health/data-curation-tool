@@ -4849,8 +4849,8 @@ declare namespace store {
   interface SourceTargetGroup {
     type: string
     value: string
-    target: Target[],
-    conceptMap?: {id: string, name: string}
+    target: Target[]
+    conceptMap?: ConceptMap
     defaultValue?: string
   }
   interface Target {
@@ -4859,6 +4859,12 @@ declare namespace store {
     value: string
     type?: string
     fixedUri?: string
+  }
+  interface ConceptMap {
+    source: string
+    target: string
+    value?: string
+    resourceKey?: string
   }
 }
 
@@ -4876,6 +4882,12 @@ declare interface TransformListItem {
   resourceType: string
   count: number
   createdCount?: number
+}
+
+declare interface BufferResourceDefinition {
+  resourceType: string
+  profile: string
+  data: Map<string, BufferResource>
 }
 
 declare interface BufferResource {

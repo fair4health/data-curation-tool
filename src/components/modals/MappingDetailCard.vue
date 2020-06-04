@@ -90,9 +90,28 @@
                   </div>
                 </q-td>
                 <q-td key="conceptMap" :props="props">
-                  <span class="text-size-md">
-                    {{ props.row.conceptMap && props.row.conceptMap.name || '-' }}
-                  </span>
+                  <div v-if="props.row.conceptMap && props.row.conceptMap.source">
+                    <q-chip dense square
+                            color="grey-4" text-color="grey-8" class="q-pa-sm no-margin">
+                      <div class="ellipsis text-size-md">
+                        Src:
+                        {{ props.row.conceptMap.source }}
+                      </div>
+                      <q-tooltip>{{ props.row.conceptMap.source }}</q-tooltip>
+                    </q-chip>
+                    <br />
+                    <q-chip dense square v-if="props.row.conceptMap.target"
+                            color="grey-4" text-color="grey-8" class="q-pa-sm no-margin">
+                      <div class="ellipsis text-size-md">
+                        Target:
+                        {{ props.row.conceptMap.target }}
+                      </div>
+                      <q-tooltip>{{ props.row.conceptMap.target }}</q-tooltip>
+                    </q-chip>
+                  </div>
+                  <div v-else>
+                    -
+                  </div>
                 </q-td>
               </tr>
             </template>

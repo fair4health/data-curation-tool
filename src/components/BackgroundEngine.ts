@@ -15,6 +15,7 @@ import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
 @Component
 export default class BackgroundEngine extends Vue {
+  private readonly CHUNK_SIZE: number = 1000
   private electronStore: ElectronStore
   private fhirBaseUrl: fhir.uri
   private terminologyBaseUrl: fhir.uri
@@ -81,6 +82,7 @@ export default class BackgroundEngine extends Vue {
   public setTerminologyBaseUrl () {
     ipcRenderer.on(ipcChannels.Terminology.SET_TERMINOLOGY_BASE_URL, (event, url) => {
       this.terminologyBaseUrl = url
+      this.$terminologyService.setUrl(this.terminologyBaseUrl)
     })
   }
 
@@ -352,18 +354,18 @@ export default class BackgroundEngine extends Vue {
               // Create resources row by row in entries
               // Start validation operation
               const resources: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
+              const bufferResourceList: BufferResourceDefinition[] = []
+              const conceptMapList: store.ConceptMap[] = []
 
               Promise.all(entries.map((entry) => {
                 return new Promise((resolveOneRow, rejectOneRow) => {
-                  // For each row create resource instances
-                  // const resourceMap: Map<string, Map<string, fhir.Resource>> = new Map<string, Map<string, fhir.Resource>>()
+                  // For each row create buffer resources
 
                   Promise.all(sheetRecords.map((record: store.Record) => {
                     return new Promise((resolveRecord, rejectRecord) => {
                       if (!resources.get(record.resource)) resources.set(record.resource, [])
 
                       const generator = generators.get(record.resource)!
-                      const currResourceList: fhir.Resource[] = resources.get(record.resource)!
                       const bufferResourceMap: Map<string, BufferResource> = new Map<string, BufferResource>()
 
                       if (generator) {
@@ -372,26 +374,21 @@ export default class BackgroundEngine extends Vue {
                             const entryValue: any = sourceData.defaultValue || entry[sourceData.value]
                             if (entryValue !== undefined && entryValue !== null && entryValue !== '') {
                               const value = String(entryValue)
-                              Promise.all(sourceData.target.map((target: store.Target) => {
 
+                              Promise.all(sourceData.target.map((target: store.Target) => {
                                 // Buffer Resource creation
                                 // target.value.substr(target.value.length - 3) === '[x]'
-                                if (target.type)
-                                  bufferResourceMap.set(`${target.value}.${target.type}`, FHIRUtil.cleanJSON({
-                                    value,
-                                    sourceType: sourceData.type,
-                                    targetType: target.type,
-                                    conceptMap: conceptMap.get(sourceData.conceptMap?.id),
-                                    fixedUri: target.fixedUri
-                                  }))
-                                else
-                                  bufferResourceMap.set(target.value, FHIRUtil.cleanJSON({
-                                    value,
-                                    sourceType: sourceData.type,
-                                    targetType: target.type,
-                                    conceptMap: conceptMap.get(sourceData.conceptMap?.id),
-                                    fixedUri: target.fixedUri
-                                  }))
+                                const key = target.type ? `${target.value}.${target.type}` : target.value
+                                bufferResourceMap.set(key, FHIRUtil.cleanJSON({
+                                  value,
+                                  sourceType: sourceData.type,
+                                  targetType: target.type,
+                                  fixedUri: target.fixedUri
+                                }))
+
+                                if (sourceData.conceptMap && sourceData.conceptMap.source) {
+                                  conceptMapList.push({value, resourceKey: key, ...sourceData.conceptMap})
+                                }
 
                               }))
                                 .then(() => resolveTargets())
@@ -401,20 +398,8 @@ export default class BackgroundEngine extends Vue {
                         }))
                           .then(() => {
                             // End of one record
-                            // Generate FHIR Resource from bufferResourceMap
-                            generator.generateResource(bufferResourceMap, record.profile)
-                              .then((res: fhir.Resource) => {
-
-                                currResourceList.push(res)
-                                setTimeout(() => { resolveRecord() }, 0)
-
-                              })
-                              .catch(err => {
-
-                                log.error(record.resource + ' Resource generation error.', err)
-                                setTimeout(() => { resolveRecord() }, 0)
-
-                              })
+                            bufferResourceList.push({resourceType: record.resource, profile: record.profile, data: bufferResourceMap})
+                            resolveRecord()
 
                           })
                           .catch(err => rejectRecord(err))
@@ -429,108 +414,183 @@ export default class BackgroundEngine extends Vue {
                 })
               }))
                 .then(() => { // End of sheet
-                  ipcRenderer.send(ipcChannels.TO_RENDERER, `generated-resources-${filePath}-${sheet.sheetName}`, {status: Status.VALIDATING})
-                  if (entries.length) {
 
-                    Promise.all(Array.from(resources.keys()).map(resourceType => {
-                      const resourceList = resources.get(resourceType) || []
+                  let chunkPromise = Promise.resolve()
 
-                      return new Promise((resolve, reject) => {
-                        this.$store.dispatch(types.IDB.SAVE, {resource: resourceType, data: resourceList})
-                          .then(() => {
-                            // Batch upload resources
-                            // Max capacity 1000 resources
-                            const len = Math.ceil(resourceList.length / 1000)
+                  if (conceptMapList.length) {
+                    const conceptMappingCountPerResource: number = conceptMapList.length / bufferResourceList.length
+                    const chunkedConceptMapList = this.$_.chunk(conceptMapList, conceptMappingCountPerResource * this.CHUNK_SIZE)
 
-                            const batchPromiseList: Array<Promise<any>> = []
+                    for (let i = 0; i < chunkedConceptMapList.length; i++) {
+                      chunkPromise = chunkPromise.then(() => {
+                        return new Promise((resolveChunk, rejectChunk) => {
+                          const currentChunk = chunkedConceptMapList[i]
 
-                            for (let i = 0, p = Promise.resolve(); i < len; i++) {
-                              batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
-                                this.$fhirService.validate(resourceList!.slice(i * 1000, (i + 1) * 1000))
-                                  .then(res => {
-                                    const bundle: fhir.Bundle = res.data as fhir.Bundle
-                                    const outcomeDetails: OutcomeDetail[] = []
-                                    let hasError: boolean = false
+                          this.$terminologyService.translateBatch(currentChunk)
+                            .then((bundle: fhir.Bundle) => {
 
-                                    // Check batch bundle response for errors
-                                    Promise.all(bundle.entry?.map(_ => {
-                                      if (!_.resource) {
-                                        const operationOutcome: fhir.OperationOutcome = _.response!.outcome as fhir.OperationOutcome
-                                        operationOutcome.issue.map(issue => {
-                                          if (issue.severity === 'error') {
-                                            hasError = true
-                                            outcomeDetails.push({status: Status.ERROR, resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
-                                          }
-                                          // else if (issue.severity === 'information') {
-                                          // outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
-                                          // }
-                                        })
-                                      } else {
-                                        outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
-                                      }
-                                    }) || [])
-                                      .then(() => {
-                                        if (hasError) resolveBatch(outcomeDetails)
-                                        else resolveBatch(outcomeDetails)
-                                      })
-                                      .catch(err => rejectBatch(err))
-                                  })
-                                  .catch(err => {
-                                    log.error(`Batch process error. ${err}`)
-                                    rejectBatch(err)
-                                    ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: 'CONNECTIN ERROR'}]})
-                                  })
-                              })))
-                            }
+                              const parametersEntry: fhir.BundleEntry[] = bundle.entry
+                              const bundleEntrySize: number = bundle.entry.length
 
-                            Promise.all(batchPromiseList)
-                              .then(res => {
-                                if (res.length) {
-                                  log.info(`Batch process completed for Resource: ${resourceType}`)
-                                  resolve([].concat.apply([], res))
-                                } else {
-                                  log.error(`Batch process error for Resource: ${resourceType}`)
-                                  reject([{
-                                    status: Status.ERROR,
-                                    message: `There is no ${resourceType} Resource created. See the logs for detailed error information.`,
-                                    resourceType: 'OperationOutcome'
-                                  } as OutcomeDetail])
+                              for (let j = 0; j < bundleEntrySize; j++) {
+                                const parametersParameters: fhir.ParametersParameter[] = (parametersEntry[j].resource as fhir.Parameters).parameter
+
+                                if (parametersParameters.find(_ => _.name === 'result')?.valueBoolean === true) {
+                                  const matchConcept: fhir.ParametersParameter | undefined = parametersParameters.find(_ => _.name === 'match')?.part?.find(_ => _.name === 'concept')
+                                  if (matchConcept) {
+
+                                    const key: string = currentChunk[j].resourceKey
+                                    const bufferResource: BufferResource = bufferResourceList[Math.floor((i * this.CHUNK_SIZE + j) / conceptMappingCountPerResource)].data.get(key)
+
+                                    bufferResource.value = matchConcept.valueCoding.code
+                                    bufferResource.fixedUri = matchConcept.valueCoding.system
+
+                                  }
                                 }
-                              })
-                              .catch(err => {
-                                log.error(`Batch process error for Resource: ${resourceType}`)
-                                reject(err)
-                              })
+                              }
+                              resolveChunk()
+                            })
+                            .catch(err => {
+                              log.error(`Batch translation error. ${err}`)
+                              resolveChunk()
+                            })
+
+                        })
+                      })
+                    }
+                  }
+
+                  chunkPromise.then(() => {
+                    // End of translation
+                    // Generate resources
+                    Promise.all(bufferResourceList.map((bufferResourceDefinition: BufferResourceDefinition) => {
+                      return new Promise(resolve => {
+                        const generator = generators.get(bufferResourceDefinition.resourceType)
+                        const currResourceList: fhir.Resource[] = resources.get(bufferResourceDefinition.resourceType)
+
+                        generator.generateResource(bufferResourceDefinition.data, bufferResourceDefinition.profile)
+                          .then((res: fhir.Resource) => {
+
+                            currResourceList.push(res)
+                            setTimeout(() => { resolve() }, 0)
+
                           })
                           .catch(err => {
-                            log.warn(`Couldn't store resources created: ${err}`)
-                            return reject([{
-                              status: Status.ERROR,
-                              message: `Couldn't store resources. Capacity exceeded.`,
-                              resourceType: 'OperationOutcome'
-                            } as OutcomeDetail])
-                          })
-                      }).catch(_ => _)
 
+                            log.error(bufferResourceDefinition.resourceType + ' Resource generation error.', err)
+                            setTimeout(() => { resolve() }, 0)
+
+                          })
+                      })
                     }))
-                      .then((res: any[]) => {
-                        resolveSheet()
-                        const outcomeDetails: OutcomeDetail[] = [].concat.apply([], res)
-                        const status = !outcomeDetails.length || !!outcomeDetails.find(_ => _.status === Status.ERROR) ? Status.ERROR : Status.SUCCESS
-                        ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status, outcomeDetails})
-                        log.info(`Validation completed ${sheet.sheetName} in ${filePath}`)
+                      .then(() => {
+                        ipcRenderer.send(ipcChannels.TO_RENDERER, `generated-resources-${filePath}-${sheet.sheetName}`, {status: Status.VALIDATING})
+                        if (entries.length) {
+
+                          Promise.all(Array.from(resources.keys()).map(resourceType => {
+                            const resourceList = resources.get(resourceType) || []
+
+                            return new Promise((resolve, reject) => {
+                              this.$store.dispatch(types.IDB.SAVE, {resource: resourceType, data: resourceList})
+                                .then(() => {
+                                  // Batch upload resources
+                                  // Max capacity CHUNK_SIZE resources
+                                  const len = Math.ceil(resourceList.length / this.CHUNK_SIZE)
+
+                                  const batchPromiseList: Array<Promise<any>> = []
+
+                                  for (let i = 0, p = Promise.resolve(); i < len; i++) {
+                                    batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
+                                      this.$fhirService.validate(resourceList!.slice(i * this.CHUNK_SIZE, (i + 1) * this.CHUNK_SIZE))
+                                        .then(res => {
+                                          const bundle: fhir.Bundle = res.data as fhir.Bundle
+                                          const outcomeDetails: OutcomeDetail[] = []
+                                          let hasError: boolean = false
+
+                                          // Check batch bundle response for errors
+                                          Promise.all(bundle.entry?.map(_ => {
+                                            if (!_.resource) {
+                                              const operationOutcome: fhir.OperationOutcome = _.response!.outcome as fhir.OperationOutcome
+                                              operationOutcome.issue.map(issue => {
+                                                if (issue.severity === 'error') {
+                                                  hasError = true
+                                                  outcomeDetails.push({status: Status.ERROR, resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
+                                                }
+                                              })
+                                            } else {
+                                              outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
+                                            }
+                                          }) || [])
+                                            .then(() => {
+                                              if (hasError) resolveBatch(outcomeDetails)
+                                              else resolveBatch(outcomeDetails)
+                                            })
+                                            .catch(err => rejectBatch(err))
+                                        })
+                                        .catch(err => {
+                                          log.error(`Batch process error. ${err}`)
+                                          rejectBatch(err)
+                                          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: 'CONNECTIN ERROR'}]})
+                                        })
+                                    })))
+                                  }
+
+                                  Promise.all(batchPromiseList)
+                                    .then(res => {
+                                      if (res.length) {
+                                        log.info(`Batch process completed for Resource: ${resourceType}`)
+                                        resolve([].concat.apply([], res))
+                                      } else {
+                                        log.error(`Batch process error for Resource: ${resourceType}`)
+                                        reject([{
+                                          status: Status.ERROR,
+                                          message: `There is no ${resourceType} Resource created. See the logs for detailed error information.`,
+                                          resourceType: 'OperationOutcome'
+                                        } as OutcomeDetail])
+                                      }
+                                    })
+                                    .catch(err => {
+                                      log.error(`Batch process error for Resource: ${resourceType}`)
+                                      reject(err)
+                                    })
+                                })
+                                .catch(err => {
+                                  log.warn(`Couldn't store resources created: ${err}`)
+                                  return reject([{
+                                    status: Status.ERROR,
+                                    message: `Couldn't store resources. Capacity exceeded.`,
+                                    resourceType: 'OperationOutcome'
+                                  } as OutcomeDetail])
+                                })
+                            }).catch(_ => _)
+
+                          }))
+                            .then((res: any[]) => {
+                              resolveSheet()
+                              const outcomeDetails: OutcomeDetail[] = [].concat.apply([], res)
+                              const status = !outcomeDetails.length || !!outcomeDetails.find(_ => _.status === Status.ERROR) ? Status.ERROR : Status.SUCCESS
+                              ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status, outcomeDetails})
+                              log.info(`Validation completed ${sheet.sheetName} in ${filePath}`)
+                            })
+                            .catch(err => {
+                              resolveSheet()
+                              ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, message: 'Batch process error', outcomeDetails: err})
+                              log.error(`Batch process error ${filePath}-${sheet.sheetName}`)
+                            })
+
+                        } else {
+                          resolveSheet()
+                          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: 'Empty sheet'}]})
+                          log.warn(`Empty sheet: ${sheet.sheetName} in ${filePath}`)
+                        }
                       })
                       .catch(err => {
                         resolveSheet()
-                        ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, message: 'Batch process error', outcomeDetails: err})
-                        log.error(`Batch process error ${filePath}-${sheet.sheetName}`)
+                        ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: `Translation Terminology Service error for sheet: ${sheet.sheetName}. ${err}`}]})
+                        log.error(`Chunk promise error. ${err}`)
                       })
 
-                  } else {
-                    resolveSheet()
-                    ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: 'Empty sheet'}]})
-                    log.warn(`Empty sheet: ${sheet.sheetName} in ${filePath}`)
-                  }
+                  })
                 })
                 .catch(err => {
                   resolveSheet()
@@ -577,14 +637,14 @@ export default class BackgroundEngine extends Vue {
               ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: Status.IN_PROGRESS} as OutcomeDetail)
 
               // Batch upload resources
-              // Max capacity 1000 resources
-              const len = Math.ceil(resourceList!.length / 1000)
+              // Max capacity CHUNK_SIZE resources
+              const len = Math.ceil(resourceList!.length / this.CHUNK_SIZE)
 
               const batchPromiseList: Array<Promise<any>> = []
 
               for (let i = 0, p = Promise.resolve(); i < len; i++) {
                 batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
-                  this.$fhirService.postBatch(resourceList!.slice(i * 1000, (i + 1) * 1000), 'PUT')
+                  this.$fhirService.postBatch(resourceList!.slice(i * this.CHUNK_SIZE, (i + 1) * this.CHUNK_SIZE), 'PUT')
                     .then(res => {
                       const bundle: fhir.Bundle = res.data as fhir.Bundle
                       const outcomeDetails: OutcomeDetail[] = []
