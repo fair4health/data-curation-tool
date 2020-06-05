@@ -1,5 +1,4 @@
 import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
-import i18n from '@/i18n'
 
 const terminologyStore = {
   state: {
@@ -40,7 +39,7 @@ const terminologyStore = {
       return new Promise((resolve, reject) => {
         this._vm.$terminologyService.verify()
           .then(() => resolve(true))
-          .catch(err => reject(i18n.t('ERROR.TERMINOLOGY_URL_NOT_VERIFIED') + ` ${err}`))
+          .catch(err => reject(err))
       })
     },
     [types.Terminology.GET_CODE_SYSTEMS] ({ commit, state }, noCache?: boolean): Promise<any> {
