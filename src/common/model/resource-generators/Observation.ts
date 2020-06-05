@@ -19,35 +19,19 @@ export class Observation implements Generator {
         observation.id = String(resource.get('Observation.id')?.value || '')
       }
       if (resource.has('Observation.status')) {
-        const item = resource.get('Observation.status')
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) observation.status = targetValue
-        } else {
-          observation.status = String(item.value)
-        }
+        observation.status = String(resource.get('Observation.status').value)
       }
       if (resource.has('Observation.category')) {
         const item = resource.get('Observation.category')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          observation.category = [targetValue]
-        } else {
-          observation.category = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )]
-        }
+        observation.category = [DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )]
       }
       if (resource.has('Observation.code')) {
         const item = resource.get('Observation.code')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) observation.code = targetValue
-        } else {
-          observation.code = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )
-        }
+        observation.code = DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )
       }
 
       const subject = FHIRUtil.searchForReference(keys, resource, 'Observation.subject.Reference.')
@@ -111,14 +95,9 @@ export class Observation implements Generator {
         }
         if (resource.has('Observation.effective[x].Timing.code')) {
           const item = resource.get('Observation.effective[x].Timing.code')
-          if (item.conceptMap) {
-            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-            if (targetValue) timing.code = targetValue
-          } else {
-            timing.code = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-            )
-          }
+          timing.code = DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+          )
         }
         const effectingTimingRepeat = effectiveTiming.filter(_ => _.startsWith('Observation.effective[x].Timing.repeat'))
         if (effectingTimingRepeat.length) {
@@ -139,13 +118,7 @@ export class Observation implements Generator {
             timing.repeat.durationMax = Number(resource.get('Observation.effective[x].Timing.repeat.durationMax').value)
           }
           if (resource.has('Observation.effective[x].Timing.repeat.durationUnit')) {
-            const item = resource.get('Observation.effective[x].Timing.repeat.durationUnit')
-            if (item.conceptMap) {
-              const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-              if (targetValue) timing.repeat.durationUnit = targetValue
-            } else {
-              timing.repeat.durationUnit = String(item.value)
-            }
+            timing.repeat.durationUnit = String(resource.get('Observation.effective[x].Timing.repeat.durationUnit').value)
           }
           if (resource.has('Observation.effective[x].Timing.repeat.frequency')) {
             timing.repeat.frequency = Number(resource.get('Observation.effective[x].Timing.repeat.frequency').value)
@@ -160,34 +133,16 @@ export class Observation implements Generator {
             timing.repeat.periodMax = Number(resource.get('Observation.effective[x].Timing.repeat.periodMax').value)
           }
           if (resource.has('Observation.effective[x].Timing.repeat.periodUnit')) {
-            const item = resource.get('Observation.effective[x].Timing.repeat.periodUnit')
-            if (item.conceptMap) {
-              const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-              if (targetValue) timing.repeat.periodUnit = targetValue
-            } else {
-              timing.repeat.periodUnit = String(item.value)
-            }
+            timing.repeat.periodUnit = String(resource.get('Observation.effective[x].Timing.repeat.periodUnit').value)
           }
           if (resource.has('Observation.effective[x].Timing.repeat.dayOfWeek')) {
-            const item = resource.get('Observation.effective[x].Timing.repeat.dayOfWeek')
-            if (item.conceptMap) {
-              const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-              if (targetValue) timing.repeat.dayOfWeek = [targetValue]
-            } else {
-              timing.repeat.dayOfWeek = [String(item.value)]
-            }
+            timing.repeat.dayOfWeek = [String(resource.get('Observation.effective[x].Timing.repeat.dayOfWeek').value)]
           }
           if (resource.has('Observation.effective[x].Timing.repeat.timeOfDay')) {
             timing.repeat.timeOfDay = [String(resource.get('Observation.effective[x].Timing.repeat.timeOfDay').value)]
           }
           if (resource.has('Observation.effective[x].Timing.repeat.when')) {
-            const item = resource.get('Observation.effective[x].Timing.repeat.when')
-            if (item.conceptMap) {
-              const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-              if (targetValue) timing.repeat.when = [targetValue]
-            } else {
-              timing.repeat.when = [String(item.value)]
-            }
+            timing.repeat.when = [String(resource.get('Observation.effective[x].Timing.repeat.when').value)]
           }
           if (resource.has('Observation.effective[x].Timing.repeat.offset')) {
             timing.repeat.offset = Number(resource.get('Observation.effective[x].Timing.repeat.offset').value)
@@ -253,14 +208,9 @@ export class Observation implements Generator {
       }
       if (resource.has('Observation.value[x].CodeableConcept')) {
         const item = resource.get('Observation.value[x].CodeableConcept')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) observation.valueCodeableConcept = targetValue
-        } else {
-          observation.valueCodeableConcept = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )
-        }
+        observation.valueCodeableConcept = DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )
       }
       if (resource.has('Observation.value[x].Range.low')) {
         const item = resource.get('Observation.value[x].Range.low')
@@ -316,47 +266,27 @@ export class Observation implements Generator {
 
       if (resource.has('Observation.dataAbsentReason')) {
         const item = resource.get('Observation.dataAbsentReason')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) observation.dataAbsentReason = targetValue
-        } else {
-          observation.dataAbsentReason = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )
-        }
+        observation.dataAbsentReason = DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )
       }
       if (resource.has('Observation.interpretation')) {
         const item = resource.get('Observation.interpretation')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) observation.interpretation = [targetValue]
-        } else {
-          observation.interpretation = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )]
-        }
+        observation.interpretation = [DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )]
       }
       if (resource.has('Observation.bodySite')) {
         const item = resource.get('Observation.bodySite')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) observation.bodySite = targetValue
-        } else {
-          observation.bodySite = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )
-        }
+        observation.bodySite = DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )
       }
       if (resource.has('Observation.method')) {
         const item = resource.get('Observation.method')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) observation.method = targetValue
-        } else {
-          observation.method = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )
-        }
+        observation.method = DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )
       }
 
       const specimen = FHIRUtil.searchForReference(keys, resource, 'Observation.specimen.Reference.')
@@ -370,37 +300,22 @@ export class Observation implements Generator {
         const component: fhir.ObservationComponent = {} as fhir.ObservationComponent
         if (resource.has('Observation.component.code')) {
           const item = resource.get('Observation.component.code')
-          if (item.conceptMap) {
-            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-            if (targetValue) component.code = targetValue
-          } else {
-            component.code = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-            )
-          }
+          component.code = DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+          )
         }
 
         if (resource.has('Observation.component.dataAbsentReason')) {
           const item = resource.get('Observation.component.dataAbsentReason')
-          if (item.conceptMap) {
-            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-            if (targetValue) component.dataAbsentReason = targetValue
-          } else {
-            component.dataAbsentReason = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-            )
-          }
+          component.dataAbsentReason = DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+          )
         }
         if (resource.has('Observation.component.interpretation')) {
           const item = resource.get('Observation.component.interpretation')
-          if (item.conceptMap) {
-            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-            if (targetValue) component.interpretation = [targetValue]
-          } else {
-            component.interpretation = [DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-            )]
-          }
+          component.interpretation = [DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+          )]
         }
 
         const _component = FHIRUtil.cleanJSON(component)

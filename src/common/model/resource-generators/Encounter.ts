@@ -19,23 +19,10 @@ export class Encounter implements Generator {
         encounter.id = String(resource.get('Encounter.id')?.value || '')
       }
       if (resource.has('Encounter.status')) {
-        const item = resource.get('Encounter.status')
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) encounter.status = targetValue
-        } else {
-          encounter.status = String(item.value)
-        }
+        encounter.status = String(resource.get('Encounter.status').value)
       }
       if (resource.has('Encounter.statusHistory.status')) {
-        const item = resource.get('Encounter.statusHistory.status')
-        let _status = ''
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) _status = targetValue
-        } else {
-          _status = String(item.value)
-        }
+        const _status = String(resource.get('Encounter.statusHistory.status').value)
 
         if (!encounter.statusHistory?.length) {
           encounter.statusHistory = [{} as fhir.EncounterStatusHistory]
@@ -74,22 +61,11 @@ export class Encounter implements Generator {
 
       if (resource.has('Encounter.class')) {
         const item = resource.get('Encounter.class')
-        if (item.conceptMap) {
-          const targetValue: fhir.Coding = FHIRUtil.getConceptMapTargetAsCoding(item.conceptMap, String(item.value))
-          if (targetValue) encounter.class = targetValue
-        } else {
-          encounter.class = DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)}).toJSON()
-        }
+        encounter.class = DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)}).toJSON()
       }
       if (resource.has('Encounter.classHistory.class')) {
         const item = resource.get('Encounter.classHistory.class')
-        let _class: fhir.Coding
-        if (item.conceptMap) {
-          const targetValue: fhir.Coding = FHIRUtil.getConceptMapTargetAsCoding(item.conceptMap, String(item.value))
-          if (targetValue) _class = targetValue
-        } else {
-          _class = DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)}).toJSON()
-        }
+        const _class: fhir.Coding = DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)}).toJSON()
 
         if (!encounter.classHistory?.length && _class && !FHIRUtil.isEmpty(_class)) {
           encounter.classHistory = [{} as fhir.EncounterClassHistory]
@@ -127,35 +103,21 @@ export class Encounter implements Generator {
 
       if (resource.has('Encounter.type')) {
         const item = resource.get('Encounter.type')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          encounter.type = [targetValue]
-        } else {
-          encounter.type = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )]
-        }
+        encounter.type = [DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )]
       }
       if (resource.has('Encounter.serviceType')) {
         const item = resource.get('Encounter.serviceType')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) encounter.serviceType = targetValue
-        } else {
-          encounter.serviceType = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )
-        }
+        encounter.serviceType = DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )
       }
       if (resource.has('Encounter.priority')) {
         const item = resource.get('Encounter.priority')
-        if (item.conceptMap) {
-          encounter.priority = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-        } else {
-          encounter.priority = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )
-        }
+        encounter.priority = DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )
       }
 
       const subject = FHIRUtil.searchForReference(keys, resource, 'Encounter.subject.Reference.')
@@ -169,15 +131,9 @@ export class Encounter implements Generator {
 
       if (resource.has('Encounter.participant.type')) {
         const item = resource.get('Encounter.participant.type')
-        let _type: fhir.CodeableConcept
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) _type = targetValue
-        } else {
-          _type = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )
-        }
+        const _type: fhir.CodeableConcept = DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )
 
         if (!encounter.participant?.length && _type && !FHIRUtil.isEmpty(_type)) {
           encounter.participant = [{} as fhir.EncounterParticipant]
@@ -281,14 +237,9 @@ export class Encounter implements Generator {
 
       if (resource.has('Encounter.reasonCode')) {
         const item = resource.get('Encounter.reasonCode')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) encounter.reasonCode = [targetValue]
-        } else {
-          encounter.reasonCode = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )]
-        }
+        encounter.reasonCode = [DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )]
       }
 
       const reasonReference = FHIRUtil.searchForReference(keys, resource, 'Encounter.reasonReference.Reference.')
@@ -302,14 +253,9 @@ export class Encounter implements Generator {
         if (diagnosisCondition) encounterDiagnosis.condition = diagnosisCondition
         if (resource.has('Encounter.diagnosis.use')) {
           const item = resource.get('Encounter.diagnosis.use')
-          if (item.conceptMap) {
-            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-            if (targetValue) encounterDiagnosis.use = targetValue
-          } else {
-            encounterDiagnosis.use = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-            )
-          }
+          encounterDiagnosis.use = DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+          )
         }
         if (resource.has('Encounter.diagnosis.rank')) {
           const item = resource.get('Encounter.diagnosis.rank')
@@ -331,69 +277,39 @@ export class Encounter implements Generator {
 
         if (resource.has('Encounter.hospitalization.admitSource')) {
           const item = resource.get('Encounter.hospitalization.admitSource')
-          if (item.conceptMap) {
-            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-            if (targetValue) encounterHospitalization.admitSource = targetValue
-          } else {
-            encounterHospitalization.admitSource = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-            )
-          }
+          encounterHospitalization.admitSource = DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+          )
         }
         if (resource.has('Encounter.hospitalization.reAdmission')) {
           const item = resource.get('Encounter.hospitalization.reAdmission')
-          if (item.conceptMap) {
-            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-            if (targetValue) encounterHospitalization.reAdmission = targetValue
-          } else {
-            encounterHospitalization.reAdmission = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-            )
-          }
+          encounterHospitalization.reAdmission = DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+          )
         }
         if (resource.has('Encounter.hospitalization.dietPreference')) {
           const item = resource.get('Encounter.hospitalization.dietPreference')
-          if (item.conceptMap) {
-            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-            if (targetValue) encounterHospitalization.dietPreference = [targetValue]
-          } else {
-            encounterHospitalization.dietPreference = [DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-            )]
-          }
+          encounterHospitalization.dietPreference = [DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+          )]
         }
         if (resource.has('Encounter.hospitalization.specialCourtesy')) {
           const item = resource.get('Encounter.hospitalization.specialCourtesy')
-          if (item.conceptMap) {
-            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-            if (targetValue) encounterHospitalization.specialCourtesy = [targetValue]
-          } else {
-            encounterHospitalization.specialCourtesy = [DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-            )]
-          }
+          encounterHospitalization.specialCourtesy = [DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+          )]
         }
         if (resource.has('Encounter.hospitalization.specialArrangement')) {
           const item = resource.get('Encounter.hospitalization.specialArrangement')
-          if (item.conceptMap) {
-            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-            if (targetValue) encounterHospitalization.specialArrangement = [targetValue]
-          } else {
-            encounterHospitalization.specialArrangement = [DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-            )]
-          }
+          encounterHospitalization.specialArrangement = [DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+          )]
         }
         if (resource.has('Encounter.hospitalization.dischargeDisposition')) {
           const item = resource.get('Encounter.hospitalization.dischargeDisposition')
-          if (item.conceptMap) {
-            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-            if (targetValue) encounterHospitalization.dischargeDisposition = targetValue
-          } else {
-            encounterHospitalization.dischargeDisposition = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-            )
-          }
+          encounterHospitalization.dischargeDisposition = DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+          )
         }
 
         const hospitalizationDestination = FHIRUtil.searchForReference(keys, resource, 'Encounter.hospitalization.destination.Reference.')
@@ -413,24 +329,13 @@ export class Encounter implements Generator {
         if (locationReference) location.location = locationReference
 
         if (resource.has('Encounter.location.status')) {
-          const item = resource.get('Encounter.location.status')
-          if (item.conceptMap) {
-            const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-            if (targetValue) location.status = targetValue
-          } else {
-            location.status = String(item.value)
-          }
+          location.status = String(resource.get('Encounter.location.status').value)
         }
         if (resource.has('Encounter.location.physicalType')) {
           const item = resource.get('Encounter.location.physicalType')
-          if (item.conceptMap) {
-            const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-            if (targetValue) location.physicalType = targetValue
-          } else {
-            location.physicalType = DataTypeFactory.createCodeableConcept(
-              DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-            )
-          }
+          location.physicalType = DataTypeFactory.createCodeableConcept(
+            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+          )
         }
 
         const locationPeriod = keys.filter(_ => _.startsWith('Encounter.location.period.Period'))

@@ -55,7 +55,7 @@ export class DataTypeFactory {
     return date ? new Date(date) : null
   }
   static createDateString (date: Date): string {
-    return date.getFullYear() + '-' + ('0' + (date.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + date.getUTCDate()).slice(-2)
+    return date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2)
   }
 
 }

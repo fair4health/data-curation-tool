@@ -20,44 +20,23 @@ export class Practitioner implements Generator {
       }
       if (resource.has('Practitioner.active')) {
         const item = resource.get('Practitioner.active')
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) practitioner.active = String(item.value).toLowerCase() === 'true'
-        } else {
-          practitioner.active = String(item.value).toLowerCase() === 'true'
-        }
+        practitioner.active = String(item.value).toLowerCase() === 'true'
       }
       if (resource.has('Practitioner.gender')) {
-        const item = resource.get('Practitioner.gender')
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) practitioner.gender = targetValue
-        } else {
-          practitioner.gender = String(item.value)
-        }
+        practitioner.gender = String(resource.get('Practitioner.gender').value)
       }
       const practitionerTelecom = keys.filter(_ => _.startsWith('Practitioner.telecom'))
       if (practitionerTelecom.length) {
         // TODO: ContactPoint.period
         const telecom: fhir.ContactPoint = {}
         if (resource.has('Practitioner.telecom.ContactPoint.system')) {
-          const item = resource.get('Practitioner.telecom.ContactPoint.system')
-          if (item.conceptMap) {
-            const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-            if (targetValue) telecom.system = targetValue
-          } else {
-            telecom.system = String(item.value)
-          }
+          telecom.system = String(resource.get('Practitioner.telecom.ContactPoint.system').value)
         }
-        if (resource.has('Practitioner.telecom.ContactPoint.value')) { telecom.value = String(resource.get('Practitioner.telecom.ContactPoint.value').value) }
+        if (resource.has('Practitioner.telecom.ContactPoint.value')) {
+          telecom.value = String(resource.get('Practitioner.telecom.ContactPoint.value').value)
+        }
         if (resource.has('Practitioner.telecom.ContactPoint.use')) {
-          const item = resource.get('Practitioner.telecom.ContactPoint.use')
-          if (item.conceptMap) {
-            const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-            if (targetValue) telecom.use = targetValue
-          } else {
-            telecom.use = String(item.value)
-          }
+          telecom.use = String(resource.get('Practitioner.telecom.ContactPoint.use').value)
         }
         if (resource.has('Practitioner.telecom.ContactPoint.rank')) { telecom.rank = Number(resource.get('Practitioner.telecom.ContactPoint.rank').value) }
 
@@ -80,13 +59,7 @@ export class Practitioner implements Generator {
         // TODO: HumanName.period
         const name: fhir.HumanName = {}
         if (resource.has('Practitioner.name.HumanName.use')) {
-          const item = resource.get('Practitioner.name.HumanName.use')
-          if (item.conceptMap) {
-            const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-            if (targetValue) name.use = targetValue
-          } else {
-            name.use = String(item.value)
-          }
+          name.use = String(resource.get('Practitioner.name.HumanName.use').value)
         }
         if (resource.has('Practitioner.name.HumanName.text')) { name.text = String(resource.get('Practitioner.name.HumanName.text').value) }
         if (resource.has('Practitioner.name.HumanName.family')) { name.family = String(resource.get('Practitioner.name.HumanName.family').value) }

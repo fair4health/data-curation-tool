@@ -22,13 +22,7 @@ export class Device implements Generator {
         device.id = String(resource.get('Device.id')?.value || '')
       }
       if (resource.has('Device.status')) {
-        const item = resource.get('Device.status')
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) device.status = targetValue
-        } else {
-          device.status = String(item.value)
-        }
+        device.status = String(resource.get('Device.status').value)
       }
       const patient = FHIRUtil.searchForReference(keys, resource, 'Device.patient.Reference.')
       if (patient) device.patient = patient
@@ -71,13 +65,7 @@ export class Device implements Generator {
         deviceName.name = String(resource.get('Device.deviceName.name')!.value)
       }
       if (resource.has('Device.deviceName.type')) {
-        const item = resource.get('Device.deviceName.type')
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) deviceName.type = targetValue
-        } else {
-          deviceName.type = String(item.value)
-        }
+        deviceName.type = String(resource.get('Device.deviceName.type').value)
       }
       if (resource.has('Device.modelNumber')) {
         device.modelNumber = String(resource.get('Device.modelNumber').value)
@@ -87,14 +75,7 @@ export class Device implements Generator {
       }
       if (resource.has('Device.type')) {
         const item = resource.get('Device.type')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) device.type = targetValue
-        } else {
-          device.type = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )
-        }
+        device.type = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)}))
       }
 
       if (resource.has('Device.udiCarrier.deviceIdentifier')) {
@@ -113,13 +94,7 @@ export class Device implements Generator {
         udi.carrierHRF = String(resource.get('Device.udiCarrier.carrierHRF').value)
       }
       if (resource.has('Device.udiCarrier.entryType')) {
-        const item = resource.get('Device.udiCarrier.entryType')
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) device.status = targetValue
-        } else {
-          device.status = String(item.value)
-        }
+        device.status = String(resource.get('Device.udiCarrier.entryType').value)
       }
 
       if (!FHIRUtil.isEmpty(udi)) device.udi = udi
