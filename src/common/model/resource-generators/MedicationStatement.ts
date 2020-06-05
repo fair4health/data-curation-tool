@@ -21,45 +21,25 @@ export class MedicationStatement implements Generator {
         medicationStatement.id = String(resource.get('MedicationStatement.id')?.value || '')
       }
       if (resource.has('MedicationStatement.status')) {
-        const item = resource.get('MedicationStatement.status')
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) medicationStatement.status = targetValue
-        } else {
-          medicationStatement.status = String(item.value)
-        }
+        medicationStatement.status = String(resource.get('MedicationStatement.status').value)
       }
       if (resource.has('MedicationStatement.statusReason')) {
         const item = resource.get('MedicationStatement.statusReason')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) medicationStatement.statusReason = [targetValue]
-        } else {
-          medicationStatement.statusReason = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )]
-        }
+        medicationStatement.statusReason = [DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )]
       }
       if (resource.has('MedicationStatement.category')) {
         const item = resource.get('MedicationStatement.category')
-        if (item.conceptMap) {
-          medicationStatement.category = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-        } else {
-          medicationStatement.category = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )
-        }
+        medicationStatement.category = DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )
       }
       if (resource.has('MedicationStatement.medication[x].CodeableConcept')) {
         const item = resource.get('MedicationStatement.medication[x].CodeableConcept')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) medicationStatement.medicationCodeableConcept = targetValue
-        } else {
-          medicationStatement.medicationCodeableConcept = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )
-        }
+        medicationStatement.medicationCodeableConcept = DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )
       }
       const medication = FHIRUtil.searchForReference(keys, resource, 'MedicationStatement.medication[x].Reference.')
       if (medication) medicationStatement.medicationReference = medication

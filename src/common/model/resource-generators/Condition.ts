@@ -20,65 +20,31 @@ export class Condition implements Generator {
       }
       if (resource.has('Condition.clinicalStatus')) {
         const item = resource.get('Condition.clinicalStatus')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) condition.clinicalStatus = targetValue
-        } else {
-          condition.clinicalStatus = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
-        }
+        condition.clinicalStatus = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
       }
       if (resource.has('Condition.verificationStatus')) {
         const item = resource.get('Condition.verificationStatus')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) condition.verificationStatus = targetValue
-        } else {
-          condition.verificationStatus = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
-        }
+        condition.verificationStatus = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
       }
       if (resource.has('Condition.category')) {
         const item = resource.get('Condition.category')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          condition.category = [targetValue]
-        } else {
-          condition.category = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )]
-        }
+        condition.category = [DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )]
       }
       if (resource.has('Condition.severity')) {
         const item = resource.get('Condition.severity')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) condition.severity = targetValue
-        } else {
-          condition.severity = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
-        }
+        condition.severity = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
       }
       if (resource.has('Condition.code')) {
         const item = resource.get('Condition.code')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) condition.code = targetValue
-        } else {
-          condition.code = DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )
-        }
+        condition.code = DataTypeFactory.createCodeableConcept(DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)}))
       }
       if (resource.has('Condition.bodySite')) {
         const item = resource.get('Condition.bodySite')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-
-          if (condition.bodySite?.length) condition.bodySite.push(targetValue)
-          else condition.bodySite = [targetValue]
-        } else {
-          condition.bodySite = [DataTypeFactory.createCodeableConcept(
-            DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
-          )]
-        }
+        condition.bodySite = [DataTypeFactory.createCodeableConcept(
+          DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})
+        )]
       }
 
       const subject = FHIRUtil.searchForReference(keys, resource, 'Condition.subject.Reference.')

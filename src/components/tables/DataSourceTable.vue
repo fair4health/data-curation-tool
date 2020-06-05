@@ -132,29 +132,20 @@
           </template>
           <template v-slot:body-cell-conceptMap="props">
             <q-td :props="props">
-              <q-select v-if="props.row.target"
-                        dense
-                        options-dense
-                        use-input
-                        hide-selected
-                        fill-input
-                        clearable
-                        input-debounce="0"
-                        :outlined="!!props.row.conceptMap"
-                        :standout="!props.row.conceptMap ? 'bg-primary text-white' : ''"
-                        class="text-size-lg select-input"
-                        :label="!props.row.conceptMap ? 'No mapping' : 'Concept Map'"
-                        :ref="props.row.value"
-                        v-model="props.row.conceptMap"
-                        :options="filteredConceptMapList"
-                        option-label="name"
-                        option-value="id"
-                        :disable="!conceptMapList.length"
-                        @clear="removeConceptMap(props.row); $refs[props.row.value].blur()"
-                        @input="bufferSheetHeaders = [...bufferSheetHeaders]"
-                        @filter="filterConceptMaps"
-              />
-
+              <q-btn v-if="props.row.target"
+                     :disable="!isSuccess(tBaseVerificationStatus)"
+                     dense
+                     unelevated
+                     :icon="props.row.conceptMap && props.row.conceptMap.source ? 'edit' : 'add'"
+                     :label="props.row.conceptMap && props.row.conceptMap.source ? 'Edit' : ''"
+                     color="grey-2"
+                     text-color="grey-9"
+                     class="q-px-sm q-mr-sm text-size-md"
+                     @click="editConceptMap(props.row)"
+                     no-caps
+              >
+                <q-badge v-if="props.row.conceptMap && props.row.conceptMap.source" color="primary" class="text-size-xs" label="1" floating />
+              </q-btn>
             </q-td>
           </template>
           <template v-slot:no-data="{ icon, message, filter }">
@@ -174,6 +165,7 @@
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import StatusMixin from '@/common/mixins/statusMixin'
+  import ConceptMapCard from '@/components/modals/ConceptMapCard.vue'
 
   @Component
   export default class DataSourceTable extends Mixins(StatusMixin) {
@@ -183,7 +175,6 @@
     private pagination = sourceDataTable.pagination
     private filterText: string = ''
     private showMappedFields: boolean = false
-    private filteredConceptMapList: Array<{id: string, name: string}> = []
 
     get fieldTypes (): string[] { return Object.values(cellType) }
 
@@ -205,11 +196,6 @@
     get bufferSheetHeaders (): BufferElement[] { return this.$store.getters[types.File.BUFFER_SHEET_HEADERS] }
     set bufferSheetHeaders (value) { this.$store.commit(types.File.SET_BUFFER_SHEET_HEADERS, value) }
 
-    get conceptMapList (): Array<{id: string, name: string}> {
-      return this.$store.getters[types.Terminology.CONCEPT_MAP_LIST].map((_: fhir.ConceptMap) => ({id: _.id, name: _.name}))
-    }
-    set conceptMapList (value) { this.$store.commit(types.Terminology.SET_CONCEPT_MAP_LIST, value) }
-
     get filteredBufferSheetHeaders (): BufferElement[] {
       return this.bufferSheetHeaders.filter(_ => _.value && (!this.showMappedFields || _.target))
     }
@@ -221,27 +207,18 @@
     }
 
     created () {
-      setTimeout(() => {
-        this.bufferSheetHeaders = []
-        if (!this.currentSource) this.currentSource = this.fileSourceList[0]
-        if (this.currentSheet) this.onSheetChanged()
-        if (this.isSuccess(this.tBaseVerificationStatus)) {
-          this.$q.loading.show({message: 'Fetching Concept Maps...', spinner: undefined})
-          this.$store.dispatch(types.Terminology.GET_CONCEPT_MAPS, true)
-            .then(() => this.$q.loading.hide())
-            .catch(() => {
-              this.$q.loading.hide()
-              this.$notify.error(String(this.$t('ERROR.ST_WRONG_FETCHING_X', {name: 'Concept Maps'})))
-            })
-          this.$store.dispatch(types.Terminology.GET_CODE_SYSTEMS, true)
-            .then(() => this.$q.loading.hide())
-            .catch(() => {
-              this.$q.loading.hide()
-              this.$notify.error(String(this.$t('ERROR.ST_WRONG_FETCHING_X', {name: 'Code Systems'})))
-            })
-        }
-      }, 10)
-      this.filteredConceptMapList = this.conceptMapList
+      this.bufferSheetHeaders = []
+      if (!this.currentSource) this.currentSource = this.fileSourceList[0]
+      if (this.currentSheet) this.onSheetChanged()
+      if (this.isSuccess(this.tBaseVerificationStatus)) {
+        this.$q.loading.show({message: 'Fetching Concept Maps...', spinner: undefined})
+        this.$store.dispatch(types.Terminology.GET_CODE_SYSTEMS, true)
+          .then(() => this.$q.loading.hide())
+          .catch(() => {
+            this.$q.loading.hide()
+            this.$notify.error(String(this.$t('ERROR.ST_WRONG_FETCHING_X', {name: 'Code Systems'})))
+          })
+      }
     }
 
     @Watch('currentSource')
@@ -314,16 +291,13 @@
       }
     }
 
-    removeConceptMap (row: BufferElement) {
-      row.conceptMap = undefined
-      delete row.conceptMap
-      this.bufferSheetHeaders = this.bufferSheetHeaders.slice()
-    }
-
-    filterConceptMaps (val, update, abort) {
-      update(() => {
-        const needle = val.toLowerCase()
-        this.filteredConceptMapList = this.conceptMapList.filter(v => v.name.toLowerCase().indexOf(needle) > -1)
+    editConceptMap (element: SourceDataElement) {
+      this.$q.dialog({
+        component: ConceptMapCard,
+        parent: this,
+        element
+      }).onOk(() => {
+        this.bufferSheetHeaders = this.bufferSheetHeaders.slice()
       })
     }
 

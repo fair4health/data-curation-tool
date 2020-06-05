@@ -20,28 +20,14 @@ export class Patient implements Generator {
       }
       if (resource.has('Patient.active')) {
         const item = resource.get('Patient.active')
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) patient.active = String(item.value).toLowerCase() === 'true'
-        } else {
-          patient.active = String(item.value).toLowerCase() === 'true'
-        }
+        patient.active = String(item.value).toLowerCase() === 'true'
       }
       if (resource.has('Patient.gender')) {
-        const item = resource.get('Patient.gender')
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) patient.gender = targetValue
-        } else {
-          patient.gender = String(item.value)
-        }
+        patient.gender = String(resource.get('Patient.gender').value)
       }
       if (resource.has('Patient.maritalStatus')) {
         const item = resource.get('Patient.maritalStatus')
-        if (item.conceptMap) {
-          const targetValue: fhir.CodeableConcept = FHIRUtil.getConceptMapTargetAsCodeable(item.conceptMap, String(item.value))
-          if (targetValue) patient.maritalStatus = targetValue
-        }
+        patient.maritalStatus = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})
       }
       const patientTelecom = keys.filter(_ => _.startsWith('Patient.telecom'))
       if (patientTelecom.length) {
@@ -49,24 +35,18 @@ export class Patient implements Generator {
         const telecom: fhir.ContactPoint = {}
         if (resource.has('Patient.telecom.ContactPoint.system')) {
           const item = resource.get('Patient.telecom.ContactPoint.system')
-          if (item.conceptMap) {
-            const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-            if (targetValue) telecom.system = targetValue
-          } else {
-            telecom.system = String(item.value)
-          }
+          telecom.system = String(item.value)
         }
-        if (resource.has('Patient.telecom.ContactPoint.value')) { telecom.value = String(resource.get('Patient.telecom.ContactPoint.value').value) }
+        if (resource.has('Patient.telecom.ContactPoint.value')) {
+          telecom.value = String(resource.get('Patient.telecom.ContactPoint.value').value)
+        }
         if (resource.has('Patient.telecom.ContactPoint.use')) {
           const item = resource.get('Patient.telecom.ContactPoint.use')
-          if (item.conceptMap) {
-            const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-            if (targetValue) telecom.use = targetValue
-          } else {
-            telecom.use = String(item.value)
-          }
+          telecom.use = String(item.value)
         }
-        if (resource.has('Patient.telecom.ContactPoint.rank')) { telecom.rank = Number(resource.get('Patient.telecom.ContactPoint.rank').value) }
+        if (resource.has('Patient.telecom.ContactPoint.rank')) {
+          telecom.rank = Number(resource.get('Patient.telecom.ContactPoint.rank').value)
+        }
 
         const _telecom = DataTypeFactory.createContactPoint(telecom).toJSON()
         if (!FHIRUtil.isEmpty(_telecom)) {
@@ -92,27 +72,14 @@ export class Patient implements Generator {
       }
       if (resource.has('Patient.deceased[x].boolean')) {
         const item = resource.get('Patient.deceased[x].boolean')
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) patient.deceasedBoolean = String(item.value).toLowerCase() === 'true'
-        } else {
-          patient.deceasedBoolean = String(item.value).toLowerCase() === 'true'
-        }
+        patient.deceasedBoolean = String(item.value).toLowerCase() === 'true'
       }
       if (resource.has('Patient.multipleBirth[x].boolean')) {
         const item = resource.get('Patient.multipleBirth[x].boolean')
-        if (item.conceptMap) {
-          const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-          if (targetValue) patient.multipleBirthBoolean = String(item.value).toLowerCase() === 'true'
-        } else {
-          patient.multipleBirthBoolean = String(item.value).toLowerCase() === 'true'
-        }
-
+        patient.multipleBirthBoolean = String(item.value).toLowerCase() === 'true'
       }
       if (resource.has('Patient.multipleBirth[x].integer')) {
-        const item = resource.get('Patient.multipleBirth[x].integer')
-
-        patient.multipleBirthInteger = Number(item.value)
+        patient.multipleBirthInteger = Number(resource.get('Patient.multipleBirth[x].integer').value)
       }
 
       const patientName = keys.filter(_ => _.startsWith('Patient.name'))
@@ -121,12 +88,7 @@ export class Patient implements Generator {
         const name: fhir.HumanName = {}
         if (resource.has('Patient.name.HumanName.use')) {
           const item = resource.get('Patient.name.HumanName.use')
-          if (item.conceptMap) {
-            const targetValue: string = FHIRUtil.getConceptMapTargetAsString(item.conceptMap, String(item.value))
-            if (targetValue) name.use = targetValue
-          } else {
-            name.use = String(item.value)
-          }
+          name.use = String(item.value)
         }
         if (resource.has('Patient.name.HumanName.text')) { name.text = String(resource.get('Patient.name.HumanName.text').value) }
         if (resource.has('Patient.name.HumanName.family')) { name.family = String(resource.get('Patient.name.HumanName.family').value) }

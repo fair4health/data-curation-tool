@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import { FhirService } from '@/common/services/fhir.service'
+import { TerminologyService } from '@/common/services/terminology.service'
 import { LoDashStatic } from 'lodash'
 
 interface Notifier {
@@ -14,6 +15,6 @@ declare module 'vue/types/vue' {
     $_: LoDashStatic
     $notify: Notifier
     $fhirService: FhirService
-    $terminologyService: FhirService
+    $terminologyService: TerminologyService
   }
 }
