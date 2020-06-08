@@ -123,13 +123,13 @@ export default class BackgroundEngine extends Vue {
   }
 
   /**
-   * Browses files with extensions [xl*, csv] and sends back their paths as a list
+   * Browses files with extensions [xls, xlsx, csv] and sends back their paths as a list
    */
   public onBrowseFile () {
     ipcRenderer.on(ipcChannels.File.BROWSE_FILE, (event) => {
       remote.dialog.showOpenDialog(remote.BrowserWindow.getFocusedWindow(), {
         properties: ['openFile', 'multiSelections'],
-        filters: [{ extensions: ['xl*', 'csv'], name: 'Excel or CSV' }]
+        filters: [{ extensions: ['xls', 'xlsx', 'csv'], name: 'Excel or CSV' }]
       }, (files) => {
         if (files) {
           log.info('Browse file - ' + files)
