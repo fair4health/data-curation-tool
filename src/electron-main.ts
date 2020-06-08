@@ -122,11 +122,8 @@ function createBgWindow (id: number): BrowserWindow {
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  // On macOS, quits the app as Cmd + Q does
+  app.quit()
 })
 
 app.on('activate', () => {
