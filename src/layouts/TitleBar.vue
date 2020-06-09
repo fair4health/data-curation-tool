@@ -1,17 +1,23 @@
 <template>
   <div>
     <q-bar class="bg-black text-weight-light text-white q-electron-drag q-pr-none">
-      <q-btn flat dense round aria-label="Menu" icon="menu"
-             @click="$q.screen.lt.lg || !drawerOpen ? (drawerOpen = !drawerOpen) : (drawerMiniState = !drawerMiniState)"
-      />
-      <img class="flex flex-center" src="../assets/FAIR4Health-logo.png" width="80px">
-      <div class="text-weight-bold text-size-xl">{{ $t('COMMON.APP_NAME') }}</div>
-      <q-space />
-      <div class="q-mx-none q-px-none">
-        <q-btn flat square icon="remove" class="title-bar-btn" @click="minimizeApp" />
-        <q-btn flat :icon="isMaximized ? 'mdi-window-restore' : 'mdi-crop-square'" class="title-bar-btn" @click="toggleFullScreen" />
-        <q-btn flat icon="close" class="title-bar-btn btn-close" @click="closeApp" />
+      <div :class="{'col flex flex-center': isDarwin}">
+        <div class="row items-center">
+          <q-btn v-if="!isDarwin" flat dense round icon="menu" @click="toggleSidebar" />
+          <div class="col-auto">
+            <img class="flex flex-center" src="../assets/FAIR4Health-logo.png" width="80px">
+          </div>
+          <div class="col text-weight-bold text-size-xl">{{ $t('COMMON.APP_NAME') }}</div>
+        </div>
       </div>
+      <template v-if="!isDarwin">
+        <q-space />
+        <div class="q-mx-none q-px-none">
+          <q-btn flat square icon="remove" class="title-bar-btn" @click="minimizeApp" />
+          <q-btn flat :icon="isMaximized ? 'mdi-window-restore' : 'mdi-crop-square'" class="title-bar-btn" @click="toggleFullScreen" />
+          <q-btn flat icon="close" class="title-bar-btn btn-close" @click="closeApp" />
+        </div>
+      </template>
     </q-bar>
     <div class="bg-grey-10 q-pa-sm q-pl-md row q-gutter-x-sm items-center">
       <div v-for="menuItem in menu" class="q-px-xs cursor-pointer non-selectable">
@@ -75,7 +81,13 @@
           submenu: [
             {
               label: this.$tc('MENU.TOGGLE_FULL_SCREEN'),
-              action: () => this.toggleFullScreen()
+              icon: 'zoom_out_map',
+              action: () => this.toggleFullScreen(),
+              separate: true
+            },
+            {
+              label: this.$tc('MENU.TOGGLE_SIDEBAR'),
+              action: () => this.toggleSidebar()
             }
           ]
         },
@@ -113,6 +125,7 @@
       ]
     }
     get projectHomePage (): string { return window.process.env.ELECTRON_WEBPACK_APP_F4H_HOMEPAGE }
+    get isDarwin (): boolean { return remote.process.platform === 'darwin' }
 
     get drawerOpen (): boolean { return this.$store.getters[types.DRAWER_OPEN] }
     set drawerOpen (value) { this.$store.commit(types.SET_DRAWER_OPEN, value) }
@@ -128,6 +141,10 @@
     toggleFullScreen () {
       if (this.currentWindow.isMaximized()) this.currentWindow.unmaximize()
       else this.currentWindow.maximize()
+    }
+    toggleSidebar () {
+      if (this.$q.screen.lt.lg || !this.drawerOpen) this.drawerOpen = !this.drawerOpen
+      else this.drawerMiniState = !this.drawerMiniState
     }
     minimizeApp () { this.currentWindow.minimize() }
     closeApp () { this.currentWindow.destroy() }

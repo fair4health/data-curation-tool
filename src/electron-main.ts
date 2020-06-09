@@ -40,7 +40,15 @@ function doWork () {
 
 function createWindow () {
   // Create the browser window.
-  win = new BrowserWindow({ width: 800, height: 600, show: false, frame: false, useContentSize: true, webPreferences: { nodeIntegration: true } })
+  win = new BrowserWindow({
+    minWidth: 800,
+    minHeight: 600,
+    show: false,
+    frame: false,
+    titleBarStyle: 'hidden',
+    useContentSize: true,
+    webPreferences: { nodeIntegration: true }
+  })
   // Make window fullscreen
   win.maximize()
   win.show()
