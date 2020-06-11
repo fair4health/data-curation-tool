@@ -291,7 +291,7 @@
       }
     }
 
-    editConceptMap (element: SourceDataElement) {
+    editConceptMap (element: BufferElement) {
       this.$q.dialog({
         component: ConceptMapCard,
         parent: this,

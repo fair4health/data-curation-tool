@@ -29,7 +29,21 @@
         </div>
         <div class="row">
           <span class="text-size-lg text-weight-bold q-pa-xs">{{ $t('LABELS.TARGET') }} <span class="text-red"></span></span>
-          <code-system-select class="full-width" v-model="targetUrl" :value="targetUrl" :label="$t('LABELS.TARGET')" />
+
+          <!--Fixed URL from FHIR Resource element-->
+          <template v-if="propModel.target && propModel.target.length && propModel.target[0].fixedUri">
+            <q-input outlined
+                     dense
+                     class="full-width"
+                     :value="propModel.target[0].fixedUri"
+                     :hint="$t('LABELS.FIXED_URL_FROM_FHIR')"
+                     disable
+            />
+          </template>
+          <template v-else>
+            <code-system-select class="full-width" v-model="targetUrl" :value="targetUrl" :label="$t('LABELS.TARGET')" />
+          </template>
+
         </div>
         <q-item-label v-if="mandatoryError" class="text-weight-regular bg-red-1 q-pa-md">
           <span class="text-negative"><q-icon name="error" size="xs" class="q-mr-xs" /> Please check mandatory fields </span>
@@ -50,7 +64,7 @@
   import { Component, Prop, Mixins } from 'vue-property-decorator'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import Loading from '@/components/Loading.vue'
-  import { BufferElement, SourceDataElement } from '@/common/model/file-source'
+  import { BufferElement } from '@/common/model/file-source'
   import ModalMixin from '@/common/mixins/modalMixin'
 
   @Component({
@@ -64,9 +78,9 @@
     } as any
   })
   export default class CodeSystemPopup extends Mixins(ModalMixin) {
-    @Prop({required: true}) element: SourceDataElement
+    @Prop({required: true}) element: BufferElement
 
-    private propModel: SourceDataElement = this.element
+    private propModel: BufferElement = this.element
     private sourceUrl: string = this.propModel.conceptMap?.source || ''
     private targetUrl: string = this.propModel.conceptMap?.target || ''
     private mandatoryError: boolean = false
@@ -76,7 +90,8 @@
     updateElementList () {
       this.mandatoryError = false
       if (this.sourceUrl) {
-        this.propModel.conceptMap = {source: this.sourceUrl, target: this.targetUrl}
+        const targetUrl: string = this.propModel.target?.length && this.propModel.target[0]?.fixedUri || this.targetUrl
+        this.propModel.conceptMap = {source: this.sourceUrl, target: targetUrl}
         this.onOKClick(true)
       } else {
         this.mandatoryError = true
