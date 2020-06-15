@@ -13,12 +13,18 @@
                  :no-data-label="$t('LABELS.NO_RESULT')" :no-results-label="$t('LABELS.NO_RESULT')"
         >
           <template v-slot:top-right>
-            <q-input borderless dense v-model="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
-              <template v-slot:append>
-                <q-icon v-if="!filterText" name="search" />
-                <q-icon v-else name="clear" class="cursor-pointer" @click="filterText = ''" />
-              </template>
-            </q-input>
+            <div class="row items-center q-gutter-md">
+              <div>
+                <span class="text-grey-8">Chunk size: </span>
+                <input type="number" class="chunk-size-input" v-model="chunkSize" />
+              </div>
+              <q-input borderless dense v-model="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
+                <template v-slot:append>
+                  <q-icon v-if="!filterText" name="search" />
+                  <q-icon v-else name="clear" class="cursor-pointer" @click="filterText = ''" />
+                </template>
+              </q-input>
+            </div>
           </template>
           <template v-slot:header="props">
             <q-tr :props="props">
@@ -227,7 +233,6 @@
   import { validatorTable } from '@/common/model/data-table'
   import { FHIRUtil } from '@/common/utils/fhir-util'
   import OutcomeCard from '@/components/modals/OutcomeCard.vue'
-  import electronStore from '@/common/electron-store'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import Status from '@/common/Status'
@@ -244,6 +249,7 @@
     private Status = Status
     private tablesToValidate = []
     private abortValidation: AbortController
+    private chunkSize: number = 1000
 
     get fileSourceList (): FileSource[] { return this.$store.getters[types.File.SOURCE_LIST] }
     get savedRecords (): store.SavedRecord[] { return this.$store.getters[types.File.SAVED_RECORDS] }
@@ -295,15 +301,19 @@
     }
 
     validate () {
-      this.abortValidation = new AbortController()
-      this.validatePromise(this.abortValidation.signal)
-        .then(() => {
-          this.removeAllListeners()
-        })
-        .catch(() => {
-          this.removeAllListeners()
-          this.validationStatus = Status.PENDING
-        })
+      if (this.chunkSize > 0) {
+        this.abortValidation = new AbortController()
+        this.validatePromise(this.abortValidation.signal)
+          .then(() => {
+            this.removeAllListeners()
+          })
+          .catch(() => {
+            this.removeAllListeners()
+            this.validationStatus = Status.PENDING
+          })
+      } else {
+        this.$notify.error(String(this.$t('ERROR.CHUNK_SIZE_CANNOT_BE_X', {chunkSize: this.chunkSize || 0})))
+      }
     }
 
     validatePromise (abortSignal: AbortSignal): Promise<any> {
@@ -341,7 +351,7 @@
                 // const sheets = this.mappingObj[filePath]
                 const sheets = this.savedRecords.find((files: store.SavedRecord) => files.fileName === filePath)!.sheets
 
-                ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.VALIDATE, {filePath, sheets})
+                ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.VALIDATE, {chunkSize: this.chunkSize, data: {filePath, sheets}})
 
                 ipcRenderer.on(`validate-read-file-${filePath}`, (event, result) => {
                   this.$q.loading.hide()
@@ -539,4 +549,7 @@
 <style lang="stylus">
   .error-tooltip
     width 250px
+  .chunk-size-input
+    border-radius 3px
+    padding 2px
 </style>

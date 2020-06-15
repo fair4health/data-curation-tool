@@ -65,6 +65,7 @@
     "CANNOT_GET_SAVED_MAPPINGS": "Cannot get saved mappings",
     "CANNOT_LOAD_CREATED_RESOURCES": "Cannot load created resources. Try again",
     "CHOOSE_A_TYPE": "Choose a type for selected items",
+    "CHUNK_SIZE_CANNOT_BE_X": "Chunk size can not be {chunkSize}.",
     "DATA_COULDNT_BE_IMPORTED": "Data could't be imported",
     "EMPTY_MAPPING_SHEET": "Empty mapping sheet",
     "FHIR_URL_NOT_VERIFIED": "Given FHIR Repository URL is not verified.",

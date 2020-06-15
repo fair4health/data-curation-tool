@@ -15,7 +15,7 @@ import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 
 @Component
 export default class BackgroundEngine extends Vue {
-  private readonly CHUNK_SIZE: number = 1000
+  private CHUNK_SIZE: number = 1000
   private electronStore: ElectronStore
   private fhirBaseUrl: fhir.uri
   private terminologyBaseUrl: fhir.uri
@@ -290,10 +290,10 @@ export default class BackgroundEngine extends Vue {
    * Create and validate resources
    */
   public onValidate () {
-    ipcRenderer.on(ipcChannels.Fhir.VALIDATE, (event, data: any) => {
+    ipcRenderer.on(ipcChannels.Fhir.VALIDATE, (event, validationReqBody: any) => {
       this.abortValidation = new AbortController()
 
-      this.validate(data, this.abortValidation.signal)
+      this.validate(validationReqBody.data, validationReqBody.chunkSize, this.abortValidation.signal)
         .then(() => {
           this.ready()
         })
@@ -305,7 +305,10 @@ export default class BackgroundEngine extends Vue {
     })
   }
 
-  public validate (data: any, abortSignal: AbortSignal): Promise<any> {
+  public validate (data: any, reqChunkSize: number, abortSignal: AbortSignal): Promise<any> {
+    // Update chunk size
+    this.CHUNK_SIZE = reqChunkSize
+
     return new Promise((resolveValidation, rejectValidation) => {
       const filePath = data.filePath
 
