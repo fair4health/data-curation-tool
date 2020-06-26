@@ -59,6 +59,7 @@
     "TRANSFORM": "Transform",
     "VALIDATE": "Validate",
     "VALIDATING": "Validating",
+    "VERIFY_FHIR_REPO": "Verify FHIR Repo",
     "WARNING": "Warning"
   },
   "ERROR": {
@@ -80,6 +81,13 @@
     "ST_WRONG_FETCHING_X": "Something went wrong while fetching {name}",
     "ST_WRONG_SAVING_RECORD": "Something went wrong while saving the record",
     "TERMINOLOGY_URL_NOT_VERIFIED": "Given terminology url is not verified."
+  },
+  "INFO": {
+    "DATA_SOURCE_ANALYZER_INFO": "Browse your file system and add the sources as Excel or CSV file.",
+    "FHIR_REPO_VERIFICATION_INFO": "Verify the FHIR repository and also connect a Terminology Service.",
+    "METADATA_MAPPER_INFO": "Map your source data with the FHIR profiles fetched from FHIR repository given at the first step.",
+    "TRANSFORMER_INFO": "Put the FHIR resources generated into the repository.",
+    "VALIDATOR_INFO": "Validate FHIR resources created as a result of mapping, and review details if an inappropriate resource was created."
   },
   "LABELS": {
     "ADD_TERMINOLOGY_SERVICE": "Add Terminology Service",
@@ -129,7 +137,7 @@
     "TOGGLE_SIDEBAR": "Toggle Sidebar",
     "TOOLS": "Tools",
     "VALIDATE": "@:COMMON.VALIDATE",
-    "VERIFY_FHIR_REPO": "Verify FHIR Repo",
+    "VERIFY_FHIR_REPO": "@:COMMON.VERIFY_FHIR_REPO",
     "VIEW": "View",
     "VIEW_ON": "View on"
   },

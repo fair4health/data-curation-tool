@@ -16,66 +16,22 @@
     <q-item class="q-pa-lg text-weight-bold text-grey-8">
       <q-item-section>
         <q-item-label class="text-h4 text-weight-bold">{{ $t('LABELS.OVERALL_STEPS') }}</q-item-label>
-        <q-stepper flat v-model="step" ref="stepper" alternative-labels color="primary" class="bg-grey-3">
-          <q-step :name="1" :title="$t('COMMON.ANALYZE_DATA_SOURCE')" icon="fas fa-database" />
-          <q-step :name="2" :title="$t('COMMON.MAP_METADATA')" icon="fas fa-list-ul" />
-          <q-step :name="3" :title="$t('COMMON.VALIDATE')" icon="fas fa-check-circle" />
-          <q-step :name="4" :title="$t('COMMON.TRANSFORM')" icon="fas fa-exchange-alt" />
+        <q-stepper flat v-model="currStep" ref="stepper" alternative-labels color="primary" class="bg-grey-3">
+          <q-step v-for="(step, index) in stepDescriptions" :key="index"
+                  :name="index+1" :title="step.title" :icon="step.icon" />
         </q-stepper>
       </q-item-section>
     </q-item>
 
-    <!--Analyze Data Source-->
-    <q-item class="q-pa-lg text-weight-bold text-grey-8">
+    <!--Curation Step Descriptions-->
+    <q-item v-for="(step, index) in stepDescriptions" :key="index" class="q-pa-lg text-grey-8">
       <q-item-section>
-        <q-item-label class="text-h7 text-grey-8">
-          <q-icon name="fas fa-database" /> {{ $t('COMMON.ANALYZE_DATA_SOURCE') }}
+        <q-item-label class="text-h7 text-weight-bold text-grey-8">
+          <q-icon :name="step.icon" /> {{ step.title }}
         </q-item-label>
         <q-card flat class="q-ma-md">
           <q-card-section>
-            Text
-          </q-card-section>
-        </q-card>
-      </q-item-section>
-    </q-item>
-
-    <!--Map Metadata-->
-    <q-item class="q-pa-lg text-weight-bold text-grey-8">
-      <q-item-section>
-        <q-item-label class="text-h7 text-grey-8">
-          <q-icon name="fas fa-list-ul" /> {{ $t('COMMON.MAP_METADATA') }}
-        </q-item-label>
-        <q-card flat class="q-ma-md">
-          <q-card-section>
-            Text
-          </q-card-section>
-        </q-card>
-      </q-item-section>
-    </q-item>
-
-    <!--Validate-->
-    <q-item class="q-pa-lg text-weight-bold text-grey-8">
-      <q-item-section>
-        <q-item-label class="text-h7 text-grey-8">
-          <q-icon name="fas fa-check-circle" /> {{ $t('COMMON.VALIDATE') }}
-        </q-item-label>
-        <q-card flat class="q-ma-md">
-          <q-card-section>
-            Text
-          </q-card-section>
-        </q-card>
-      </q-item-section>
-    </q-item>
-
-    <!--Transform-->
-    <q-item class="q-pa-lg text-weight-bold text-grey-8">
-      <q-item-section>
-        <q-item-label class="text-h7 text-grey-8">
-          <q-icon name="fas fa-exchange-alt" /> {{ $t('COMMON.TRANSFORM') }}
-        </q-item-label>
-        <q-card flat class="q-ma-md">
-          <q-card-section>
-            Text
+            {{ step.description }}
           </q-card-section>
         </q-card>
       </q-item-section>
@@ -89,7 +45,37 @@
 
   @Component
   export default class Home extends Vue {
-    private step: number = 0
+    private currStep: number = 0
+
+    get stepDescriptions (): Array<{title: string, description: string, icon: string}> {
+      return [
+        {
+          title: String(this.$t('COMMON.VERIFY_FHIR_REPO')),
+          description: String(this.$t('INFO.FHIR_REPO_VERIFICATION_INFO')),
+          icon: 'fas fa-fire'
+        },
+        {
+          title: String(this.$t('COMMON.ANALYZE_DATA_SOURCE')),
+          description: String(this.$t('INFO.DATA_SOURCE_ANALYZER_INFO')),
+          icon: 'fas fa-database'
+        },
+        {
+          title: String(this.$t('COMMON.MAP_METADATA')),
+          description: String(this.$t('INFO.METADATA_MAPPER_INFO')),
+          icon: 'fas fa-list-ul'
+        },
+        {
+          title: String(this.$t('COMMON.VALIDATE')),
+          description: String(this.$t('INFO.VALIDATOR_INFO')),
+          icon: 'fas fa-check-circle'
+        },
+        {
+          title: String(this.$t('COMMON.TRANSFORM')),
+          description: String(this.$t('INFO.TRANSFORMER_INFO')),
+          icon: 'fas fa-exchange-alt'
+        }
+      ]
+    }
   }
 
 </script>
