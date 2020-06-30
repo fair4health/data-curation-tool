@@ -18,6 +18,20 @@ export class Patient implements Generator {
       if (resource.has('Patient.id')) {
         patient.id = String(resource.get('Patient.id')?.value || '')
       }
+
+      const patientIdentifier = keys.filter(_ => _.startsWith('Patient.identifier'))
+      if (patientIdentifier.length) {
+        const identifier: fhir.Identifier = {}
+        if (resource.has('Patient.identifier.Identifier.system')) {
+          identifier.system = String(resource.get('Patient.identifier.Identifier.system')?.value || '')
+        }
+        if (resource.has('Patient.identifier.Identifier.value')) {
+          identifier.value = String(resource.get('Patient.identifier.Identifier.value')?.value || '')
+        }
+
+        patient.identifier = [identifier]
+      }
+
       if (resource.has('Patient.active')) {
         const item = resource.get('Patient.active')
         patient.active = String(item.value).toLowerCase() === 'true'
@@ -93,7 +107,7 @@ export class Patient implements Generator {
         if (resource.has('Patient.name.HumanName.text')) { name.text = String(resource.get('Patient.name.HumanName.text').value) }
         if (resource.has('Patient.name.HumanName.family')) { name.family = String(resource.get('Patient.name.HumanName.family').value) }
         if (resource.has('Patient.name.HumanName.given')) { name.given = [String(resource.get('Patient.name.HumanName.given').value)] }
-        if (resource.has('Patient.name.HumanName.pref"ix')) { name.prefix = [String(resource.get('Patient.name.HumanName.prefix').value)] }
+        if (resource.has('Patient.name.HumanName.prefix')) { name.prefix = [String(resource.get('Patient.name.HumanName.prefix').value)] }
         if (resource.has('Patient.name.HumanName.suffix')) { name.suffix = [String(resource.get('Patient.name.HumanName.suffix').value)] }
 
         const _name = DataTypeFactory.createHumanName(name).toJSON()

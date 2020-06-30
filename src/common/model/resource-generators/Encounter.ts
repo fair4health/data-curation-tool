@@ -18,6 +18,20 @@ export class Encounter implements Generator {
       if (resource.has('Encounter.id')) {
         encounter.id = String(resource.get('Encounter.id')?.value || '')
       }
+
+      const encounterIdentifier = keys.filter(_ => _.startsWith('Encounter.identifier'))
+      if (encounterIdentifier.length) {
+        const identifier: fhir.Identifier = {}
+        if (resource.has('Encounter.identifier.Identifier.system')) {
+          identifier.system = String(resource.get('Encounter.identifier.Identifier.system')?.value || '')
+        }
+        if (resource.has('Encounter.identifier.Identifier.value')) {
+          identifier.value = String(resource.get('Encounter.identifier.Identifier.value')?.value || '')
+        }
+
+        encounter.identifier = [identifier]
+      }
+
       if (resource.has('Encounter.status')) {
         encounter.status = String(resource.get('Encounter.status').value)
       }

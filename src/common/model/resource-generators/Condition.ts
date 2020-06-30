@@ -18,6 +18,20 @@ export class Condition implements Generator {
       if (resource.has('Condition.id')) {
         condition.id = String(resource.get('Condition.id')?.value || '')
       }
+
+      const conditionIdentifier = keys.filter(_ => _.startsWith('Condition.identifier'))
+      if (conditionIdentifier.length) {
+        const identifier: fhir.Identifier = {}
+        if (resource.has('Condition.identifier.Identifier.system')) {
+          identifier.system = String(resource.get('Condition.identifier.Identifier.system')?.value || '')
+        }
+        if (resource.has('Condition.identifier.Identifier.value')) {
+          identifier.value = String(resource.get('Condition.identifier.Identifier.value')?.value || '')
+        }
+
+        condition.identifier = [identifier]
+      }
+
       if (resource.has('Condition.clinicalStatus')) {
         const item = resource.get('Condition.clinicalStatus')
         condition.clinicalStatus = DataTypeFactory.createCodeableConcept({system: item.fixedUri, code: String(item.value)})

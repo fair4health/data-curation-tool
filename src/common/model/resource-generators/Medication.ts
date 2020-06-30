@@ -17,6 +17,20 @@ export class Medication implements Generator {
       if (resource.has('Medication.id')) {
         medication.id = String(resource.get('Medication.id')?.value || '')
       }
+
+      const medicationIdentifier = keys.filter(_ => _.startsWith('Medication.identifier'))
+      if (medicationIdentifier.length) {
+        const identifier: fhir.Identifier = {}
+        if (resource.has('Medication.identifier.Identifier.system')) {
+          identifier.system = String(resource.get('Medication.identifier.Identifier.system')?.value || '')
+        }
+        if (resource.has('Medication.identifier.Identifier.value')) {
+          identifier.value = String(resource.get('Medication.identifier.Identifier.value')?.value || '')
+        }
+
+        medication.identifier = [identifier]
+      }
+
       if (resource.has('Medication.status')) {
         medication.status = String(resource.get('Medication.status').value)
       }

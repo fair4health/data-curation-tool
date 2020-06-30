@@ -21,6 +21,20 @@ export class Device implements Generator {
       if (resource.has('Device.id')) {
         device.id = String(resource.get('Device.id')?.value || '')
       }
+
+      const deviceIdentifier = keys.filter(_ => _.startsWith('Device.identifier'))
+      if (deviceIdentifier.length) {
+        const identifier: fhir.Identifier = {}
+        if (resource.has('Device.identifier.Identifier.system')) {
+          identifier.system = String(resource.get('Device.identifier.Identifier.system')?.value || '')
+        }
+        if (resource.has('Device.identifier.Identifier.value')) {
+          identifier.value = String(resource.get('Device.identifier.Identifier.value')?.value || '')
+        }
+
+        device.identifier = [identifier]
+      }
+
       if (resource.has('Device.status')) {
         device.status = String(resource.get('Device.status').value)
       }

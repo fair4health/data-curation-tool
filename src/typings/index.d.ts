@@ -2452,7 +2452,7 @@ declare namespace fhir {
     content: Attachment;
   }
   interface Medication extends DomainResource {
-    identifier?: Identifier;
+    identifier?: Identifier[];
     code?: CodeableConcept;
     status?: code;
     manufacturer?: Reference;

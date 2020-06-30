@@ -18,6 +18,20 @@ export class Practitioner implements Generator {
       if (resource.has('Practitioner.id')) {
         practitioner.id = String(resource.get('Practitioner.id')?.value || '')
       }
+
+      const practitionerIdentifier = keys.filter(_ => _.startsWith('Practitioner.identifier'))
+      if (practitionerIdentifier.length) {
+        const identifier: fhir.Identifier = {}
+        if (resource.has('Practitioner.identifier.Identifier.system')) {
+          identifier.system = String(resource.get('Practitioner.identifier.Identifier.system')?.value || '')
+        }
+        if (resource.has('Practitioner.identifier.Identifier.value')) {
+          identifier.value = String(resource.get('Practitioner.identifier.Identifier.value')?.value || '')
+        }
+
+        practitioner.identifier = [identifier]
+      }
+
       if (resource.has('Practitioner.active')) {
         const item = resource.get('Practitioner.active')
         practitioner.active = String(item.value).toLowerCase() === 'true'

@@ -17,6 +17,20 @@ export class MedicationRequest implements Generator {
       if (resource.has('MedicationRequest.id')) {
         medicationRequest.id = String(resource.get('MedicationRequest.id')?.value || '')
       }
+
+      const medicationRequestIdentifier = keys.filter(_ => _.startsWith('MedicationRequest.identifier'))
+      if (medicationRequestIdentifier.length) {
+        const identifier: fhir.Identifier = {}
+        if (resource.has('MedicationRequest.identifier.Identifier.system')) {
+          identifier.system = String(resource.get('MedicationRequest.identifier.Identifier.system')?.value || '')
+        }
+        if (resource.has('MedicationRequest.identifier.Identifier.value')) {
+          identifier.value = String(resource.get('MedicationRequest.identifier.Identifier.value')?.value || '')
+        }
+
+        medicationRequest.identifier = [identifier]
+      }
+
       if (resource.has('MedicationRequest.status')) {
         medicationRequest.status = String(resource.get('MedicationRequest.status').value)
       }

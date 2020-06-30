@@ -20,6 +20,20 @@ export class MedicationStatement implements Generator {
       if (resource.has('MedicationStatement.id')) {
         medicationStatement.id = String(resource.get('MedicationStatement.id')?.value || '')
       }
+
+      const medicationStatementIdentifier = keys.filter(_ => _.startsWith('MedicationStatement.identifier'))
+      if (medicationStatementIdentifier.length) {
+        const identifier: fhir.Identifier = {}
+        if (resource.has('MedicationStatement.identifier.Identifier.system')) {
+          identifier.system = String(resource.get('MedicationStatement.identifier.Identifier.system')?.value || '')
+        }
+        if (resource.has('MedicationStatement.identifier.Identifier.value')) {
+          identifier.value = String(resource.get('MedicationStatement.identifier.Identifier.value')?.value || '')
+        }
+
+        medicationStatement.identifier = [identifier]
+      }
+
       if (resource.has('MedicationStatement.status')) {
         medicationStatement.status = String(resource.get('MedicationStatement.status').value)
       }

@@ -18,6 +18,20 @@ export class Observation implements Generator {
       if (resource.has('Observation.id')) {
         observation.id = String(resource.get('Observation.id')?.value || '')
       }
+
+      const observationIdentifier = keys.filter(_ => _.startsWith('Observation.identifier'))
+      if (observationIdentifier.length) {
+        const identifier: fhir.Identifier = {}
+        if (resource.has('Observation.identifier.Identifier.system')) {
+          identifier.system = String(resource.get('Observation.identifier.Identifier.system')?.value || '')
+        }
+        if (resource.has('Observation.identifier.Identifier.value')) {
+          identifier.value = String(resource.get('Observation.identifier.Identifier.value')?.value || '')
+        }
+
+        observation.identifier = [identifier]
+      }
+
       if (resource.has('Observation.status')) {
         observation.status = String(resource.get('Observation.status').value)
       }
