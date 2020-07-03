@@ -76,8 +76,8 @@
 
           <q-item-section side>
             <div class="row q-gutter-sm">
-              <q-btn unelevated :label="$t('BUTTONS.EXPORT')" color="negative" text-color="white" @click="exportState" icon="publish" no-caps />
-              <q-btn unelevated :label="$t('BUTTONS.SAVE')" color="secondary" text-color="white" @click="saveState" icon="save" no-caps />
+              <q-btn unelevated :label="$t('BUTTONS.EXPORT')" color="negative" text-color="white" @click="exportState" icon="publish" :disable="!savedRecords.length" no-caps />
+              <q-btn unelevated :label="$t('BUTTONS.SAVE')" color="secondary" text-color="white" @click="saveState" icon="save" :disable="!savedRecords.length" no-caps />
             </div>
           </q-item-section>
         </template>
@@ -452,8 +452,10 @@
     addRecord () {
       const bufferItems: BufferElement[] = this.bufferSheetHeaders.filter(_ => _.target && _.target.length)
 
-      if (!bufferItems.length)
-        return;
+      if (!bufferItems.length) {
+        this.$notify.error(String(this.$t('WARNING.MATCH_THE_FIELDS_FIRST')))
+        return
+      }
 
       if (this.editRecordId) this.removeRecord(this.currentSource.path, this.currentSheet?.value!, this.editRecordId)
       const recordId = this.editRecordId || uuid().slice(0, 8)

@@ -198,6 +198,7 @@
     "ARE_YOU_SURE_TO_REMOVE_RESOURCE": "Are you sure you want to remove {resourceType} resource. {resourceType} resources will not be transformed.",
     "CHANGES_WILL_BE_LOST": "The changes you have made will be lost.",
     "DELETE_RECORD_WITH_ID": "Delete record with id #{id}.",
-    "IF_YOU_GO_BACK": "If you go back and make any change, @:WARNING.CHANGES_WILL_BE_LOST"
+    "IF_YOU_GO_BACK": "If you go back and make any change, @:WARNING.CHANGES_WILL_BE_LOST",
+    "MATCH_THE_FIELDS_FIRST": "You have not matched your data with any fields. Please match the fields first."
   }
 }
