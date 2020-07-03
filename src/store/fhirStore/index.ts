@@ -88,20 +88,49 @@ const fhirStore = {
       })
     },
     [types.Fhir.GET_PROFILES_BY_RES] ({ commit }, resource: string): Promise<boolean> {
+      const profileList: fhir.StructureDefinition[] = []
+      const subProfiles: fhir.StructureDefinition[] = []
       return new Promise((resolve, reject) => {
         this._vm.$fhirService.search('StructureDefinition',
           {_summary: 'data', base: `${environment.hl7}/StructureDefinition/${resource}`}, true)
           .then(res => {
             const bundle = res.data as fhir.Bundle
             if (bundle.total > 0) {
-              commit(types.Fhir.SET_PROFILE_LIST, bundle.entry?.map(e => {
+              profileList.push(...(bundle.entry?.map(e => {
                 const structure = e.resource as fhir.StructureDefinition
-                return {id: structure.id, title: structure.title, url: structure.url}
-              }) || [])
+                return {id: structure.id, title: structure.title, url: structure.url} as fhir.StructureDefinition
+              }) || []))
+
+              Promise.all(profileList.map(profile => {
+                return new Promise((resolveSubProfile, rejectSubProfile) => {
+                  this._vm.$fhirService.search('StructureDefinition', {_summary: 'data', base: profile.url}, true)
+                    .then(res => {
+                      const bundle = res.data as fhir.Bundle
+                      if (bundle.total > 0) {
+                        subProfiles.push(...(bundle.entry?.map(e => {
+                          const structure = e.resource as fhir.StructureDefinition
+                          return {id: structure.id, title: structure.title, url: structure.url} as fhir.StructureDefinition
+                        }) || []))
+                      }
+                      resolveSubProfile(true)
+                    })
+                    .catch(err => {
+                      rejectSubProfile(err)
+                    })
+                })
+              }))
+                .then(() => {
+                  commit(types.Fhir.SET_PROFILE_LIST, profileList.concat(subProfiles))
+                  resolve(true)
+                })
+                .catch(err => {
+                  commit(types.Fhir.SET_PROFILE_LIST, profileList.concat(subProfiles))
+                  reject(err)
+                })
             } else {
               commit(types.Fhir.SET_PROFILE_LIST, [])
+              resolve(true)
             }
-            resolve(true)
           })
           .catch(err => reject(err) )
       })
