@@ -53,3 +53,10 @@ npm run test:e2e
 npm run lint
 ```
 
+### Log Locations
+The tool writes logs to the following locations:
+
+- on **macOS**: `~/Library/Logs/FAIR4Health Data Curation Tool/log.txt`
+- on **Windows**: `%USERPROFILE%\AppData\Roaming\FAIR4Health Data Curation Tool\logs\log.txt`
+- on **Linux**: `~/.config/FAIR4Health Data Curation Tool/logs/log.txt`
+
