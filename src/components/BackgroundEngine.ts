@@ -494,74 +494,85 @@ export default class BackgroundEngine extends Vue {
                             const resourceList = resources.get(resourceType) || []
 
                             return new Promise((resolve, reject) => {
-                              this.$store.dispatch(types.IDB.SAVE, {resource: resourceType, data: resourceList})
-                                .then(() => {
-                                  // Batch upload resources
-                                  // Max capacity CHUNK_SIZE resources
-                                  const len = Math.ceil(resourceList.length / this.CHUNK_SIZE)
+                              this.$store.dispatch(types.IDB.GET, resourceType)
+                                .then(resourcesInDB => {
+                                  this.$store.dispatch(types.IDB.SAVE, {resource: resourceType, data: (resourcesInDB?.data || []).concat(resourceList)})
+                                    .then(() => {
+                                      // Batch upload resources
+                                      // Max capacity CHUNK_SIZE resources
+                                      const len = Math.ceil(resourceList.length / this.CHUNK_SIZE)
 
-                                  const batchPromiseList: Array<Promise<any>> = []
+                                      const batchPromiseList: Array<Promise<any>> = []
 
-                                  for (let i = 0, p = Promise.resolve(); i < len; i++) {
-                                    batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
-                                      this.$fhirService.validate(resourceList!.slice(i * this.CHUNK_SIZE, (i + 1) * this.CHUNK_SIZE))
-                                        .then(res => {
-                                          const bundle: fhir.Bundle = res.data as fhir.Bundle
-                                          const outcomeDetails: OutcomeDetail[] = []
-                                          let hasError: boolean = false
+                                      for (let i = 0, p = Promise.resolve(); i < len; i++) {
+                                        batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
+                                          this.$fhirService.validate(resourceList!.slice(i * this.CHUNK_SIZE, (i + 1) * this.CHUNK_SIZE))
+                                            .then(res => {
+                                              const bundle: fhir.Bundle = res.data as fhir.Bundle
+                                              const outcomeDetails: OutcomeDetail[] = []
+                                              let hasError: boolean = false
 
-                                          // Check batch bundle response for errors
-                                          Promise.all(bundle.entry?.map(_ => {
-                                            if (!_.resource) {
-                                              const operationOutcome: fhir.OperationOutcome = _.response!.outcome as fhir.OperationOutcome
-                                              operationOutcome.issue.map(issue => {
-                                                if (issue.severity === 'error') {
-                                                  hasError = true
-                                                  outcomeDetails.push({status: Status.ERROR, resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
+                                              // Check batch bundle response for errors
+                                              Promise.all(bundle.entry?.map(_ => {
+                                                if (!_.resource) {
+                                                  const operationOutcome: fhir.OperationOutcome = _.response!.outcome as fhir.OperationOutcome
+                                                  operationOutcome.issue.map(issue => {
+                                                    if (issue.severity === 'error') {
+                                                      hasError = true
+                                                      outcomeDetails.push({status: Status.ERROR, resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
+                                                    }
+                                                  })
+                                                } else {
+                                                  outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
                                                 }
-                                              })
-                                            } else {
-                                              outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
-                                            }
-                                          }) || [])
-                                            .then(() => {
-                                              if (hasError) resolveBatch(outcomeDetails)
-                                              else resolveBatch(outcomeDetails)
+                                              }) || [])
+                                                .then(() => {
+                                                  if (hasError) resolveBatch(outcomeDetails)
+                                                  else resolveBatch(outcomeDetails)
+                                                })
+                                                .catch(err => rejectBatch(err))
                                             })
-                                            .catch(err => rejectBatch(err))
+                                            .catch(err => {
+                                              log.error(`Batch process error. ${err}`)
+                                              rejectBatch(err)
+                                              ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: err.message}]})
+                                            })
+                                        })))
+                                      }
+
+                                      Promise.all(batchPromiseList)
+                                        .then(res => {
+                                          if (res.length) {
+                                            log.info(`Batch process completed for Resource: ${resourceType}`)
+                                            resolve([].concat.apply([], res))
+                                          } else {
+                                            log.error(`Batch process error for Resource: ${resourceType}`)
+                                            reject([{
+                                              status: Status.ERROR,
+                                              message: `There is no ${resourceType} Resource created. See the logs for detailed error information.`,
+                                              resourceType: 'OperationOutcome'
+                                            } as OutcomeDetail])
+                                          }
                                         })
                                         .catch(err => {
-                                          log.error(`Batch process error. ${err}`)
-                                          rejectBatch(err)
-                                          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: 'CONNECTIN ERROR'}]})
+                                          log.error(`Batch process error for Resource: ${resourceType}`)
+                                          reject(err)
                                         })
-                                    })))
-                                  }
-
-                                  Promise.all(batchPromiseList)
-                                    .then(res => {
-                                      if (res.length) {
-                                        log.info(`Batch process completed for Resource: ${resourceType}`)
-                                        resolve([].concat.apply([], res))
-                                      } else {
-                                        log.error(`Batch process error for Resource: ${resourceType}`)
-                                        reject([{
-                                          status: Status.ERROR,
-                                          message: `There is no ${resourceType} Resource created. See the logs for detailed error information.`,
-                                          resourceType: 'OperationOutcome'
-                                        } as OutcomeDetail])
-                                      }
                                     })
                                     .catch(err => {
-                                      log.error(`Batch process error for Resource: ${resourceType}`)
-                                      reject(err)
+                                      log.warn(`Couldn't store resources created: ${err}`)
+                                      return reject([{
+                                        status: Status.ERROR,
+                                        message: `Couldn't store resources. Capacity exceeded.`,
+                                        resourceType: 'OperationOutcome'
+                                      } as OutcomeDetail])
                                     })
                                 })
                                 .catch(err => {
                                   log.warn(`Couldn't store resources created: ${err}`)
                                   return reject([{
                                     status: Status.ERROR,
-                                    message: `Couldn't store resources. Capacity exceeded.`,
+                                    message: `${err}`,
                                     resourceType: 'OperationOutcome'
                                   } as OutcomeDetail])
                                 })
