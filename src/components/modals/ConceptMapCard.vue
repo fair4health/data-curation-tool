@@ -53,8 +53,8 @@
       <q-separator />
 
       <q-card-actions align="right">
-        <q-btn flat color="primary" :label="$t('BUTTONS.OK')" @click="updateElementList" />
         <q-btn flat color="primary" :label="$t('BUTTONS.CANCEL')" @click="onCloseClick" />
+        <q-btn unelevated color="primary" :label="$t('BUTTONS.OK')" @click="updateElementList" />
       </q-card-actions>
     </q-card>
   </q-dialog>

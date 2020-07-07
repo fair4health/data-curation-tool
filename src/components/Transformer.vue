@@ -215,15 +215,24 @@
     }
 
     removeResourceFromFHIR (resourceType: string) {
-      this.$q.loading.show()
-      this.$store.dispatch(types.Fhir.DELETE_ALL, resourceType)
-        .then(() => {
-          this.$q.loading.hide()
-          this.$notify.success(String(this.$t('SUCCESS.X_RESOURCES_REMOVED', {resourceType})))
-        })
-      .catch(() => {
-        this.$q.loading.hide()
-        this.$notify.error(String(this.$t('ERROR.SOMETHING_WENT_WRONG')))
+      this.$q.dialog({
+        title: `<span class="text-negative"><i class="fas fa-trash q-pr-sm"></i>${this.$t('TITLES.REMOVE_RESOURCE')}</span>`,
+        message: `${this.$t('WARNING.ARE_YOU_SURE_TO_REMOVE_RESOURCE_FROM_FHIR', {resourceType})}`,
+        class: 'text-grey-9',
+        ok: this.$t('BUTTONS.OK'),
+        cancel: this.$t('BUTTONS.CANCEL'),
+        html: true
+      }).onOk(() => {
+        this.$q.loading.show()
+        this.$store.dispatch(types.Fhir.DELETE_ALL, resourceType)
+          .then(() => {
+            this.$q.loading.hide()
+            this.$notify.success(String(this.$t('SUCCESS.X_RESOURCES_REMOVED', {resourceType})))
+          })
+          .catch(() => {
+            this.$q.loading.hide()
+            this.$notify.error(String(this.$t('ERROR.SOMETHING_WENT_WRONG')))
+          })
       })
     }
 

@@ -44,12 +44,12 @@
           </q-splitter>
           <q-separator />
           <q-card-section class="row">
-            <q-btn :disable="tickedFHIRAttr.length !== 1" outline :label="$t('BUTTONS.ASSIGN_DEFAULT_VALUE')"
-                   color="grey-8" @click="openDefaultValueAssigner" no-caps />
+            <q-btn :disable="tickedFHIRAttr.length !== 1" unelevated :label="$t('BUTTONS.ASSIGN_DEFAULT_VALUE')"
+                   color="primary" @click="openDefaultValueAssigner" no-caps />
             <q-space />
             <div class="q-gutter-sm">
               <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" unelevated :label="$t('BUTTONS.MATCH')"
-                     color="grey-2" text-color="primary" @click="matchFields" no-caps />
+                     color="primary" @click="matchFields" no-caps />
               <q-btn unelevated v-show="!editRecordId" color="positive" :label="$t('BUTTONS.ADD_MAPPING')" icon="check" @click="addRecord" no-caps />
               <q-btn unelevated v-show="editRecordId" color="primary" :label="$t('BUTTONS.UPDATE')" icon="edit" @click="addRecord" no-caps />
               <q-btn unelevated v-show="editRecordId" color="negative" :label="$t('BUTTONS.CLOSE_EDIT_MODE')" @click="closeEditMode" no-caps />

@@ -22,8 +22,8 @@
 
       <q-separator />
       <q-card-actions align="right">
-        <q-btn flat color="primary" :label="$t('BUTTONS.OK')" @click="onOKClick(defaultValue)" :disable="!defaultValue" />
         <q-btn flat color="primary" :label="$t('BUTTONS.CLOSE')" @click="onCloseClick" />
+        <q-btn unelevated color="primary" :label="$t('BUTTONS.OK')" @click="onOKClick(defaultValue)" :disable="!defaultValue" />
       </q-card-actions>
     </q-card>
   </q-dialog>

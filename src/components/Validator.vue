@@ -14,10 +14,10 @@
         >
           <template v-slot:top-right>
             <div class="row items-center q-gutter-md">
-              <div>
-                <span class="text-grey-8">Chunk size: </span>
-                <input type="number" class="chunk-size-input" v-model="chunkSize" />
-              </div>
+<!--              <div>-->
+<!--                <span class="text-grey-8">Chunk size: </span>-->
+<!--                <input type="number" class="chunk-size-input" v-model="chunkSize" />-->
+<!--              </div>-->
               <q-input borderless dense v-model="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
                 <template v-slot:append>
                   <q-icon v-if="!filterText" name="search" />
