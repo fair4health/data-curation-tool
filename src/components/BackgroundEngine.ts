@@ -376,7 +376,10 @@ export default class BackgroundEngine extends Vue {
                           return new Promise((resolveTargets, rejectTargets) => {
                             const entryValue: any = sourceData.defaultValue || entry[sourceData.value]
                             if (entryValue !== undefined && entryValue !== null && entryValue !== '') {
-                              const value = String(entryValue)
+                              let value = String(entryValue).trim()
+                              if (sourceData.type === cellType.n) {
+                                value = value.replace(',', '.')
+                              }
 
                               Promise.all(sourceData.target.map((target: store.Target) => {
                                 // Buffer Resource creation
