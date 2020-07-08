@@ -346,10 +346,13 @@
             Promise.all(filePathList.map((filePath: string) => {
               return new Promise((resolveFile, rejectFile) => {
 
+                const selectedSheetList = Object.keys(FHIRUtil.groupBy(this.tablesToValidate.filter(_ => _.file === filePath), 'sheet'))
+
                 this.setSelectedStatus(Status.IN_PROGRESS)
 
                 // const sheets = this.mappingObj[filePath]
-                const sheets = this.savedRecords.find((files: store.SavedRecord) => files.fileName === filePath)!.sheets
+                let sheets = this.savedRecords.find((files: store.SavedRecord) => files.fileName === filePath)!.sheets
+                sheets = sheets.filter((sheet: store.Sheet) => selectedSheetList.includes(sheet.sheetName))
 
                 ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.VALIDATE, {chunkSize: this.chunkSize, data: {filePath, sheets}})
 
@@ -376,7 +379,7 @@
                   rejectFile(false)
                 })
 
-                Promise.all(Object.keys(this.mappingObj[filePath]).map(sheet => {
+                Promise.all(selectedSheetList.map(sheet => {
                   return new Promise((resolveSheet, rejectSheet) => {
                     ipcRenderer.on(`info-${filePath}-${sheet}`, (event, result) => {
                       this.mappingList = this.mappingList.map(_ => {
@@ -411,15 +414,20 @@
                         return _
                       })
                       if (result && this.isSuccess(result.status)) {
-                        resolveSheet()
+                        resolveSheet(true)
                       } else {
                         // Reject even if a resource has error
-                        rejectSheet()
+                        resolveSheet(false)
                       }
                     })
                   })
                 }))
-                  .then(() => resolveFile(true))
+                  .then(res => {
+                    if (res.includes(false)) {
+                      rejectFile(false)
+                    }
+                    resolveFile(true)
+                  })
                   .catch(() => rejectFile(false))
               }).catch(_ => _)
             }))
@@ -451,9 +459,10 @@
 
     setSelectedStatus (status: Status) {
       const filePathList = Object.keys(FHIRUtil.groupBy(this.tablesToValidate, 'file'))
+      const sheetList = Object.keys(FHIRUtil.groupBy(this.tablesToValidate, 'sheet'))
       filePathList.map((filePath: string) => {
         this.mappingList = this.mappingList.map(_ => {
-          if (_.file === filePath) {
+          if (_.file === filePath && sheetList.includes(_.sheet)) {
             _.validation = { status }
           }
           return _
