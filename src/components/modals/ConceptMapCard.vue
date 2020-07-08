@@ -10,7 +10,7 @@
           <q-btn v-if="propModel.conceptMap && propModel.conceptMap.source"
                  unelevated
                  rounded
-                 label="Remove mapping"
+                 :label="$t('BUTTONS.REMOVE_MAPPING')"
                  icon="delete"
                  color="negative"
                  @click="removeConceptMap"

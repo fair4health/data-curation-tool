@@ -29,6 +29,7 @@
     "RELOAD_FILE": "Reload File",
     "REMOVE": "Remove",
     "REMOVE_FROM_FHIR": "Remove from FHIR",
+    "REMOVE_MAPPING": "Remove mapping",
     "SAVE": "Save",
     "SEARCH": "Search",
     "SET": "Set",

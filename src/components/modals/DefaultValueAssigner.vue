@@ -1,9 +1,22 @@
 <template>
-  <q-dialog ref="dialog" @hide="onDialogHide">
+  <q-dialog ref="dialog">
     <q-card class="assigner-card">
-      <q-card-section>
+      <q-card-section class="row items-center">
         <div class="text-h6">
           {{ $t('TITLES.ASSIGN_DEFAULT_VALUE') }}
+        </div>
+        <q-space />
+        <div class="q-gutter-sm">
+          <q-btn v-if="defaultValueProp"
+                 unelevated
+                 rounded
+                 :label="$t('BUTTONS.REMOVE')"
+                 icon="delete"
+                 color="negative"
+                 @click="removeValue"
+                 no-caps
+          />
+          <q-btn flat round dense icon="close" @click="onCloseClick" />
         </div>
       </q-card-section>
 
@@ -40,6 +53,11 @@
 
     mounted () {
       this.defaultValue = this.defaultValueProp
+    }
+
+    removeValue () {
+      this.$emit('ok', '')
+      this.onCloseClick()
     }
 
   }

@@ -8,10 +8,11 @@
             clearable
             :placeholder="label"
             class="code-system-popup"
-            v-model="url"
+            :value="url"
             input-debounce="0"
             :options="systemUrls"
             @filter="filterCodeSystems"
+            @input-value="updateUrl"
             @input="updateUrl"
   >
     <template v-slot:no-option>
@@ -50,7 +51,8 @@
       })
     }
 
-    updateUrl () {
+    updateUrl (val: string) {
+      this.url = val
       this.$emit('input', this.url)
     }
   }
