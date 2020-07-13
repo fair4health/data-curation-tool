@@ -64,7 +64,7 @@ export class Practitioner implements Generator {
         try {
           let date = item.value
           if (!(date instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
-          practitioner.birthDate = DataTypeFactory.createDateString(date)
+          practitioner.birthDate = DataTypeFactory.shortenDate(date)
         } catch (e) { log.error('Date insertion error.', e) }
       }
 

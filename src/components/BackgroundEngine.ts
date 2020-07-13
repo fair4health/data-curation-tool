@@ -328,7 +328,7 @@ export default class BackgroundEngine extends Vue {
           stream.on('data', (data) => { buffers.push(data) })
           stream.on('end', () => {
             const buffer = Buffer.concat(buffers)
-            const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', cellDates: true})
+            const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', cellDates: true, cellText: false})
 
             // Save buffer workbook to map
             workbookMap.set(filePath, workbook)
@@ -348,7 +348,7 @@ export default class BackgroundEngine extends Vue {
         data.sheets.reduce((promise: Promise<any>, sheet: store.Sheet) =>
             promise.then(() => new Promise((resolveSheet, rejectSheet) => {
 
-              const entries: any[] = Excel.utils.sheet_to_json(workbook.Sheets[sheet.sheetName]) || []
+              const entries: any[] = Excel.utils.sheet_to_json(workbook.Sheets[sheet.sheetName], {raw: false, dateNF: 'mm/dd/yyyy'}) || []
               const sheetRecords: store.Record[] = sheet.records
 
               ipcRenderer.send(ipcChannels.TO_RENDERER, `info-${filePath}-${sheet.sheetName}`, {total: entries.length})

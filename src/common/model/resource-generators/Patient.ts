@@ -73,7 +73,7 @@ export class Patient implements Generator {
         try {
           let date = item.value
           if (!(date instanceof Date)) { date = DataTypeFactory.createDate(String(item.value)) }
-          patient.birthDate = DataTypeFactory.createDateString(date)
+          patient.birthDate = DataTypeFactory.shortenDate(date)
         } catch (e) { log.error('Date insertion error.', e) }
       }
       if (resource.has('Patient.deceased[x].dateTime')) {

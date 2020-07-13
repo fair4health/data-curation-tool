@@ -55,6 +55,9 @@ export class DataTypeFactory {
     return date ? new Date(date) : null
   }
   static createDateString (date: Date): string {
+    return new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString()
+  }
+  static shortenDate (date: Date): string {
     return date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2)
   }
 

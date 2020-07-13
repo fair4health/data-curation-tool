@@ -945,7 +945,6 @@ declare namespace fhir {
     abatementPeriod?: Period;
     abatementRange?: Range;
     abatementString?: string;
-    assertedDate?: date;
     asserter?: Reference;
     recorder?: Reference;
     recordedDate?: dateTime;
