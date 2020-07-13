@@ -15,6 +15,7 @@
     "EDIT": "Edit",
     "EXPORT": "Export",
     "EXPORT_RESOURCES": "Export Resources",
+    "FINALIZE_CURATION": "Finalize Curation",
     "HIDE_BASE_RESOURCE_ELEMENTS": "Hide base resource elements",
     "IMPORT": "Import",
     "LOAD": "Load",
@@ -183,6 +184,7 @@
     "DATA_SOURCE_ANALYZER": "Data Source Analyzer",
     "DELETE": "@:COMMON.DELETE",
     "DELETE_RECORD": "Delete Record",
+    "FINALIZE_CURATION": "@:BUTTONS.FINALIZE_CURATION",
     "MAPPING_DETAILS": "Mapping Details",
     "METADATA_MAPPER": "Metadata Mapper",
     "OUTCOME_DETAILS": "Outcome Details",
@@ -199,6 +201,7 @@
     "ARE_YOU_SURE_TO_REMOVE_RESOURCE": "Are you sure you want to remove {resourceType} resources? {resourceType} resources will not be transformed.",
     "ARE_YOU_SURE_TO_REMOVE_RESOURCE_FROM_FHIR": "Are you sure you want to remove all instances of {resourceType} resource type from the FHIR Repository?",
     "CHANGES_WILL_BE_LOST": "The changes you have made will be lost.",
+    "CURATION_HAS_ENDED": "The curation process has ended. If you have not saved your mappings, they will be lost. Are you sure you want to finalize the section?",
     "DELETE_RECORD_WITH_ID": "Delete record with id #{id}.",
     "IF_YOU_GO_BACK": "If you go back and make any change, @:WARNING.CHANGES_WILL_BE_LOST",
     "MATCH_THE_FIELDS_FIRST": "You have not matched your data with any fields. Please match the fields first."

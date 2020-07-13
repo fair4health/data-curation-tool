@@ -105,6 +105,9 @@
     </q-card>
     <div class="row q-pa-sm">
       <q-btn unelevated :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" :disable="isInProgress(transformStatus)" no-caps />
+      <q-space />
+      <q-btn v-if="!isInProgress(transformStatus) && !isPending(transformStatus)"
+             unelevated icon="done_outline" color="primary" :label="$t('BUTTONS.FINALIZE_CURATION')" @click="finalizeCuration" no-caps />
     </div>
   </div>
 </template>
@@ -241,6 +244,20 @@
       this.$q.dialog({
         component: OutcomeCard,
         parent: this
+      })
+    }
+
+    finalizeCuration () {
+      this.$q.dialog({
+        title: `<span class="text-primary"><i class="fas fa-info-circle q-pr-sm"></i>${this.$t('TITLES.FINALIZE_CURATION')}</span>`,
+        message: `${this.$t('WARNING.CURATION_HAS_ENDED')}`,
+        class: 'text-grey-9',
+        ok: this.$t('BUTTONS.OK'),
+        cancel: this.$t('BUTTONS.CANCEL'),
+        html: true
+      }).onOk(() => {
+        this.$store.dispatch(types.File.DESTROY_STORE)
+        this.$store.commit(types.SET_STEP, 1)
       })
     }
 
