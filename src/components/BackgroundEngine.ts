@@ -513,26 +513,30 @@ export default class BackgroundEngine extends Vue {
                                             .then(res => {
                                               const bundle: fhir.Bundle = res.data as fhir.Bundle
                                               const outcomeDetails: OutcomeDetail[] = []
-                                              let hasError: boolean = false
 
                                               // Check batch bundle response for errors
-                                              Promise.all(bundle.entry?.map(_ => {
-                                                if (!_.resource) {
-                                                  const operationOutcome: fhir.OperationOutcome = _.response!.outcome as fhir.OperationOutcome
-                                                  operationOutcome.issue.map(issue => {
-                                                    if (issue.severity === 'error') {
-                                                      hasError = true
-                                                      outcomeDetails.push({status: Status.ERROR, resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
-                                                    }
-                                                  })
+                                              Promise.all(bundle.entry?.map((entry: fhir.BundleEntry) => {
+                                                let operationOutcome: fhir.OperationOutcome
+                                                let isValidated: boolean = true
+                                                if (!entry.resource) {
+                                                  operationOutcome = entry.response.outcome as fhir.OperationOutcome
                                                 } else {
-                                                  outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
+                                                  operationOutcome = entry.resource as fhir.OperationOutcome
                                                 }
-                                              }) || [])
-                                                .then(() => {
-                                                  if (hasError) resolveBatch(outcomeDetails)
-                                                  else resolveBatch(outcomeDetails)
+
+                                                operationOutcome.issue.map(issue => {
+                                                  if (issue.severity === 'error' || issue.severity === 'fatal') {
+                                                    isValidated = false
+                                                    outcomeDetails.push({status: Status.ERROR, resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
+                                                  }
                                                 })
+
+                                                if (isValidated) {
+                                                  outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${entry.response?.status}`} as OutcomeDetail)
+                                                }
+
+                                              }) || [])
+                                                .then(() => resolveBatch(outcomeDetails))
                                                 .catch(err => rejectBatch(err))
                                             })
                                             .catch(err => {
@@ -672,7 +676,7 @@ export default class BackgroundEngine extends Vue {
                         if (!_.resource) {
                           const operationOutcome: fhir.OperationOutcome = _.response!.outcome as fhir.OperationOutcome
                           operationOutcome.issue.map(issue => {
-                            if (issue.severity === 'error') {
+                            if (issue.severity === 'error' || issue.severity === 'fatal') {
                               hasError = true
                               outcomeDetails.push({status: Status.ERROR, resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
                             } else if (issue.severity === 'information') {
