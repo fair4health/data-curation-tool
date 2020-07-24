@@ -141,6 +141,9 @@ const fhirStore = {
           .then(res => {
             const elementList = res[0]?.children || []
             commit(types.Fhir.SET_ELEMENT_LIST, elementList)
+            if (!elementList.length) {
+              reject()
+            }
             resolve(true)
           })
           .catch(err => reject(err))

@@ -107,7 +107,7 @@
                               <q-btn flat round dense size="sm" icon="visibility" color="grey-9"
                                      @click="openMappingDetail(file.fileName, sheet.sheetName, record)" />
                               <q-btn flat round dense size="sm" icon="edit" color="grey-9"
-                                     @click="editRecord(file.fileName, sheet.sheetName, record.recordId)" />
+                                     @click="editRecord(file.fileName, sheet.sheetName, record)" />
                               <q-btn unelevated round dense size="sm" icon="close" color="white" text-color="grey-9"
                                      @click="removeRecordPopup(file.fileName, sheet.sheetName, record.recordId)" />
                             </div>
@@ -239,8 +239,10 @@
     set currentSheet (value) { this.$store.commit(types.File.SET_CURRENT_SHEET, value) }
 
     get currentFHIRRes (): string { return this.$store.getters[types.Fhir.CURRENT_RESOURCE] }
+    set currentFHIRRes (value) { this.$store.commit(types.Fhir.SET_CURRENT_RESOURCE, value) }
 
     get currentFHIRProf (): string { return this.$store.getters[types.Fhir.CURRENT_PROFILE] }
+    set currentFHIRProf (value) { this.$store.commit(types.Fhir.SET_CURRENT_PROFILE, value) }
 
     get selectedAttr (): any { return this.$store.getters[types.File.SELECTED_HEADERS] }
     set selectedAttr (value) { this.$store.commit(types.File.SET_SELECTED_HEADERS, value) }
@@ -504,7 +506,7 @@
       }
     }
 
-    editRecord (fileName: string, sheetName: string, recordId: string) {
+    editRecord (fileName: string, sheetName: string, mappingRecord: store.Record) {
       new Promise(resolve => {
         if (this.currentSource.path !== fileName) {
           this.currentSource = this.fileSourceList.filter(_ => _.path === fileName)[0]
@@ -512,16 +514,22 @@
         if (this.currentSheet?.value !== sheetName) {
           this.currentSource.currentSheet = this.currentSource.sheets!.filter(_ => _.value === sheetName)[0]
         }
+        if (this.currentFHIRRes !== mappingRecord.resource) {
+          this.currentFHIRRes = mappingRecord.resource
+        }
+        if (mappingRecord.profile && this.currentFHIRProf !== mappingRecord.profile) {
+          setTimeout(() => { this.currentFHIRProf = mappingRecord.profile }, 0)
+        }
         resolve()
       }).then(() => {
-        this.editRecordId = recordId
+        this.editRecordId = mappingRecord.recordId
         this.$q.loading.show()
         this.$store.commit(types.File.SETUP_BUFFER_SHEET_HEADERS)
         const file = this.savedRecords.filter(_ => _.fileName === fileName) || []
         if (file.length === 1) {
           const sheet = file[0].sheets?.filter(_ => _.sheetName === sheetName) || []
           if (sheet.length === 1) {
-            const record = sheet[0].records?.filter(_ => _.recordId === recordId)
+            const record = sheet[0].records?.filter(_ => _.recordId === this.editRecordId)
             const sourceAttrs: store.SourceTargetGroup[] = record[0].data || []
             sourceAttrs.map(_ => {
               const tmp: BufferElement[] = this.bufferSheetHeaders.filter(field => _.value && field.value === _.value) || []
@@ -698,7 +706,7 @@
         mapping: mappingRecord
       })
         .onOk(() => {
-          this.editRecord(fileName, sheetName, mappingRecord.recordId)
+          this.editRecord(fileName, sheetName, mappingRecord)
         })
     }
 

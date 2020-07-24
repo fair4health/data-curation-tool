@@ -378,21 +378,20 @@
       this.$store.dispatch(types.Fhir.GET_PROFILES_BY_RES, this.currentFHIRRes)
         .then(result => {
           if (result) {
-            this.currentFHIRProf = this.fhirProfileList.length ? this.fhirProfileList[0] : ''
             // Fetch elements of base resources
             if (!this.currentFHIRProf) {
               this.$store.dispatch(types.Fhir.GET_ELEMENTS, {parameterName: '_id', profile: this.currentFHIRRes})
                 .then(() => this.loadingFhir = false )
                 .catch(() => {
                   this.loadingFhir = false
-                  this.$notify.error(String(this.$t('ERROR.RESOURCE_ELEMENTS_COULDNT_BE_LOADED')))
+                  this.$notify.error(String(this.$t('ERROR.X_RESOURCE_ELEMENTS_COULDNT_BE_LOADED', {resource: this.currentFHIRRes})))
                 })
             } else this.loadingFhir = false
           }
         })
         .catch(err => {
           this.loadingFhir = false
-          throw err
+          this.$notify.error(String(this.$t('ERROR.X_RESOURCE_ELEMENTS_COULDNT_BE_LOADED', {resource: this.currentFHIRRes})))
         })
     }
 
@@ -407,7 +406,7 @@
           })
           .catch(() => {
             this.loadingFhir = false
-            this.$notify.error(String(this.$t('ERROR.RESOURCE_ELEMENTS_COULDNT_BE_LOADED')))
+            this.$notify.error(String(this.$t('ERROR.X_PROFILE_ELEMENTS_COULDNT_BE_LOADED', {profile: this.currentFHIRProf})))
           })
       }
     }
