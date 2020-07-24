@@ -77,12 +77,13 @@
     "HEADERS_COULDNT_BE_DETECTED": "Headers couldn't be detected",
     "NO_MAPPING_AVAILABLE": "No mapping available",
     "NO_TERMINOLOGY_SERVICE_IS_CONNECTED": "No terminology service is connected.",
-    "RESOURCE_ELEMENTS_COULDNT_BE_LOADED": "Resource elements couldn't be loaded",
     "SELECT_A_TABLE": "Select a sheet/table",
     "SOMETHING_WENT_WRONG": "Something went wrong",
     "ST_WRONG_FETCHING_X": "Something went wrong while fetching {name}",
     "ST_WRONG_SAVING_RECORD": "Something went wrong while saving the record",
-    "TERMINOLOGY_URL_NOT_VERIFIED": "Given terminology url is not verified."
+    "TERMINOLOGY_URL_NOT_VERIFIED": "Given terminology url is not verified.",
+    "X_PROFILE_ELEMENTS_COULDNT_BE_LOADED": "{profile} Profile elements couldn't be loaded",
+    "X_RESOURCE_ELEMENTS_COULDNT_BE_LOADED": "{resource} Resource elements couldn't be loaded"
   },
   "INFO": {
     "DATA_SOURCE_ANALYZER_INFO": "Browse your file system and add the sources as Excel or CSV file.",
