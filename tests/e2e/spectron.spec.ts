@@ -1,6 +1,8 @@
 import testWithSpectron from 'vue-cli-plugin-electron-builder/lib/testWithSpectron'
-import chai from 'chai'
+import chai, { expect } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
+
+const spectron = __non_webpack_require__('spectron')
 
 chai.should()
 chai.use(chaiAsPromised)
@@ -12,7 +14,7 @@ describe('Application launch', function () {
   let stopServe: any
 
   before(() => {
-    return testWithSpectron().then((instance: any) => {
+    return testWithSpectron(spectron).then((instance: any) => {
       app = instance.app
       stopServe = instance.stopServe
     })
@@ -29,18 +31,19 @@ describe('Application launch', function () {
   })
 
   it('Should check the number of windows', () => {
-    return app.client.getWindowCount().should.eventually.equal(3)
+    return app.client.getWindowCount().then(windowCount => {
+      expect(windowCount).to.equal(3)
+    })
   })
 
-  // TODO: Update using spectron switchWindow()
   it('Should check background invisible windows titles', () => {
     return app.client.getWindowCount().then(async windowCount => {
       const windowPromiseList = []
       for (let i = 0; i < windowCount; i++) {
 
-        const window = app.client.windowByIndex(i)
-        const title = await window.browserWindow.getTitle()
-        const isVisible = await window.browserWindow.isVisible()
+        app.client.windowByIndex(i)
+        const title = await app.client.browserWindow.getTitle()
+        const isVisible = await app.client.browserWindow.isVisible()
 
         windowPromiseList.push(new Promise(resolve => {
           resolve({title, isVisible})
@@ -54,7 +57,9 @@ describe('Application launch', function () {
               return res.filter((_) => _.title.startsWith('bg') && _.isVisible === false).length
             })
         )
-      })).should.eventually.equal(windowCount - 1)
+      })).then(res => {
+        expect(res).to.equal(windowCount - 1)
+      })
     })
   })
 
