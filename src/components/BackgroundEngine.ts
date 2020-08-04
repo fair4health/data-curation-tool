@@ -5,7 +5,7 @@ import generators from '@/common/model/resource-generators'
 import log from 'electron-log'
 import Status from '@/common/Status'
 import { VNode, CreateElement } from 'vue'
-import { remote, ipcRenderer } from 'electron'
+import { remote, ipcRenderer, OpenDialogReturnValue, SaveDialogReturnValue } from 'electron'
 import { workbookMap } from '@/common/model/workbook'
 import { cellType } from '@/common/model/data-table'
 import { FHIRUtil } from '@/common/utils/fhir-util'
@@ -126,18 +126,24 @@ export default class BackgroundEngine extends Vue {
    * Browses files with extensions [xls, xlsx, csv] and sends back their paths as a list
    */
   public onBrowseFile () {
-    ipcRenderer.on(ipcChannels.File.BROWSE_FILE, (event) => {
+    ipcRenderer.on(ipcChannels.File.BROWSE_FILE, () => {
       remote.dialog.showOpenDialog(remote.BrowserWindow.getFocusedWindow(), {
         properties: ['openFile', 'multiSelections'],
         filters: [{ extensions: ['xls', 'xlsx', 'csv'], name: 'Excel or CSV' }]
-      }, (files) => {
-        if (files) {
-          log.info('Browse file - ' + files)
-          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_FILES, files)
-        } else ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_FILES, undefined)
-
-        this.ready()
       })
+        .then((openDialogReturnValue: OpenDialogReturnValue) => {
+          const filePaths: string[] = openDialogReturnValue.filePaths
+          if (filePaths && filePaths.length) {
+            log.info('Browse file - ' + filePaths)
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_FILES, filePaths)
+          } else ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_FILES, undefined)
+
+          this.ready()
+        })
+        .catch(err => {
+          log.error(`Browse file error. ${err}`)
+          this.ready()
+        })
     })
   }
 
@@ -229,26 +235,32 @@ export default class BackgroundEngine extends Vue {
    * Browses files with .json extension and sends back parsed content
    */
   public onBrowseMapping () {
-    ipcRenderer.on(ipcChannels.File.BROWSE_MAPPING, (event) => {
+    ipcRenderer.on(ipcChannels.File.BROWSE_MAPPING, () => {
       remote.dialog.showOpenDialog(remote.BrowserWindow.getFocusedWindow(), {
         properties: ['openFile'],
         filters: [{ extensions: ['json'], name: 'JSON (.json)' }]
-      }, (files) => {
-        if (files && files.length) {
-          fs.readFile(files[0], (err, data) => {
-            if (err) {
-              log.error(`Cannot read mapping file ${files[0]}`)
-              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, undefined)
-              this.ready()
-              return
-            }
-            log.info(`Mapping loaded from ${files[0]}`)
-            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, JSON.parse(data.toString()))
-          })
-        } else ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, undefined)
-
-        this.ready()
       })
+        .then((openDialogReturnValue: OpenDialogReturnValue) => {
+          const filePaths: string[] = openDialogReturnValue.filePaths
+          if (filePaths && filePaths.length) {
+            fs.readFile(filePaths[0], (err, data) => {
+              if (err) {
+                log.error(`Cannot read mapping file ${filePaths[0]}`)
+                ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, undefined)
+                this.ready()
+                return
+              }
+              log.info(`Mapping loaded from ${filePaths[0]}`)
+              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, JSON.parse(data.toString()))
+            })
+          } else ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, undefined)
+
+          this.ready()
+        })
+        .catch(err => {
+          log.error(`Browse file error. ${err}`)
+          this.ready()
+        })
     })
   }
 
@@ -259,29 +271,35 @@ export default class BackgroundEngine extends Vue {
     ipcRenderer.on(ipcChannels.File.EXPORT_FILE, (event, content) => {
       remote.dialog.showSaveDialog(remote.BrowserWindow.getFocusedWindow(), {
         filters: [{ extensions: ['json'], name: 'JSON (.json)' }]
-      }, (filename) => {
-        if (!filename) {
-          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.EXPORT_DONE, null)
-          this.ready()
-          return
-        }
-        fs.writeFile(filename, content, (err) => {
-          if (err) {
-            log.error(`Export file: ${err}`)
+      })
+        .then((saveDialogReturnValue: SaveDialogReturnValue) => {
+          const filename: string = saveDialogReturnValue.filePath
+          if (!filename) {
             ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.EXPORT_DONE, null)
             this.ready()
             return
           }
-          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.EXPORT_DONE, true)
-        })
+          fs.writeFile(filename, content, (err) => {
+            if (err) {
+              log.error(`Export file: ${err}`)
+              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.EXPORT_DONE, null)
+              this.ready()
+              return
+            }
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.EXPORT_DONE, true)
+          })
 
-        this.ready()
-      })
+          this.ready()
+        })
+        .catch(err => {
+          log.error(`Save file error. ${err}`)
+          this.ready()
+        })
     })
   }
 
   public onAbortValidation () {
-    ipcRenderer.on(ipcChannels.Fhir.ABORT_VALIDATION, (event, data: any) => {
+    ipcRenderer.on(ipcChannels.Fhir.ABORT_VALIDATION, () => {
       this.abortValidation.abort()
     })
   }
@@ -642,7 +660,7 @@ export default class BackgroundEngine extends Vue {
    * Puts resources into the FHIR Repository
    */
   public onTransform () {
-    ipcRenderer.on(ipcChannels.Fhir.TRANSFORM, (event) => {
+    ipcRenderer.on(ipcChannels.Fhir.TRANSFORM, () => {
       this.$store.dispatch(types.IDB.GET_ALL)
         .then((resources: any[]) => {
           const map: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
