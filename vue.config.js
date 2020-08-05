@@ -7,6 +7,7 @@ module.exports = {
       appId: 'fair4health-data-curation-tool',
       customFileProtocol: 'fair4health://./',
       mainProcessFile: 'src/electron-main.ts',
+      nodeIntegration: true,
       builderOptions: {
         mac: {
           icon: './dist_electron/bundled/icons/icon.icns'

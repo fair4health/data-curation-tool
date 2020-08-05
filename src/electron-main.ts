@@ -1,9 +1,10 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, dialog, ipcMain, webContents } from 'electron'
-import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib'
+import { app, protocol, BrowserWindow, dialog, ipcMain, webContents, MessageBoxReturnValue } from 'electron'
+import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import log from 'electron-log'
 import { IpcChannelUtil as ipcChannels } from './common/utils/ipc-channel-util'
+// import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -47,7 +48,10 @@ function createWindow () {
     frame: false,
     titleBarStyle: 'hidden',
     useContentSize: true,
-    webPreferences: { nodeIntegration: true }
+    webPreferences: {
+      nodeIntegration: true,
+      enableRemoteModule: true
+    }
   })
   // Make window fullscreen
   win.maximize()
@@ -73,10 +77,15 @@ function createWindow () {
       buttons: ['Reload', 'Close']
     }
     log.error('Renderer Process Crashed')
-    dialog.showMessageBox(options, (index) => {
-      if (index === 0) win?.reload()
-      else win?.destroy()
-    })
+    dialog.showMessageBox(options)
+      .then((messageBoxReturnValue: MessageBoxReturnValue) => {
+        if (messageBoxReturnValue.response === 0) win?.reload()
+        else win?.destroy()
+      })
+      .catch(err => {
+        log.error(err)
+        win?.destroy()
+      })
   })
 
   win.on('closed', () => {
@@ -110,9 +119,16 @@ function createBgWindow (id: number): BrowserWindow {
       buttons: ['Close']
     }
     log.error('Background Process Crashed')
-    dialog.showMessageBox(options, (index) => {
-      if (index === 0) background?.destroy()
-    })
+    dialog.showMessageBox(options)
+      .then((messageBoxReturnValue: MessageBoxReturnValue) => {
+        if (messageBoxReturnValue.response === 0) {
+          background?.destroy()
+        }
+      })
+      .catch(err => {
+        log.error(err)
+        background?.destroy()
+      })
   })
 
   background.webContents.on('did-finish-load', () => {
@@ -148,16 +164,11 @@ app.on('activate', () => {
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
-    // Devtools extensions are broken in Electron 6.0.0 and greater
-    // See https://github.com/nklayman/vue-cli-plugin-electron-builder/issues/378 for more info
-    // Electron will not launch with Devtools extensions installed on Windows 10 with dark mode
-    // If you are not using Windows 10 dark mode, you may uncomment these lines
-    // In addition, if the linked issue is closed, you can upgrade electron and uncomment these lines
-    try {
-      await installVueDevtools()
-    } catch (e) {
-      console.error('Vue Devtools failed to install:', e.toString())
-    }
+    // try {
+    //   await installExtension(VUEJS_DEVTOOLS)
+    // } catch (e) {
+    //   console.error('Vue Devtools failed to install:', e.toString())
+    // }
   }
 
   // Create Main renderer window
