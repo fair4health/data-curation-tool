@@ -2,8 +2,12 @@ import { expect } from 'chai'
 import { FhirService } from '@/common/services/fhir.service'
 import 'isomorphic-fetch'
 
-describe('Test FHIR Search', () => {
+describe('Test FHIR Repository', () => {
+
+  // Init FHIR Service - set base URL
   const fhirService: FhirService = new FhirService()
+  fhirService.setUrl('http://localhost:8282/fhir')
+
   let Patient: fhir.Patient
 
   before(async () => {
@@ -11,18 +15,18 @@ describe('Test FHIR Search', () => {
       resourceType: 'Patient',
       id: 'dd1199d8-11cf-4053-99f9-95ba5cdbe696',
       meta: {
-        profile: [
-          'http://hl7.org/fhir/uv/ips/StructureDefinition/patient-uv-ips'
-        ]
+        profile: ['http://hl7.eu/fhir/f4h/StructureDefinition/Patient-eu-f4h']
       },
+      identifier: [{
+        system: 'http://f4h.srdc.com.tr/fhir/demos/patient_id',
+        value: '1'
+      }],
       active: true,
       gender: 'male',
-      birthDate: '1996',
-      name: [
-        {
-          text: 'Test Patient'
-        }
-      ]
+      birthDate: '1960-04-10',
+      address: [{
+        country: 'ES'
+      }]
     }
   })
 
@@ -33,11 +37,10 @@ describe('Test FHIR Search', () => {
           const bundle = res.data as fhir.Bundle
           expect(res.status).to.equal(200)
           expect(bundle.entry?.length).to.equal(1)
-          done()
         }, err => {
           expect(false).to.be.true
-          done()
         })
+        .then(done, done)
     })
     it('Get Resource by reference - StructureDefinition/Appointment', (done) => {
       fhirService.getResource('StructureDefinition/Appointment')
@@ -46,11 +49,10 @@ describe('Test FHIR Search', () => {
           expect(res.status).to.equal(200)
           expect(resource.resourceType).to.equal('StructureDefinition')
           expect(resource.id).to.equal('Appointment')
-          done()
         }, err => {
           expect(false).to.be.true
-          done()
         })
+        .then(done, done)
     })
   })
 
@@ -62,15 +64,14 @@ describe('Test FHIR Search', () => {
           fhirService.deleteResource(res.data as fhir.Patient)
             .then(delRes => {
               expect(delRes.status).to.equal(204)
-              done()
             }, err => {
               expect(false).to.be.true
-              done()
             })
+            .then(done, done)
         }, err => {
           expect(false).to.be.true
-          done()
         })
+        .then(null, done)
     })
   })
 
@@ -93,21 +94,20 @@ describe('Test FHIR Search', () => {
               fhirService.deleteResource(res.data as fhir.Patient)
                 .then(delRes => {
                   expect(delRes.status).to.equal(204)
-                  done()
                 }, err => {
                   expect(false).to.be.true
-                  done()
                 })
+                .then(done, done)
 
             }, err => {
               expect(false).to.be.true
-              done()
             })
+            .then(null, done)
 
         }, err => {
           expect(false).to.be.true
-          done()
         })
+        .then(null, done)
     })
   })
 
