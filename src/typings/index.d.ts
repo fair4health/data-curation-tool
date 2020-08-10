@@ -4846,8 +4846,8 @@ declare namespace store {
     data: SourceTargetGroup[]
   }
   interface SourceTargetGroup {
-    type: string
-    value: string
+    type?: string
+    value?: string
     target: Target[]
     conceptMap?: ConceptMap
     defaultValue?: string
