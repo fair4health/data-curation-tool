@@ -4853,8 +4853,8 @@ declare namespace store {
     defaultValue?: string
   }
   interface Target {
-    resource: string
-    profile: string
+    resource?: string
+    profile?: string
     value: string
     type?: string
     fixedUri?: string

@@ -25,8 +25,8 @@ export interface Record {
 }
 
 export interface TargetResource {
-  resource: string
-  profile: string
+  resource?: string
+  profile?: string
   value: string
   type?: string
   fixedUri?: string
