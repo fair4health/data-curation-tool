@@ -41,7 +41,7 @@ describe('Application launch', function () {
       const windowPromiseList = []
       for (let i = 0; i < windowCount; i++) {
 
-        app.client.windowByIndex(i)
+        await app.client.windowByIndex(i)
         const title = await app.client.browserWindow.getTitle()
         const isVisible = await app.client.browserWindow.isVisible()
 
