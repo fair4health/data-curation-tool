@@ -4,7 +4,7 @@ import { cellType } from '@/common/model/data-table'
 import { FHIRUtil } from '@/common/utils/fhir-util'
 import { Generator } from '@/common/model/resource-generators/Generator'
 
-describe('FHIR Resource Generator Tests', () => {
+describe('Test FHIR Resource Generators', () => {
   let bufferResourceMap: Map<string, BufferResource> = new Map<string, BufferResource>()
   let bufferResourceList: BufferResourceDefinition[] = []
 
