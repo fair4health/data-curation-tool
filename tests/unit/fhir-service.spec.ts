@@ -1,12 +1,15 @@
 import { expect } from 'chai'
 import { FhirService } from '@/common/services/fhir.service'
 import 'isomorphic-fetch'
+import readlineSync from 'readline-sync'
 
-describe('Test FHIR Repository', () => {
+const onfhirURL = require('./../../package.json').onfhirTestURL || readlineSync.question('Enter the FHIR Repository URL: ')
+
+describe('Test FHIR Repository: ' + onfhirURL, () => {
 
   // Init FHIR Service - set base URL
   const fhirService: FhirService = new FhirService()
-  fhirService.setUrl('http://localhost:8282/fhir')
+  fhirService.setUrl(onfhirURL)
 
   let Patient: fhir.Patient
 
