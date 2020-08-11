@@ -1,14 +1,17 @@
 import { expect } from 'chai'
 import { TerminologyService } from '@/common/services/terminology.service'
+import readlineSync from 'readline-sync'
 
-describe('Test Terminology Service Methods', () => {
+const terminologyServiceURL = require('./../../package.json').terminologyServiceTestURL || readlineSync.question('Enter the Terminology Service URL: ')
+
+describe('Test Terminology Service Methods: ' + terminologyServiceURL, () => {
 
   // Init Terminology Service
   const terminologyService: TerminologyService = new TerminologyService()
 
   beforeEach(() => {
     // Set the base URL before each one because some will replace it
-    terminologyService.setUrl('https://terminology-service.atosresearch.eu')
+    terminologyService.setUrl(terminologyServiceURL)
   })
 
   it('Should verify the service', (done) => {

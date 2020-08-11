@@ -8,6 +8,7 @@
   "license": "Apache 2.0",
   "homepage": "https://github.com/fair4health/data-curation-tool",
   "onfhirTestURL": null,
+  "terminologyServiceTestURL": null,
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
