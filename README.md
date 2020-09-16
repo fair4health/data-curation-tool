@@ -1,6 +1,13 @@
 # FAIR4Health Data Curation & Validation Tool
 
-![alt text](https://www.fair4health.eu/images/logo.png)
+<p align="center">
+  <a href="https://www.fair4health.eu" target="_blank"><img width="400" src="https://www.fair4health.eu/images/logo.png" alt="FAIR4Health logo"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/fair4health/data-curation-tool"><img src="https://img.shields.io/github/license/fair4health/data-curation-tool" alt="License"></a>
+  <a href="https://github.com/fair4health/data-curation-tool/releases"><img src="https://img.shields.io/github/v/release/fair4health/data-curation-tool" alt="Releases"></a>
+</p>
 
 ## About
 
