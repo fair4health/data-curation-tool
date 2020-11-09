@@ -86,12 +86,12 @@
     "X_RESOURCE_ELEMENTS_COULDNT_BE_LOADED": "{resource} Resource elements couldn't be loaded"
   },
   "INFO": {
+    "ASTERISK_INFO": "The asterisk (*) indicates that the field is a mandatory field in the profile.",
     "DATA_SOURCE_ANALYZER_INFO": "Browse your file system and add the sources as Excel or CSV file.",
     "FHIR_REPO_VERIFICATION_INFO": "Verify the FHIR repository and also connect a Terminology Service.",
     "METADATA_MAPPER_INFO": "Map your source data with the FHIR profiles fetched from FHIR repository given at the first step.",
     "TRANSFORMER_INFO": "Put the FHIR resources generated into the repository.",
-    "VALIDATOR_INFO": "Validate FHIR resources created as a result of mapping, and review details if an inappropriate resource was created.",
-    "ASTERISK_INFO": "The asterisk (*) indicates that the field is a mandatory field in the profile."
+    "VALIDATOR_INFO": "Validate FHIR resources created as a result of mapping, and review details if an inappropriate resource was created."
   },
   "LABELS": {
     "ADD_TERMINOLOGY_SERVICE": "Add Terminology Service",
@@ -102,6 +102,7 @@
     "FHIR_RESOURCE": "FHIR Resource Type",
     "FILE": "@:COMMON.FILE (Excel or CSV)",
     "FIXED_URL_FROM_FHIR": "Fixed url from FHIR Resource element",
+    "FOLLOW_US": "Follow us on social media!",
     "MAPPINGS": "Mappings",
     "NEW_MAPPING": "New Mapping",
     "NO_CONTENT": "No content",
