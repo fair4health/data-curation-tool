@@ -120,7 +120,7 @@
                             </div>
                             <q-chip v-if="prop.node.selectedType" :label="prop.node.selectedType" size="sm"
                                     :removable="prop.node.type && prop.node.type.length > 0"
-                                    @remove="prop.node.selectedType = ''; updateElementList()"
+                                    @remove="prop.node.selectedType = ''; updateElementList(); prop.ticked = false"
                             />
                           </div>
                           <div class="row">
@@ -158,7 +158,7 @@
                                             <div class="row items-center">
                                               <div v-if="propType.node.type[0].value !== 'Reference' && (!propType.node.children || !propType.node.children.length)">
                                                 <q-radio dense v-model="prop.node.selectedType" class="text-grey-8 text-weight-medium full-width" :val="propType.node.value"
-                                                         :label="propType.node.label" size="xs" @input="updateElementList()"
+                                                         :label="propType.node.label" size="xs" @input="updateElementList(); prop.ticked = true"
                                                 />
                                               </div>
                                               <div class="text-grey-8 text-weight-medium" v-else>
@@ -167,7 +167,6 @@
                                               <q-space />
                                               <div v-if="propType.node.type[0].value === 'Reference'" class="select-reference">
                                                 <q-select dense class="q-pl-xs ellipsis text-size-md select-input"
-                                                          clearable
                                                           options-dense
                                                           standout="bg-primary text-white"
                                                           :label="!prop.node.selectedReference ? 'Resource Type' : 'Resource'"
@@ -178,7 +177,7 @@
                                                           option-label="name"
                                                           option-value="id"
                                                           @input="prop.node.selectedReference ? prop.node.selectedType = propType.node.value + '.' + prop.node.selectedReference : undefined;
-                                                                  updateElementList();
+                                                                  updateElementList(); prop.ticked = true;
                                                                   $refs[prop.node.value].blur();"
                                                           @clear="prop.node.selectedReference = ''; $refs[prop.node.value].blur(); updateElementList()"
                                                 />
