@@ -90,7 +90,8 @@
     "FHIR_REPO_VERIFICATION_INFO": "Verify the FHIR repository and also connect a Terminology Service.",
     "METADATA_MAPPER_INFO": "Map your source data with the FHIR profiles fetched from FHIR repository given at the first step.",
     "TRANSFORMER_INFO": "Put the FHIR resources generated into the repository.",
-    "VALIDATOR_INFO": "Validate FHIR resources created as a result of mapping, and review details if an inappropriate resource was created."
+    "VALIDATOR_INFO": "Validate FHIR resources created as a result of mapping, and review details if an inappropriate resource was created.",
+    "ASTERISK_INFO": "The asterisk (*) indicates that the field is a mandatory field in the profile."
   },
   "LABELS": {
     "ADD_TERMINOLOGY_SERVICE": "Add Terminology Service",
@@ -205,6 +206,7 @@
     "CURATION_HAS_ENDED": "The curation process has ended. If you have not saved your mappings, they will be lost. Are you sure you want to finalize the section?",
     "DELETE_RECORD_WITH_ID": "Delete record with id #{id}.",
     "IF_YOU_GO_BACK": "If you go back and make any change, @:WARNING.CHANGES_WILL_BE_LOST",
-    "MATCH_THE_FIELDS_FIRST": "You have not matched your data with any fields. Please match the fields first."
+    "MATCH_THE_FIELDS_FIRST": "You have not matched your data with any fields. Please match the fields first.",
+    "THE_FILE_ALREADY_IMPORTED": "The file has already been imported. {filePath}"
   }
 }

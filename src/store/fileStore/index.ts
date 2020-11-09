@@ -1,5 +1,6 @@
 import { BufferElement, FileSource, Sheet, SourceDataElement } from '@/common/model/file-source'
 import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+import i18n from '@/i18n'
 
 const fileStore = {
   state: {
@@ -62,6 +63,8 @@ const fileStore = {
     [types.File.ADD_FILE] (state, filePath: string) {
       if (!state.fileSourceList.find(file => file.path === filePath)) {
         state.fileSourceList.push(new FileSource(filePath))
+      } else {
+        this._vm.$notify.warning(i18n.t('WARNING.THE_FILE_ALREADY_IMPORTED', {filePath}).toString())
       }
     },
     [types.File.SET_SELECTED_HEADERS] (state, list: any[]) {

@@ -85,6 +85,7 @@
       </div>
       <q-card-section>
         <div>
+          <div class="text-size-sm text-grey-9"><span class="text-red">* </span>{{ $t('INFO.ASTERISK_INFO') }}</div>
           <q-separator />
           <div class="overflow-auto">
             <q-splitter v-model="splitterModel" :limits="[50, 98]">
