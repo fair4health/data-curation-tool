@@ -185,7 +185,7 @@ export class Observation implements Generator {
         observation.valueString = String(resource.get('Observation.value[x].string').value)
       }
       if (resource.has('Observation.value[x].boolean')) {
-        observation.valueBoolean = !!resource.get('Observation.value[x].boolean').value
+        observation.valueBoolean = String(resource.get('Observation.value[x].boolean').value).toLowerCase() === 'true'
       }
       if (resource.has('Observation.value[x].dateTime')) {
         const item = resource.get('Observation.value[x].dateTime')
