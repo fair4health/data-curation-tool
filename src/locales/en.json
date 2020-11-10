@@ -204,10 +204,10 @@
     "ARE_YOU_SURE_TO_GO_TO_STEP": "Are you sure you want to go to {step} step?",
     "ARE_YOU_SURE_TO_REMOVE_RESOURCE": "Are you sure you want to remove {resourceType} resources? {resourceType} resources will not be transformed.",
     "ARE_YOU_SURE_TO_REMOVE_RESOURCE_FROM_FHIR": "Are you sure you want to remove all instances of {resourceType} resource type from the FHIR Repository?",
-    "CHANGES_WILL_BE_LOST": "The changes you have made will be lost.",
+    "CHANGES_WILL_BE_LOST": "The changes you have made in this section will be lost.",
     "CURATION_HAS_ENDED": "The curation process has ended. If you have not saved your mappings, they will be lost. Are you sure you want to finalize the section?",
     "DELETE_RECORD_WITH_ID": "Delete record with id #{id}.",
-    "IF_YOU_GO_BACK": "If you go back and make any change, @:WARNING.CHANGES_WILL_BE_LOST",
+    "IF_YOU_GO_BACK": "If you go back, @.lower:WARNING.CHANGES_WILL_BE_LOST",
     "MATCH_THE_FIELDS_FIRST": "You have not matched your data with any fields. Please match the fields first.",
     "THE_FILE_ALREADY_IMPORTED": "The file has already been imported. {filePath}"
   }
