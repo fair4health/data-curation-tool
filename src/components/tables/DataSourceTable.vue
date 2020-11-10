@@ -223,8 +223,11 @@
 
     @Watch('currentSource')
     onSourceChanged (): void {
-      if (!this.currentSource.sheets || !this.currentSource.sheets.length) {
+      if (!this.currentSource.sheets?.length) {
         this.fetchSheets()
+      } else if (this.currentSource.sheets.length === 1) {
+        // If there is only one sheet, select it as default
+        this.currentSheet = this.currentSource.sheets[0]
       }
     }
 
@@ -256,7 +259,7 @@
       ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.READ_FILE, this.currentSource.path)
       ipcRenderer.on(ipcChannels.File.READ_DONE, (event, worksheets) => {
         this.sheets = worksheets || []
-        // this.currentSheet = null
+        this.currentSheet = this.sheets?.length && this.sheets[0]
         this.loadingAttr = false
         this.$q.loadingBar.stop()
         ipcRenderer.removeAllListeners(ipcChannels.File.READ_DONE)

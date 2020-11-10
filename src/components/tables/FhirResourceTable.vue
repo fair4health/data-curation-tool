@@ -388,6 +388,10 @@
       this.$store.dispatch(types.Fhir.GET_PROFILES_BY_RES, this.currentFHIRRes)
         .then(result => {
           if (result) {
+            // If there is only one profile defined under the resource, select it as default
+            if (this.fhirProfileList?.length === 1) {
+              this.currentFHIRProf = this.fhirProfileList[0]
+            }
             // Fetch elements of base resources
             if (!this.currentFHIRProf) {
               this.$store.dispatch(types.Fhir.GET_ELEMENTS, {parameterName: '_id', profile: this.currentFHIRRes})
