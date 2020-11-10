@@ -83,15 +83,23 @@
           </template>
         </q-input>
       </div>
-      <q-card-section>
+      <div class="row bg-grey-2">
+        <div class="col q-px-md q-py-sm">
+          <div class="text-size-sm text-grey-8"><span class="text-red">* </span>{{ $t('INFO.ASTERISK_INFO') }}</div>
+          <div v-show="expandedTableInfo" class="text-size-sm text-grey-8"><span class="text-red">* </span>{{ $t('INFO.ID_FIELD_INFO') }}</div>
+        </div>
+        <div class="col-auto q-mr-md q-pa-xs">
+          <q-btn flat round dense size="sm" :icon="expandedTableInfo ? 'expand_less' : 'expand_more'"
+                 @click="expandedTableInfo = !expandedTableInfo" class="flex-center center" />
+        </div>
+      </div>
+      <q-card-section class="q-pt-none">
         <div>
-          <div class="text-size-sm text-grey-9"><span class="text-red">* </span>{{ $t('INFO.ASTERISK_INFO') }}</div>
-          <q-separator />
           <div class="overflow-auto">
             <q-splitter v-model="splitterModel" :limits="[50, 98]">
               <!--Fhir Element Tree Part-->
               <template v-slot:before>
-                <q-scroll-area class="fhir-table-height overflow-hidden">
+                <q-scroll-area class="fhir-table-height overflow-hidden q-pa-sm">
                   <q-tree :nodes="filteredFhirElementList"
                           ref="fhirTree"
                           node-key="value"
@@ -241,7 +249,7 @@
               <template v-slot:after>
                 <q-scroll-area v-if="selectedElem" class="fhir-table-height overflow-hidden">
                   <div>
-                    <q-toolbar class="bg-grey-2">
+                    <q-toolbar>
                       <q-item-label class="text-weight-bold text-grey-7 ellipsis">
                       <span class="text-weight-regular text-primary">
                         [{{ selectedElem.min }}..{{ selectedElem.max }}]
@@ -255,6 +263,7 @@
                       <q-space />
                       <q-btn unelevated round dense size="sm" icon="close" color="white" text-color="grey-9" @click="selectedStr=null; selectedElem=null" />
                     </q-toolbar>
+                    <q-separator inset />
                     <div class="q-ma-sm q-gutter-sm">
                       <q-card flat bordered v-if="selectedElem.short">
                         <q-card-section>
@@ -321,6 +330,7 @@
     private env = environment
     private loadingResources: boolean = false
     private hideBaseElements: boolean = true
+    private expandedTableInfo: boolean = true
 
     get fhirResourceList (): string[] { return this.$store.getters[types.Fhir.RESOURCE_LIST] }
     get fhirProfileList (): any[] { return this.$store.getters[types.Fhir.PROFILE_LIST].map(_ => _.url) }

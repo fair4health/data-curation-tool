@@ -89,6 +89,7 @@
     "ASTERISK_INFO": "The asterisk (*) indicates that the field is a mandatory field in the profile.",
     "DATA_SOURCE_ANALYZER_INFO": "Browse your file system and add the sources as Excel or CSV file.",
     "FHIR_REPO_VERIFICATION_INFO": "Verify the FHIR repository and also connect a Terminology Service.",
+    "ID_FIELD_INFO": "Mapping of the \"id\" field is mandatory so that the resources can refer to each other. It is important to indicate the relation between resources. e.g. Subject of a Condition resource must be a reference to the related Patient resource through the id field. (Do not confuse this field with \"identifier\". \"Id\" and \"identifier\" are two different fields. The value being put into the id field is hashed and can be referred by other resources. Identifier field is not used for referencing.)",
     "METADATA_MAPPER_INFO": "Map your source data with the FHIR profiles fetched from FHIR repository given at the first step.",
     "TRANSFORMER_INFO": "Put the FHIR resources generated into the repository.",
     "VALIDATOR_INFO": "Validate FHIR resources created as a result of mapping, and review details if an inappropriate resource was created."
