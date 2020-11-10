@@ -86,8 +86,10 @@
     "X_RESOURCE_ELEMENTS_COULDNT_BE_LOADED": "{resource} Resource elements couldn't be loaded"
   },
   "INFO": {
+    "ASTERISK_INFO": "The asterisk (*) indicates that the field is a mandatory field in the profile.",
     "DATA_SOURCE_ANALYZER_INFO": "Browse your file system and add the sources as Excel or CSV file.",
     "FHIR_REPO_VERIFICATION_INFO": "Verify the FHIR repository and also connect a Terminology Service.",
+    "ID_FIELD_INFO": "Mapping of the \"id\" field is mandatory so that the resources can refer to each other. It is important to indicate the relation between resources. e.g. Subject of a Condition resource must be a reference to the related Patient resource through the id field. (Do not confuse this field with \"identifier\". \"Id\" and \"identifier\" are two different fields. The value being put into the id field is hashed and can be referred by other resources. Identifier field is not used for referencing.)",
     "METADATA_MAPPER_INFO": "Map your source data with the FHIR profiles fetched from FHIR repository given at the first step.",
     "TRANSFORMER_INFO": "Put the FHIR resources generated into the repository.",
     "VALIDATOR_INFO": "Validate FHIR resources created as a result of mapping, and review details if an inappropriate resource was created."
@@ -101,6 +103,7 @@
     "FHIR_RESOURCE": "FHIR Resource Type",
     "FILE": "@:COMMON.FILE (Excel or CSV)",
     "FIXED_URL_FROM_FHIR": "Fixed url from FHIR Resource element",
+    "FOLLOW_US": "Follow us on social media!",
     "MAPPINGS": "Mappings",
     "NEW_MAPPING": "New Mapping",
     "NO_CONTENT": "No content",
@@ -205,6 +208,7 @@
     "CURATION_HAS_ENDED": "The curation process has ended. If you have not saved your mappings, they will be lost. Are you sure you want to finalize the section?",
     "DELETE_RECORD_WITH_ID": "Delete record with id #{id}.",
     "IF_YOU_GO_BACK": "If you go back and make any change, @:WARNING.CHANGES_WILL_BE_LOST",
-    "MATCH_THE_FIELDS_FIRST": "You have not matched your data with any fields. Please match the fields first."
+    "MATCH_THE_FIELDS_FIRST": "You have not matched your data with any fields. Please match the fields first.",
+    "THE_FILE_ALREADY_IMPORTED": "The file has already been imported. {filePath}"
   }
 }

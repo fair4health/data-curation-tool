@@ -392,7 +392,7 @@ export default class BackgroundEngine extends Vue {
                       if (generator) {
                         Promise.all(record.data.map((sourceData: store.SourceTargetGroup) => {
                           return new Promise((resolveTargets, rejectTargets) => {
-                            const entryValue: any = sourceData.defaultValue || entry[sourceData.value]
+                            const entryValue: any = entry[sourceData.value] || sourceData.defaultValue
                             if (entryValue !== undefined && entryValue !== null && entryValue !== '') {
                               let value = String(entryValue).trim()
                               if (sourceData.type === cellType.n) {

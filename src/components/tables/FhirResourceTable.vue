@@ -83,14 +83,23 @@
           </template>
         </q-input>
       </div>
-      <q-card-section>
+      <div class="row bg-grey-2">
+        <div class="col q-px-md q-py-sm">
+          <div class="text-size-sm text-grey-8"><span class="text-red">* </span>{{ $t('INFO.ASTERISK_INFO') }}</div>
+          <div v-show="expandedTableInfo" class="text-size-sm text-grey-8"><span class="text-red">* </span>{{ $t('INFO.ID_FIELD_INFO') }}</div>
+        </div>
+        <div class="col-auto q-mr-md q-pa-xs">
+          <q-btn flat round dense size="sm" :icon="expandedTableInfo ? 'expand_less' : 'expand_more'"
+                 @click="expandedTableInfo = !expandedTableInfo" class="flex-center center" />
+        </div>
+      </div>
+      <q-card-section class="q-pt-none">
         <div>
-          <q-separator />
           <div class="overflow-auto">
             <q-splitter v-model="splitterModel" :limits="[50, 98]">
               <!--Fhir Element Tree Part-->
               <template v-slot:before>
-                <q-scroll-area class="fhir-table-height">
+                <q-scroll-area class="fhir-table-height overflow-hidden q-pa-sm">
                   <q-tree :nodes="filteredFhirElementList"
                           ref="fhirTree"
                           node-key="value"
@@ -120,7 +129,7 @@
                             </div>
                             <q-chip v-if="prop.node.selectedType" :label="prop.node.selectedType" size="sm"
                                     :removable="prop.node.type && prop.node.type.length > 0"
-                                    @remove="prop.node.selectedType = ''; updateElementList()"
+                                    @remove="prop.node.selectedType = ''; updateElementList(); prop.ticked = false"
                             />
                           </div>
                           <div class="row">
@@ -158,7 +167,7 @@
                                             <div class="row items-center">
                                               <div v-if="propType.node.type[0].value !== 'Reference' && (!propType.node.children || !propType.node.children.length)">
                                                 <q-radio dense v-model="prop.node.selectedType" class="text-grey-8 text-weight-medium full-width" :val="propType.node.value"
-                                                         :label="propType.node.label" size="xs" @input="updateElementList()"
+                                                         :label="propType.node.label" size="xs" @input="updateElementList(); prop.ticked = true"
                                                 />
                                               </div>
                                               <div class="text-grey-8 text-weight-medium" v-else>
@@ -167,7 +176,6 @@
                                               <q-space />
                                               <div v-if="propType.node.type[0].value === 'Reference'" class="select-reference">
                                                 <q-select dense class="q-pl-xs ellipsis text-size-md select-input"
-                                                          clearable
                                                           options-dense
                                                           standout="bg-primary text-white"
                                                           :label="!prop.node.selectedReference ? 'Resource Type' : 'Resource'"
@@ -178,7 +186,7 @@
                                                           option-label="name"
                                                           option-value="id"
                                                           @input="prop.node.selectedReference ? prop.node.selectedType = propType.node.value + '.' + prop.node.selectedReference : undefined;
-                                                                  updateElementList();
+                                                                  updateElementList(); prop.ticked = true;
                                                                   $refs[prop.node.value].blur();"
                                                           @clear="prop.node.selectedReference = ''; $refs[prop.node.value].blur(); updateElementList()"
                                                 />
@@ -239,9 +247,9 @@
 
               <!--Elements Definition Part-->
               <template v-slot:after>
-                <q-scroll-area v-if="selectedElem" class="fhir-table-height">
+                <q-scroll-area v-if="selectedElem" class="fhir-table-height overflow-hidden">
                   <div>
-                    <q-toolbar class="bg-grey-2">
+                    <q-toolbar>
                       <q-item-label class="text-weight-bold text-grey-7 ellipsis">
                       <span class="text-weight-regular text-primary">
                         [{{ selectedElem.min }}..{{ selectedElem.max }}]
@@ -255,6 +263,7 @@
                       <q-space />
                       <q-btn unelevated round dense size="sm" icon="close" color="white" text-color="grey-9" @click="selectedStr=null; selectedElem=null" />
                     </q-toolbar>
+                    <q-separator inset />
                     <div class="q-ma-sm q-gutter-sm">
                       <q-card flat bordered v-if="selectedElem.short">
                         <q-card-section>
@@ -321,6 +330,7 @@
     private env = environment
     private loadingResources: boolean = false
     private hideBaseElements: boolean = true
+    private expandedTableInfo: boolean = true
 
     get fhirResourceList (): string[] { return this.$store.getters[types.Fhir.RESOURCE_LIST] }
     get fhirProfileList (): any[] { return this.$store.getters[types.Fhir.PROFILE_LIST].map(_ => _.url) }
@@ -378,6 +388,10 @@
       this.$store.dispatch(types.Fhir.GET_PROFILES_BY_RES, this.currentFHIRRes)
         .then(result => {
           if (result) {
+            // If there is only one profile defined under the resource, select it as default
+            if (this.fhirProfileList?.length === 1) {
+              this.currentFHIRProf = this.fhirProfileList[0]
+            }
             // Fetch elements of base resources
             if (!this.currentFHIRProf) {
               this.$store.dispatch(types.Fhir.GET_ELEMENTS, {parameterName: '_id', profile: this.currentFHIRRes})

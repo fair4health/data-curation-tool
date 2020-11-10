@@ -134,7 +134,7 @@
                                 <span v-if="column.value">
                                   {{ column.value }}
                                 </span>
-                                <q-chip v-else-if="column.defaultValue" dense square
+                                <q-chip v-if="column.defaultValue" dense square
                                         color="grey-4" text-color="grey-8" class="q-pa-sm no-margin">
                                   <div class="ellipsis text-size-md">
                                     <q-icon name="fas fa-thumbtack" class="q-mr-xs" />
@@ -452,7 +452,7 @@
     }
 
     addRecord () {
-      const bufferItems: BufferElement[] = this.bufferSheetHeaders.filter(_ => _.target && _.target.length)
+      const bufferItems: BufferElement[] = this.bufferSheetHeaders.filter(_ => _.target && _.target.length && (_.value || _.defaultValue))
 
       if (!bufferItems.length) {
         this.$notify.error(String(this.$t('WARNING.MATCH_THE_FIELDS_FIRST')))
@@ -488,9 +488,8 @@
                 target: buffer.target?.map(_ => ({..._}))
               } as Record
             )
-
+            header.defaultValue = buffer.defaultValue
             if (!filteredHeaders.length) {
-              header.defaultValue = buffer.defaultValue
               sheet.headers.push(header)
             }
 
@@ -534,6 +533,7 @@
             sourceAttrs.map(_ => {
               const tmp: BufferElement[] = this.bufferSheetHeaders.filter(field => _.value && field.value === _.value) || []
               if (tmp.length) {
+                tmp[0].defaultValue = _.defaultValue
                 tmp[0].type = _.type
                 tmp[0].target = [..._.target]
                 if (_.conceptMap && !FHIRUtil.isEmpty(_.conceptMap)) {
@@ -660,34 +660,42 @@
           })
         })
 
+        // If there is an attribute selected from the data source, choose its defaultValue.
+        // Otherwise, the defaultValue of the column containing the currently selected fhir element in its target will be selected.
+        const defaultValueProp = this.selectedAttr?.length && this.selectedAttr[0].target?.length ? this.selectedAttr[0].defaultValue : abstractColumn?.defaultValue
         this.$q.dialog({
           component: DefaultValueAssigner,
           parent: this,
-          defaultValueProp: abstractColumn?.defaultValue
+          defaultValueProp
         })
           .onOk(value => {
-            if (!abstractColumn) {
-              abstractColumn = {}
-              this.bufferSheetHeaders.push(abstractColumn)
-            }
-            this.tickedFHIRAttr = tickedNodes.map((node: fhir.ElementTree) => {
-              if (node.error) delete node.error
-              let type: string
-              if (FHIRUtil.isMultiDataTypeForm(node.value) && node.type?.length === 1) {
-                type = node.type[0].value
+            if (this.selectedAttr?.length && this.selectedAttr[0].target?.length) {
+              this.selectedAttr[0].defaultValue = value
+            } else {
+              if (!abstractColumn) {
+                abstractColumn = {}
+                this.bufferSheetHeaders.push(abstractColumn)
               }
-              return {
-                value: node.value,
-                resource: this.currentFHIRRes,
-                profile: this.currentFHIRProf,
-                type: node.selectedType || type,
-                fixedUri: node.fixedUri || node.selectedUri
-              } as store.Target
-            })
-            abstractColumn.defaultValue = value
-            abstractColumn.target = [...this.tickedFHIRAttr]
+              this.tickedFHIRAttr = tickedNodes.map((node: fhir.ElementTree) => {
+                if (node.error) delete node.error
+                let type: string
+                if (FHIRUtil.isMultiDataTypeForm(node.value) && node.type?.length === 1) {
+                  type = node.type[0].value
+                }
+                return {
+                  value: node.value,
+                  resource: this.currentFHIRRes,
+                  profile: this.currentFHIRProf,
+                  type: node.selectedType || type,
+                  fixedUri: node.fixedUri || node.selectedUri
+                } as store.Target
+              })
+              abstractColumn.defaultValue = value
+              abstractColumn.target = [...this.tickedFHIRAttr]
+            }
 
             this.tickedFHIRAttr = []
+            this.selectedAttr = []
             this.$notify.success(String(this.$t('SUCCESS.DEFAULT_VALUE_HAS_BEEN_ASSIGNED')))
           })
       } else {
