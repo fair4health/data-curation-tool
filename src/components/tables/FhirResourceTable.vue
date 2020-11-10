@@ -91,7 +91,7 @@
             <q-splitter v-model="splitterModel" :limits="[50, 98]">
               <!--Fhir Element Tree Part-->
               <template v-slot:before>
-                <q-scroll-area class="fhir-table-height">
+                <q-scroll-area class="fhir-table-height overflow-hidden">
                   <q-tree :nodes="filteredFhirElementList"
                           ref="fhirTree"
                           node-key="value"
@@ -239,7 +239,7 @@
 
               <!--Elements Definition Part-->
               <template v-slot:after>
-                <q-scroll-area v-if="selectedElem" class="fhir-table-height">
+                <q-scroll-area v-if="selectedElem" class="fhir-table-height overflow-hidden">
                   <div>
                     <q-toolbar class="bg-grey-2">
                       <q-item-label class="text-weight-bold text-grey-7 ellipsis">
