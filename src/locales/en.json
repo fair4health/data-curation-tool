@@ -96,6 +96,7 @@
   },
   "LABELS": {
     "ADD_TERMINOLOGY_SERVICE": "Add Terminology Service",
+    "AUTHOR": "Author",
     "CODE_SYSTEM": "Code System",
     "DATABASE": "Database",
     "DRAG_YOUR_FILES_HERE": "Drag your files here",
@@ -104,6 +105,7 @@
     "FILE": "@:COMMON.FILE (Excel or CSV)",
     "FIXED_URL_FROM_FHIR": "Fixed url from FHIR Resource element",
     "FOLLOW_US": "Follow us on social media!",
+    "LICENSE": "License",
     "MAPPINGS": "Mappings",
     "NEW_MAPPING": "New Mapping",
     "NO_CONTENT": "No content",
@@ -182,6 +184,7 @@
   "TITLES": {
     "ABOUT": "@:MENU.ABOUT",
     "ASSIGN_DEFAULT_VALUE": "@:BUTTONS.ASSIGN_DEFAULT_VALUE",
+    "AUTHOR_AND_LICENSE_INFO": "Author and License Information",
     "CANCEL_VALIDATION": "Cancel Validation",
     "CONCEPT_MAP_DETAILS": "Concept Map Details",
     "CURATION": "@:MENU.CURATION",

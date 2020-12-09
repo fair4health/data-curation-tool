@@ -11,8 +11,8 @@ export class Device implements Generator {
     const device: fhir.Device = { resourceType: 'Device' } as fhir.Device
     if (profile) device.meta = { profile: [profile] }
 
-    const udi: fhir.DeviceUdi = {}
-    const deviceName: fhir.DeviceName = {}
+    const udiCarrier: fhir.DeviceUdi = {}
+    const deviceName: fhir.DeviceName = {name: '', type: ''}
 
     return new Promise<fhir.Device>((resolve, reject) => {
 
@@ -93,25 +93,25 @@ export class Device implements Generator {
       }
 
       if (resource.has('Device.udiCarrier.deviceIdentifier')) {
-        udi.deviceIdentifier = String(resource.get('Device.udiCarrier.deviceIdentifier').value)
+        udiCarrier.deviceIdentifier = String(resource.get('Device.udiCarrier.deviceIdentifier').value)
       }
       if (resource.has('Device.udiCarrier.issuer')) {
-        udi.issuer = String(resource.get('Device.udiCarrier.issuer').value)
+        udiCarrier.issuer = String(resource.get('Device.udiCarrier.issuer').value)
       }
       if (resource.has('Device.udiCarrier.jurisdiction')) {
-        udi.jurisdiction = String(resource.get('Device.udiCarrier.jurisdiction').value)
+        udiCarrier.jurisdiction = String(resource.get('Device.udiCarrier.jurisdiction').value)
       }
       if (resource.has('Device.udiCarrier.carrierAIDC')) {
-        udi.carrierAIDC = String(resource.get('Device.udiCarrier.carrierAIDC').value)
+        udiCarrier.carrierAIDC = String(resource.get('Device.udiCarrier.carrierAIDC').value)
       }
       if (resource.has('Device.udiCarrier.carrierHRF')) {
-        udi.carrierHRF = String(resource.get('Device.udiCarrier.carrierHRF').value)
+        udiCarrier.carrierHRF = String(resource.get('Device.udiCarrier.carrierHRF').value)
       }
       if (resource.has('Device.udiCarrier.entryType')) {
         device.status = String(resource.get('Device.udiCarrier.entryType').value)
       }
 
-      if (!FHIRUtil.isEmpty(udi)) device.udi = udi
+      if (!FHIRUtil.isEmpty(udiCarrier)) device.udiCarrier = udiCarrier
       if (!FHIRUtil.isEmpty(deviceName)) device.deviceName = [deviceName]
 
       device.id = this.generateID(device)

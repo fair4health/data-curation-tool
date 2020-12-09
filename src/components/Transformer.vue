@@ -91,7 +91,7 @@
           <q-space />
           <q-btn unelevated color="primary" :label="$t('BUTTONS.DETAILS')" @click="openOutcomeDetailCard(transformOutcomeDetails)" class="q-mt-lg"
                  v-show="!isInProgress(transformStatus) && !isPending(transformStatus)" no-caps />
-          <q-btn outline color="primary" @click="transform" class="q-mt-lg" v-if="isInProgress(transformStatus) || isPending(transformStatus)"
+          <q-btn outline color="primary" @click="openTransformStartPopup" class="q-mt-lg" v-if="isInProgress(transformStatus) || isPending(transformStatus)"
                  :disable="isInProgress(transformStatus) || !transformList.length" no-caps>
             <span v-if="!isPending(transformStatus)" class="q-mr-sm">
               <q-spinner size="xs" v-show="isInProgress(transformStatus)" />
@@ -121,11 +121,14 @@
   import Status from '@/common/Status'
   import StatusMixin from '@/common/mixins/statusMixin'
   import { transformerTable } from '@/common/model/data-table'
+  import DataProvenanceCard from '@/components/modals/DataProvenanceCard.vue'
 
   @Component
   export default class Transformer extends Mixins(StatusMixin) {
     private pagination = transformerTable.pagination
     private columns = transformerTable.columns
+    private author: string = ''
+    private license: string = ''
 
     get fhirBase (): string { return this.$store.getters[types.Fhir.FHIR_BASE] }
 
@@ -153,9 +156,19 @@
         })
     }
 
-    transform () {
+    openTransformStartPopup () {
+      this.$q.dialog({
+        component: DataProvenanceCard,
+        parent: this
+      })
+        .onOk((transformRequest: TransformRequest) => {
+          this.transform(transformRequest)
+        })
+    }
+
+    transform (transformRequest: TransformRequest) {
       if (this.transformList.length) {
-        ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.TRANSFORM)
+        ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.TRANSFORM, transformRequest)
         this.transformStatus = Status.IN_PROGRESS
         ipcRenderer.on(ipcChannels.Fhir.TRANSFORM_RESULT, (event, result: OutcomeDetail) => {
           ipcRenderer.removeAllListeners(ipcChannels.Fhir.TRANSFORM_RESULT)

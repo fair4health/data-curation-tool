@@ -55,6 +55,7 @@ declare namespace fhir {
   }
   interface Reference extends Element {
     reference?: string;
+    type?: uri;
     identifier?: Identifier;
     display?: string;
   }
@@ -1274,38 +1275,57 @@ declare namespace fhir {
   }
   interface Device extends DomainResource {
     identifier?: Identifier[];
-    udi?: DeviceUdi;
+    definition?: Reference;
+    udiCarrier?: DeviceUdi;
     status?: code;
-    type?: CodeableConcept;
-    lotNumber?: string;
-    serialNumber?: string;
+    statusReason?: CodeableConcept[];
+    distinctIdentifier?: string;
     manufacturer?: string;
     manufactureDate?: dateTime;
     expirationDate?: dateTime;
+    lotNumber?: string;
+    serialNumber?: string;
+    deviceName?: DeviceName[];
     modelNumber?: string;
     partNumber?: string;
-    deviceName?: DeviceName[];
-    version?: string;
+    type?: CodeableConcept;
+    specialization?: DeviceSpecialization[];
+    version?: DeviceVersion[];
+    property?: DeviceProperty[];
     patient?: Reference;
     owner?: Reference;
     contact?: ContactPoint[];
     location?: Reference;
     url?: uri;
     note?: Annotation[];
-    safety: CodeableConcept[];
+    safety?: CodeableConcept[];
+    parent?: Reference;
   }
   interface DeviceName extends Element {
-    name?: string;
-    type?: code;
+    name: string;
+    type: code;
   }
   interface DeviceUdi extends Element {
     deviceIdentifier?: string;
-    name?: string;
-    jurisdiction?: uri;
-    carrierHRF?:	string;
-    carrierAIDC?: base64Binary;
     issuer?: uri;
+    jurisdiction?: uri;
+    carrierAIDC?: base64Binary;
+    carrierHRF?:	string;
     entryType?: code;
+  }
+  interface DeviceSpecialization extends Element {
+    systemType: CodeableConcept;
+    version?: string;
+  }
+  interface DeviceVersion extends Element {
+    type?: CodeableConcept;
+    component?: Identifier;
+    value: string;
+  }
+  interface DeviceProperty extends Element {
+    type: CodeableConcept;
+    valueQuantity?: Quantity[];
+    valueCode?: CodeableConcept[];
   }
   interface DeviceComponent extends DomainResource {
     type: CodeableConcept;
@@ -1438,20 +1458,16 @@ declare namespace fhir {
   interface DocumentManifest extends DomainResource {
     masterIdentifier?: Identifier;
     identifier?: Identifier[];
-    subject?: Reference;
-    recipient?: Reference[];
-    type?: CodeableConcept;
-    author?: Reference[];
-    created?: dateTime;
-    source?: uri;
     status: code;
+    type?: CodeableConcept;
+    subject?: Reference;
+    created?: dateTime;
+    author?: Reference[];
+    recipient?: Reference[];
+    source?: uri;
     description?: string;
-    content: DocumentManifestContent[];
+    content: Reference[];
     related?: DocumentManifestRelated[];
-  }
-  interface DocumentManifestContent extends Element {
-    pAttachment?: Attachment;
-    pReference?: Reference;
   }
   interface DocumentManifestRelated extends Element {
     identifier?: Identifier;
@@ -3234,27 +3250,26 @@ declare namespace fhir {
   }
   interface Provenance extends DomainResource {
     target: Reference[];
-    period?: Period;
+    occurredPeriod?: Period;
+    occurredDateTime?: dateTime;
     recorded: instant;
-    reason?: Coding[];
-    activity?: Coding;
-    location?: Reference;
     policy?: uri[];
+    location?: Reference;
+    reason?: CodeableConcept[];
+    activity?: CodeableConcept;
     agent: ProvenanceAgent[];
     entity?: ProvenanceEntity[];
     signature?: Signature[];
   }
   interface ProvenanceAgent extends Element {
-    role: Coding;
-    whoUri?: uri;
-    whoReference?: Reference;
-    onBehalfOfUri?: uri;
-    onBehalfOfReference?: Reference;
-    relatedAgentType?: CodeableConcept;
+    type?: CodeableConcept;
+    role?: CodeableConcept[];
+    who: Reference;
+    onBehalfOf?: Reference;
   }
   interface ProvenanceEntity extends Element {
     role: code;
-    reference: Reference;
+    what: Reference;
     agent?: ProvenanceAgent[];
   }
   interface Questionnaire extends DomainResource {
@@ -4455,12 +4470,11 @@ declare namespace fhir {
   interface Signature extends Element {
     type: Coding[];
     when: instant;
-    whoUri?: uri;
-    whoReference?: Reference;
-    onBehalfOfUri?: uri;
-    onBehalfOfReference?: Reference;
-    contentType?: code;
-    blob?: base64Binary;
+    who: Reference;
+    onBehalfOf?: Reference;
+    targetFormat?: code;
+    sigFormat?: code;
+    data?: base64Binary;
   }
   interface SampledData extends Element {
     origin: Quantity;
@@ -4814,14 +4828,14 @@ interface Date {
   toISODateString (): string;
 }
 
-declare namespace ResourceGenerator {
-  interface Payload {
-    value: any,
-    sourceType: string | undefined, // 'Text' | 'Date' | 'Number' | 'Boolean'
-    targetField: string,
-    targetSubFields: string[],
-    fhirType?: string
-  }
+declare interface TransformRequest {
+  author: string
+  license: License
+}
+declare interface License {
+  display: string
+  description?: string
+  uri: string
 }
 
 declare namespace store {
@@ -4898,8 +4912,8 @@ declare interface BufferResource {
 }
 
 declare interface StepItem {
-  title: string,
-  icon: string,
+  title: string
+  icon: string
   stepId: any
 }
 
