@@ -12,6 +12,7 @@ import { FHIRUtil } from '@/common/utils/fhir-util'
 import { Component, Vue } from 'vue-property-decorator'
 import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
 import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+import { environment } from '@/common/environment'
 
 @Component
 export default class BackgroundEngine extends Vue {
@@ -21,6 +22,55 @@ export default class BackgroundEngine extends Vue {
   private terminologyBaseUrl: fhir.uri
 
   private abortValidation: AbortController
+
+  private provenance: fhir.Provenance = {
+    resourceType: 'Provenance',
+    target: [],
+    recorded: '',
+    agent: [
+      {
+        who: {
+          display: ''
+        }
+      }
+    ],
+    signature: [
+      {
+        type: [
+          {
+            system: 'urn:iso-astm:E1762-95:2013',
+            code: '1.2.840.10065.1.12.1.1',
+            display: 'Author\'s Signature'
+          }
+        ],
+        when: '',
+        who: {
+          reference: `Device/${environment.toolID}`
+        }
+      }
+    ]
+  }
+  private documentManifest: fhir.DocumentManifest = {
+    resourceType: 'DocumentManifest',
+    status: 'current',
+    created: '',
+    author: [
+      {
+        reference: `Device/${environment.toolID}`
+      }
+    ],
+    content: [],
+    related: [
+      {
+        identifier: {
+          value: 'License'
+        },
+        ref: {
+          display: ''
+        }
+      }
+    ]
+  }
 
   created () {
 
@@ -660,7 +710,11 @@ export default class BackgroundEngine extends Vue {
    * Puts resources into the FHIR Repository
    */
   public onTransform () {
-    ipcRenderer.on(ipcChannels.Fhir.TRANSFORM, () => {
+    ipcRenderer.on(ipcChannels.Fhir.TRANSFORM, (event, transformRequest: TransformRequest) => {
+      // Created resource references [resourceType]/[id]/_history/[version]
+      const provenanceTargets: fhir.Reference[] = []
+      // Created resource references [resourceType]/[id]
+      const documentManifestContent: fhir.Reference[] = []
       this.$store.dispatch(types.IDB.GET_ALL)
         .then((resources: any[]) => {
           const map: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
@@ -703,6 +757,13 @@ export default class BackgroundEngine extends Vue {
                           })
                         } else {
                           outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
+                          // Create Provenance resource for the current batch
+                          const location: string = _.response?.location || ''
+                          const splitted = location.split('/')
+                          const referenceWithVersion: string = splitted.slice(splitted.length - 4).join('/')
+                          const referenceWithoutVersion: string = splitted.slice(splitted.length - 4, splitted.length - 2).join('/')
+                          provenanceTargets.push({ reference: referenceWithVersion })
+                          documentManifestContent.push({ reference: referenceWithoutVersion })
                         }
                       }) || [])
                         .then(() => {
@@ -738,8 +799,13 @@ export default class BackgroundEngine extends Vue {
             .then((res: any[]) => {
               ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: Status.SUCCESS, outcomeDetails: [].concat.apply([], res)})
               log.info(`Transform completed`)
-
-              this.ready()
+              this.createProvenanceAndLicense(transformRequest.author, transformRequest.license, provenanceTargets, documentManifestContent)
+                .then(() => {
+                  this.ready()
+                })
+                .catch(err => {
+                  this.ready()
+                })
             })
             .catch(err => {
               ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: Status.ERROR, message: 'Transform error', outcomeDetails: err})
@@ -752,6 +818,92 @@ export default class BackgroundEngine extends Vue {
           ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: Status.ERROR, message: 'Cannot get resources', outcomeDetails: err})
           log.error(`Transform error. ${err}`)
           this.ready()
+        })
+    })
+  }
+
+  /**
+   * Creates Provenance and DocumentManifest resources
+   *
+   * @param author - The organization that makes the transformation. Provenance.agent.who
+   * @param license - License information
+   * @param provenanceTargets - List of references of created resources with their version numbers [resourceType]/[id]/_history/[version]
+   * @param documentManifestContent - List of references of created resources without the version numbers [resourceType]/[id]
+   */
+  createProvenanceAndLicense (author: string, license: License, provenanceTargets: fhir.Reference[], documentManifestContent: fhir.Reference[]): Promise<void> {
+    const currentDate: string = new Date().toISOString()
+    // Modify provenance resource
+    this.provenance.target = provenanceTargets
+    this.provenance.recorded = currentDate
+    this.provenance.signature[0].when = currentDate
+    this.provenance.agent[0].who.display = author
+    // Modify documentManifest resource
+    this.documentManifest.content = documentManifestContent
+    this.documentManifest.created = currentDate
+    this.documentManifest.related[0].ref.display = license.display
+    this.documentManifest.related[0].ref.type = license.uri
+    return new Promise((resolve, reject) => {
+      this.createCurationToolDeviceRes().then(() => {
+        // Post the provenance resource
+        this.$fhirService.postResource(this.provenance)
+          .then(() => {
+            log.info('Provenance resource has been created.')
+            resolve()
+          }, err => {
+            log.error(`Provenance resource could not be created. Error status: ${err.status}`)
+            reject(err)
+          })
+        // Post the documentManifest resource
+        this.$fhirService.postResource(this.documentManifest)
+          .then(() => {
+            log.info('DocumentManifest resource has been created.')
+            resolve()
+          }, err => {
+            log.error(`DocumentManifest resource could not be created. Error status: ${err.status}`)
+            reject(err)
+          })
+      })
+        .catch(err => {
+          reject(err)
+        })
+    })
+  }
+
+  /**
+   * Creates Device resource with id environment.toolID. This Device resource belongs to the Data Curation Tool itself.
+   * If it already exists, it just continues.
+   */
+  createCurationToolDeviceRes (): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.$fhirService.search('Device', {_id: environment.toolID})
+        .then(res => {
+          const bundle: fhir.Bundle = res.data
+          if (!bundle.entry?.length) {
+            const device: fhir.Device = {
+              id: environment.toolID,
+              resourceType: 'Device',
+              deviceName: [
+                {
+                  name: 'F4H Data Curation Tool',
+                  type: 'udi-label-name'
+                }
+              ]
+            }
+            // Create device resource of the tool
+            this.$fhirService.putResource(device)
+              .then(() => {
+                resolve()
+              }, err => {
+                log.error(`Error while creating the resource Device/${environment.toolID}. Error status: ${err.status}`)
+                reject(err)
+              })
+          } else {
+            // Data Curation Tool device resource already exists
+            resolve()
+          }
+        }, err => {
+          log.error(`Error while retrieving the resource Device/${environment.toolID}. Error status: ${err.status}`)
+          reject(err)
         })
     })
   }
