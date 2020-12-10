@@ -26,7 +26,7 @@
             <span><q-icon name="far fa-file-alt" size="xs" color="primary" class="q-mr-xs" /> {{ $t('LABELS.PROFILES') }}</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense options-dense v-model="currentFHIRProf" class="ellipsis" :options="fhirProfileList"
+          <q-select outlined dense options-dense v-model="currentFHIRProf" class="ellipsis" :options="sortProfiles(fhirProfileList)"
                      :option-label="item => item.split('/').pop()" :label="$t('LABELS.PROFILES')" :disable="!fhirProfileList.length">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
@@ -333,7 +333,7 @@
     private expandedTableInfo: boolean = true
 
     get fhirResourceList (): string[] { return this.$store.getters[types.Fhir.RESOURCE_LIST] }
-    get fhirProfileList (): any[] { return this.$store.getters[types.Fhir.PROFILE_LIST].map(_ => _.url) }
+    get fhirProfileList (): string[] { return this.$store.getters[types.Fhir.PROFILE_LIST].map(_ => _.url) }
     set fhirProfileList (value) { this.$store.commit(types.Fhir.SET_PROFILE_LIST, value) }
 
     get currentFHIRRes (): string { return this.$store.getters[types.Fhir.CURRENT_RESOURCE] }
@@ -495,6 +495,13 @@
       return this.$_.includes(this.baseElementList, element.label)
     }
 
+    sortProfiles (profiles: string[]) {
+      return profiles.sort((p1, p2) => {
+        const p1Name = p1.split('/').pop().toLowerCase()
+        const p2Name = p2.split('/').pop().toLowerCase()
+        return (p1Name > p2Name) ? 1 : ((p2Name > p1Name) ? -1 : 0)
+      })
+    }
   }
 </script>
 
