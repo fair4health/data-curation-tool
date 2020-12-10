@@ -75,6 +75,7 @@
     "FHIR_VERSION_COULDNT_DETECTED": "FHIR version couldnt be detected for given url.",
     "FHIR_VERSION_NOT_SUPPORTED": "FHIR version ({version}) is not supported. FHIR version must be R4.",
     "HEADERS_COULDNT_BE_DETECTED": "Headers couldn't be detected",
+    "MAPPING_COULDNT_BE_EXPORTED": "Mapping couldn't be exported.",
     "NO_MAPPING_AVAILABLE": "No mapping available",
     "NO_TERMINOLOGY_SERVICE_IS_CONNECTED": "No terminology service is connected.",
     "SELECT_A_TABLE": "Select a sheet/table",
