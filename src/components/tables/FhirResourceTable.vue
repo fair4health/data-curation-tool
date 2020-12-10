@@ -42,39 +42,57 @@
         </div>
       </q-card-section>
       <div class="row q-px-md bg-grey-1">
-        <q-btn unelevated stretch :label="$t('BUTTONS.OPTIONS')" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>
-          <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>
-            {{ filterCount }}
-          </q-badge>
-          <q-menu>
-            <q-list padding class="menu-list">
-              <q-item clickable dense>
-                <q-item-section>
-                  <q-toggle v-model="showMandatoryElements"
-                            checked-icon="check"
-                            size="xs"
-                            color="primary"
-                            :label="$t('BUTTONS.SHOW_MANDATORY_ELEMENTS_ONLY')"
-                            class="text-grey-8 text-size-lg"
-                            unchecked-icon="clear"
-                  />
-                </q-item-section>
-              </q-item>
-              <q-item clickable dense>
-                <q-item-section>
-                  <q-toggle v-model="hideBaseElements"
-                            checked-icon="check"
-                            size="xs"
-                            color="primary"
-                            :label="$t('BUTTONS.HIDE_BASE_RESOURCE_ELEMENTS')"
-                            class="text-grey-8 text-size-lg"
-                            unchecked-icon="clear"
-                  />
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
+        <div class="col q-gutter-xs">
+          <q-toggle v-model="showMandatoryElements"
+                    checked-icon="check"
+                    size="xs"
+                    color="primary"
+                    :label="$t('BUTTONS.SHOW_MANDATORY_ELEMENTS_ONLY')"
+                    class="text-grey-8 text-size-lg"
+                    unchecked-icon="clear"
+          />
+          <q-toggle v-model="hideBaseElements"
+                    checked-icon="check"
+                    size="xs"
+                    color="primary"
+                    :label="$t('BUTTONS.HIDE_BASE_RESOURCE_ELEMENTS')"
+                    class="text-grey-8 text-size-lg"
+                    unchecked-icon="clear"
+          />
+        </div>
+<!--        <q-btn unelevated stretch :label="$t('BUTTONS.OPTIONS')" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>-->
+<!--          <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>-->
+<!--            {{ filterCount }}-->
+<!--          </q-badge>-->
+<!--          <q-menu>-->
+<!--            <q-list padding class="menu-list">-->
+<!--              <q-item clickable dense>-->
+<!--                <q-item-section>-->
+<!--                  <q-toggle v-model="showMandatoryElements"-->
+<!--                            checked-icon="check"-->
+<!--                            size="xs"-->
+<!--                            color="primary"-->
+<!--                            :label="$t('BUTTONS.SHOW_MANDATORY_ELEMENTS_ONLY')"-->
+<!--                            class="text-grey-8 text-size-lg"-->
+<!--                            unchecked-icon="clear"-->
+<!--                  />-->
+<!--                </q-item-section>-->
+<!--              </q-item>-->
+<!--              <q-item clickable dense>-->
+<!--                <q-item-section>-->
+<!--                  <q-toggle v-model="hideBaseElements"-->
+<!--                            checked-icon="check"-->
+<!--                            size="xs"-->
+<!--                            color="primary"-->
+<!--                            :label="$t('BUTTONS.HIDE_BASE_RESOURCE_ELEMENTS')"-->
+<!--                            class="text-grey-8 text-size-lg"-->
+<!--                            unchecked-icon="clear"-->
+<!--                  />-->
+<!--                </q-item-section>-->
+<!--              </q-item>-->
+<!--            </q-list>-->
+<!--          </q-menu>-->
+<!--        </q-btn>-->
         <q-space />
         <q-input borderless dense v-model.lazy.trim="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
           <template v-slot:append>
@@ -379,6 +397,7 @@
           this.$notify.error(String(this.$t('ERROR.ST_WRONG_FETCHING_X', {name: 'resources'})))
         })
       if (this.currentFHIRRes) this.onFHIRResourceChanged()
+      this.expandedTableInfo = (localStorage.getItem('expandedTableInfo') || '').toLowerCase() === 'true'
     }
 
     @Watch('currentFHIRRes')
@@ -429,6 +448,11 @@
     onChangedSelectedStr () {
       if (this.selectedStr) this.splitterModel = 50
       else this.splitterModel = 100
+    }
+
+    @Watch('expandedTableInfo')
+    onExpandedTableInfoChanged () {
+      localStorage.setItem('expandedTableInfo', String(this.expandedTableInfo))
     }
 
     filterFn (val, update) {

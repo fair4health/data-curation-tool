@@ -41,38 +41,48 @@
         </div>
       </q-card-section>
       <div class="row q-px-md bg-grey-1">
-        <q-btn unelevated stretch :label="$t('BUTTONS.OPTIONS')" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>
-          <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>
-            {{ filterCount }}
-          </q-badge>
-          <q-menu>
-            <q-list padding class="menu-list">
-              <q-item clickable dense>
-                <q-item-section>
-                  <q-toggle v-model="showMappedFields"
-                            checked-icon="check"
-                            size="xs"
-                            color="primary"
-                            :label="$t('BUTTONS.SHOW_MAPPED_FIELDS_ONLY')"
-                            class="text-grey-8 text-size-lg"
-                            unchecked-icon="clear"
-                  />
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
-        <q-btn v-if="currentSheet"
-               flat
-               stretch
-               :label="$t('BUTTONS.RELOAD_FILE')"
-               icon="sync"
-               color="grey-1"
-               text-color="grey-8"
-               class="text-size-lg"
-               @click="fetchHeaders(true)"
-               no-caps
-        />
+        <div class="col q-gutter-xs">
+          <q-toggle v-model="showMappedFields"
+                    checked-icon="check"
+                    size="xs"
+                    color="primary"
+                    :label="$t('BUTTONS.SHOW_MAPPED_FIELDS_ONLY')"
+                    class="text-grey-8 text-size-lg"
+                    unchecked-icon="clear"
+          />
+          <q-btn v-if="currentSheet"
+                 flat
+                 stretch
+                 :label="$t('BUTTONS.RELOAD_FILE')"
+                 icon="sync"
+                 color="grey-1"
+                 text-color="grey-8"
+                 class="text-size-lg"
+                 @click="fetchHeaders(true)"
+                 no-caps
+          />
+        </div>
+<!--        <q-btn unelevated stretch :label="$t('BUTTONS.OPTIONS')" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>-->
+<!--          <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>-->
+<!--            {{ filterCount }}-->
+<!--          </q-badge>-->
+<!--          <q-menu>-->
+<!--            <q-list padding class="menu-list">-->
+<!--              <q-item clickable dense>-->
+<!--                <q-item-section>-->
+<!--                  <q-toggle v-model="showMappedFields"-->
+<!--                            checked-icon="check"-->
+<!--                            size="xs"-->
+<!--                            color="primary"-->
+<!--                            :label="$t('BUTTONS.SHOW_MAPPED_FIELDS_ONLY')"-->
+<!--                            class="text-grey-8 text-size-lg"-->
+<!--                            unchecked-icon="clear"-->
+<!--                  />-->
+<!--                </q-item-section>-->
+<!--              </q-item>-->
+<!--            </q-list>-->
+<!--          </q-menu>-->
+<!--        </q-btn>-->
         <q-space />
         <q-input borderless dense v-model.lazy.trim="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
           <template v-slot:append>
