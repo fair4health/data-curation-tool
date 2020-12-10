@@ -48,7 +48,7 @@
                    color="primary" @click="openDefaultValueAssigner" no-caps />
             <q-space />
             <div class="q-gutter-sm">
-              <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" unelevated :label="$t('BUTTONS.MATCH')"
+              <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" unelevated :label="$t('BUTTONS.MATCH_ATTRIBUTE')"
                      color="primary" @click="matchFields" no-caps />
               <q-btn unelevated v-show="!editRecordId" color="positive" :label="$t('BUTTONS.ADD_MAPPING')" icon="check" @click="addRecord" no-caps />
               <q-btn unelevated v-show="editRecordId" color="primary" :label="$t('BUTTONS.UPDATE')" icon="edit" @click="addRecord" no-caps />
