@@ -1,9 +1,13 @@
 <template>
   <div>
     <q-toolbar class="bg-grey-4 top-fix-column">
-      <q-toolbar-title class="text-grey-8">
-        {{ $t('TITLES.CURATION') }} - <span class="text-subtitle1">{{ $t('TITLES.DATA_SOURCE_ANALYZER') }}</span>
+      <q-btn flat :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" no-caps />
+      <q-toolbar-title class="text-grey-8" align="center">
+        <q-icon name="fas fa-database" color="primary" class="q-px-md" />
+        {{ $t('TITLES.DATA_SOURCE_ANALYZER') }}
       </q-toolbar-title>
+      <q-btn unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" color="primary" :disable="!fileSourceList.length"
+             @click="nextStep" no-caps />
     </q-toolbar>
     <div class="q-ma-sm row q-gutter-sm">
       <q-expansion-item
@@ -168,12 +172,6 @@
         </q-card-section>
       </q-card>
     </q-expansion-item>
-    <div class="row q-pa-sm">
-      <q-btn unelevated :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" no-caps />
-      <q-space />
-      <q-btn unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" color="primary" :disable="!fileSourceList.length"
-             @click="nextStep" no-caps />
-    </div>
   </div>
 </template>
 

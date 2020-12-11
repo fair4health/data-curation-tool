@@ -1,9 +1,14 @@
 <template>
   <div>
     <q-toolbar class="bg-grey-4 top-fix-column">
-      <q-toolbar-title class="text-grey-8">
-        {{ $t('TITLES.CURATION') }} - <span class="text-subtitle1">{{ $t('TITLES.TRANSFORMER') }}</span>
+      <div class="col-3">
+        <q-btn flat :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" :disable="isInProgress(transformStatus)" no-caps />
+      </div>
+      <q-toolbar-title class="text-grey-8 col" align="center">
+        <q-icon name="fas fa-exchange-alt" color="primary" class="q-px-md" />
+        {{ $t('TITLES.TRANSFORMER') }}
       </q-toolbar-title>
+      <div class="col-3"></div>
     </q-toolbar>
     <q-card flat bordered class="q-ma-sm">
       <q-card-section>
@@ -104,7 +109,6 @@
       </q-card-section>
     </q-card>
     <div class="row q-pa-sm">
-      <q-btn unelevated :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" :disable="isInProgress(transformStatus)" no-caps />
       <q-space />
       <q-btn v-if="!isInProgress(transformStatus) && !isPending(transformStatus)"
              unelevated icon="done_outline" color="primary" :label="$t('BUTTONS.FINALIZE_CURATION')" @click="finalizeCuration" no-caps />
