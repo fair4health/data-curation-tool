@@ -94,7 +94,7 @@
 <!--          </q-menu>-->
 <!--        </q-btn>-->
         <q-space />
-        <q-input borderless dense v-model.lazy.trim="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
+        <q-input standout="bg-primary" rounded dense v-model.lazy.trim="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
           <template v-slot:append>
             <q-icon v-if="!filterText" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="filterText = ''" />
