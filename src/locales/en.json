@@ -36,6 +36,7 @@
     "SET": "Set",
     "SHOW_MANDATORY_ELEMENTS_ONLY": "Show mandatory elements only",
     "SHOW_MAPPED_FIELDS_ONLY": "Show mapped fields only",
+    "SNAPSHOT_OF_DATA": "Snapshot of Data",
     "SYSTEM": "System",
     "TRANSFORM": "@:COMMON.TRANSFORM",
     "UPDATE": "Update",
@@ -199,6 +200,7 @@
     "PREVIOUS_STEP": "Previous Step",
     "REMOVE_RESOURCE": "Remove Resource Type",
     "SAVE_MAPPING": "Save Mapping",
+    "SNAPSHOT_OF_DATA": "@:BUTTONS.SNAPSHOT_OF_DATA",
     "TRANSFORMER": "Transformer",
     "VALIDATOR": "Validator"
   },

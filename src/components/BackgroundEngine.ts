@@ -100,6 +100,7 @@ export default class BackgroundEngine extends Vue {
     this.onGetTableHeaders()
     this.onBrowseMapping()
     this.onExportFile()
+    this.onPrepareSnapshotData()
 
     // Resource operation listeners (Validate - Transform)
     this.onValidate()
@@ -216,7 +217,7 @@ export default class BackgroundEngine extends Vue {
           stream.on('data', (data) => { buffers.push(data) })
           stream.on('end', () => {
             const buffer = Buffer.concat(buffers)
-            const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', sheetRows: 1})
+            const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', sheetRows: 11})
 
             // workbookMap.set(path, workbook)
             ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: path, value: workbook})
@@ -246,7 +247,7 @@ export default class BackgroundEngine extends Vue {
       const headers: object[] = []
       if (!workbookMap.has(data.path) || data.noCache) {
         try {
-          workbookMap.set(data.path, Excel.readFile(data.path, {type: 'binary', sheetRows: 1}))
+          workbookMap.set(data.path, Excel.readFile(data.path, {type: 'binary', sheetRows: 11}))
           // ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: data.path, value: Excel.readFile(data.path, {type: 'binary', cellDates: true})})
         } catch (e) {
           log.error(`Cannot read file ${data.path}`)
@@ -276,6 +277,37 @@ export default class BackgroundEngine extends Vue {
         headers.push(header)
       }
       ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_TABLE_HEADERS, headers)
+
+      this.ready()
+    })
+  }
+
+  /**
+   * Prepares a snapshot of data with a few number of entries
+   */
+  public onPrepareSnapshotData () {
+    ipcRenderer.on(ipcChannels.File.PREPARE_SNAPSHOT_DATA, (event, data) => {
+      if (!workbookMap.has(data.path) || data.noCache) {
+        try {
+          workbookMap.set(data.path, Excel.readFile(data.path, {type: 'binary', sheetRows: 11}))
+        } catch (e) {
+          log.error(`Cannot read file ${data.path}`)
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_SNAPSHOT_DATA, [])
+          this.ready()
+          return
+        }
+      }
+      const workbook = workbookMap.get(data.path)
+      const sheet: Excel.WorkSheet | null = workbook ? workbook.Sheets[data.sheet] : null
+      if (!(sheet && sheet['!ref'])) {
+        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_SNAPSHOT_DATA, [])
+        log.warn(`No columns found in ${data.path} - ${data.sheet}`)
+        this.ready()
+        return
+      }
+      const entries: any[] = Excel.utils.sheet_to_json(sheet, {raw: false, dateNF: 'mm/dd/yyyy'}) || []
+
+      ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_SNAPSHOT_DATA, entries)
 
       this.ready()
     })
