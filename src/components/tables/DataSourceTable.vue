@@ -41,40 +41,61 @@
         </div>
       </q-card-section>
       <div class="row q-px-md bg-grey-1">
-        <q-btn unelevated stretch :label="$t('BUTTONS.OPTIONS')" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>
-          <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>
-            {{ filterCount }}
-          </q-badge>
-          <q-menu>
-            <q-list padding class="menu-list">
-              <q-item clickable dense>
-                <q-item-section>
-                  <q-toggle v-model="showMappedFields"
-                            checked-icon="check"
-                            size="xs"
-                            color="primary"
-                            :label="$t('BUTTONS.SHOW_MAPPED_FIELDS_ONLY')"
-                            class="text-grey-8 text-size-lg"
-                            unchecked-icon="clear"
-                  />
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
-        <q-btn v-if="currentSheet"
-               flat
-               stretch
-               :label="$t('BUTTONS.RELOAD_FILE')"
-               icon="sync"
-               color="grey-1"
-               text-color="grey-8"
-               class="text-size-lg"
-               @click="fetchHeaders(true)"
-               no-caps
-        />
+        <div class="col q-gutter-xs">
+          <q-toggle v-model="showMappedFields"
+                    checked-icon="check"
+                    size="xs"
+                    color="primary"
+                    :label="$t('BUTTONS.SHOW_MAPPED_FIELDS_ONLY')"
+                    class="text-grey-8 text-size-lg"
+                    unchecked-icon="clear"
+          />
+          <q-btn v-if="currentSheet"
+                 flat
+                 rounded
+                 :label="$t('BUTTONS.RELOAD_FILE')"
+                 icon="sync"
+                 color="grey-1"
+                 text-color="grey-8"
+                 class="text-size-lg"
+                 @click="fetchHeaders(true)"
+                 no-caps
+          />
+          <q-btn v-if="currentSheet"
+                 flat
+                 rounded
+                 :label="$t('BUTTONS.SNAPSHOT_OF_DATA')"
+                 icon="visibility"
+                 color="grey-1"
+                 text-color="grey-8"
+                 class="text-size-lg"
+                 @click="viewSnapshotData"
+                 no-caps
+          />
+        </div>
+<!--        <q-btn unelevated stretch :label="$t('BUTTONS.OPTIONS')" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>-->
+<!--          <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>-->
+<!--            {{ filterCount }}-->
+<!--          </q-badge>-->
+<!--          <q-menu>-->
+<!--            <q-list padding class="menu-list">-->
+<!--              <q-item clickable dense>-->
+<!--                <q-item-section>-->
+<!--                  <q-toggle v-model="showMappedFields"-->
+<!--                            checked-icon="check"-->
+<!--                            size="xs"-->
+<!--                            color="primary"-->
+<!--                            :label="$t('BUTTONS.SHOW_MAPPED_FIELDS_ONLY')"-->
+<!--                            class="text-grey-8 text-size-lg"-->
+<!--                            unchecked-icon="clear"-->
+<!--                  />-->
+<!--                </q-item-section>-->
+<!--              </q-item>-->
+<!--            </q-list>-->
+<!--          </q-menu>-->
+<!--        </q-btn>-->
         <q-space />
-        <q-input borderless dense v-model.lazy.trim="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
+        <q-input standout="bg-primary" rounded dense v-model.lazy.trim="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
           <template v-slot:append>
             <q-icon v-if="!filterText" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="filterText = ''" />
@@ -166,6 +187,7 @@
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import StatusMixin from '@/common/mixins/statusMixin'
   import ConceptMapCard from '@/components/modals/ConceptMapCard.vue'
+  import SnapshotDataCard from '@/components/modals/SnapshotDataCard.vue'
 
   @Component
   export default class DataSourceTable extends Mixins(StatusMixin) {
@@ -278,6 +300,21 @@
         this.$store.commit(types.File.SETUP_BUFFER_SHEET_HEADERS)
         this.loadingAttr = false
         ipcRenderer.removeAllListeners(ipcChannels.File.READY_TABLE_HEADERS)
+      })
+    }
+
+    viewSnapshotData (): void {
+      this.$q.loading.show()
+      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.PREPARE_SNAPSHOT_DATA, {path: this.currentSource?.path, sheet: this.currentSheet?.value, noCache: false})
+      ipcRenderer.on(ipcChannels.File.READY_SNAPSHOT_DATA, (event, entries) => {
+        this.$q.loading.hide()
+        ipcRenderer.removeAllListeners(ipcChannels.File.READY_SNAPSHOT_DATA)
+        this.$q.dialog({
+          component: SnapshotDataCard,
+          parent: this,
+          columns: this.bufferSheetHeaders.filter(_ => _.value).map(_ => ({name: _.value, label: _.value, field: _.value, align: 'left', sortable: true})),
+          entries
+        })
       })
     }
 

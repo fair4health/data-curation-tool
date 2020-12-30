@@ -1,9 +1,13 @@
 <template>
   <div>
     <q-toolbar class="bg-grey-4 top-fix-column">
-      <q-toolbar-title class="text-grey-8">
-        {{ $t('TITLES.CURATION') }} - <span class="text-subtitle1">{{ $t('TITLES.DATA_SOURCE_ANALYZER') }}</span>
+      <q-btn flat :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" no-caps />
+      <q-toolbar-title class="text-grey-8" align="center">
+        <q-icon name="fas fa-database" color="primary" class="q-px-md" />
+        {{ $t('TITLES.DATA_SOURCE_ANALYZER') }}
       </q-toolbar-title>
+      <q-btn unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" color="primary" :disable="!fileSourceList.length"
+             @click="nextStep" no-caps />
     </q-toolbar>
     <div class="q-ma-sm row q-gutter-sm">
       <q-expansion-item
@@ -145,6 +149,10 @@
                               <q-item-section avatar><q-icon name="fas fa-file-download" size="xs" /></q-item-section>
                               <q-item-section>{{ $t('BUTTONS.LOAD') }}</q-item-section>
                             </q-item>
+                            <q-item clickable dense class="text-grey-9" @click="exportSavedMapping(props.row.name)" v-close-popup>
+                              <q-item-section avatar><q-icon name="publish" size="xs" /></q-item-section>
+                              <q-item-section>{{ $t('BUTTONS.EXPORT') }}</q-item-section>
+                            </q-item>
                             <q-item clickable dense class="text-red-5" @click="deleteSavedMapping(props.row.index)" v-close-popup>
                               <q-item-section avatar><q-icon name="delete" size="xs" /></q-item-section>
                               <q-item-section>{{ $t('BUTTONS.DELETE') }}</q-item-section>
@@ -164,12 +172,6 @@
         </q-card-section>
       </q-card>
     </q-expansion-item>
-    <div class="row q-pa-sm">
-      <q-btn unelevated :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" no-caps />
-      <q-space />
-      <q-btn unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" color="primary" :disable="!fileSourceList.length"
-             @click="nextStep" no-caps />
-    </div>
   </div>
 </template>
 
@@ -265,6 +267,27 @@
         this.$q.loading.hide()
         ipcRenderer.removeAllListeners(ipcChannels.File.SELECTED_MAPPING)
       })
+    }
+
+    exportSavedMapping (name: string): void {
+      const listOfSavedMappings: any[] = JSON.parse(localStorage.getItem('store-fileSourceList') || '[]')
+      if (listOfSavedMappings.length) {
+        const mapping = listOfSavedMappings.find(_ => _.name === name)
+        if (mapping) {
+          this.$q.loading.show({spinner: undefined})
+          ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.EXPORT_FILE, JSON.stringify({fileSourceList: mapping.data.fileSourceList}))
+          ipcRenderer.on(ipcChannels.File.EXPORT_DONE, (event, result) => {
+            if (result) {
+              this.$notify.success(String(this.$t('SUCCESS.FILE_IS_EXPORTED')))
+            }
+            this.$q.loading.hide()
+            ipcRenderer.removeAllListeners(ipcChannels.File.EXPORT_DONE)
+          })
+        } else {
+          this.$notify.error(String(this.$t('ERROR.MAPPING_COULDNT_BE_EXPORTED')))
+        }
+      }
+
     }
 
     getISODateString (date: string): string {

@@ -26,7 +26,7 @@
             <span><q-icon name="far fa-file-alt" size="xs" color="primary" class="q-mr-xs" /> {{ $t('LABELS.PROFILES') }}</span>
           </q-item-label>
           <q-separator spaced />
-          <q-select outlined dense options-dense v-model="currentFHIRProf" class="ellipsis" :options="fhirProfileList"
+          <q-select outlined dense options-dense v-model="currentFHIRProf" class="ellipsis" :options="sortProfiles(fhirProfileList)"
                      :option-label="item => item.split('/').pop()" :label="$t('LABELS.PROFILES')" :disable="!fhirProfileList.length">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
@@ -42,41 +42,59 @@
         </div>
       </q-card-section>
       <div class="row q-px-md bg-grey-1">
-        <q-btn unelevated stretch :label="$t('BUTTONS.OPTIONS')" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>
-          <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>
-            {{ filterCount }}
-          </q-badge>
-          <q-menu>
-            <q-list padding class="menu-list">
-              <q-item clickable dense>
-                <q-item-section>
-                  <q-toggle v-model="showMandatoryElements"
-                            checked-icon="check"
-                            size="xs"
-                            color="primary"
-                            :label="$t('BUTTONS.SHOW_MANDATORY_ELEMENTS_ONLY')"
-                            class="text-grey-8 text-size-lg"
-                            unchecked-icon="clear"
-                  />
-                </q-item-section>
-              </q-item>
-              <q-item clickable dense>
-                <q-item-section>
-                  <q-toggle v-model="hideBaseElements"
-                            checked-icon="check"
-                            size="xs"
-                            color="primary"
-                            :label="$t('BUTTONS.HIDE_BASE_RESOURCE_ELEMENTS')"
-                            class="text-grey-8 text-size-lg"
-                            unchecked-icon="clear"
-                  />
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
+        <div class="col q-gutter-xs">
+          <q-toggle v-model="showMandatoryElements"
+                    checked-icon="check"
+                    size="xs"
+                    color="primary"
+                    :label="$t('BUTTONS.SHOW_MANDATORY_ELEMENTS_ONLY')"
+                    class="text-grey-8 text-size-lg"
+                    unchecked-icon="clear"
+          />
+          <q-toggle v-model="hideBaseElements"
+                    checked-icon="check"
+                    size="xs"
+                    color="primary"
+                    :label="$t('BUTTONS.HIDE_BASE_RESOURCE_ELEMENTS')"
+                    class="text-grey-8 text-size-lg"
+                    unchecked-icon="clear"
+          />
+        </div>
+<!--        <q-btn unelevated stretch :label="$t('BUTTONS.OPTIONS')" color="grey-3" text-color="grey-8" class="text-size-lg" no-caps>-->
+<!--          <q-badge v-if="filterCount" color="primary" class="text-size-xs" floating>-->
+<!--            {{ filterCount }}-->
+<!--          </q-badge>-->
+<!--          <q-menu>-->
+<!--            <q-list padding class="menu-list">-->
+<!--              <q-item clickable dense>-->
+<!--                <q-item-section>-->
+<!--                  <q-toggle v-model="showMandatoryElements"-->
+<!--                            checked-icon="check"-->
+<!--                            size="xs"-->
+<!--                            color="primary"-->
+<!--                            :label="$t('BUTTONS.SHOW_MANDATORY_ELEMENTS_ONLY')"-->
+<!--                            class="text-grey-8 text-size-lg"-->
+<!--                            unchecked-icon="clear"-->
+<!--                  />-->
+<!--                </q-item-section>-->
+<!--              </q-item>-->
+<!--              <q-item clickable dense>-->
+<!--                <q-item-section>-->
+<!--                  <q-toggle v-model="hideBaseElements"-->
+<!--                            checked-icon="check"-->
+<!--                            size="xs"-->
+<!--                            color="primary"-->
+<!--                            :label="$t('BUTTONS.HIDE_BASE_RESOURCE_ELEMENTS')"-->
+<!--                            class="text-grey-8 text-size-lg"-->
+<!--                            unchecked-icon="clear"-->
+<!--                  />-->
+<!--                </q-item-section>-->
+<!--              </q-item>-->
+<!--            </q-list>-->
+<!--          </q-menu>-->
+<!--        </q-btn>-->
         <q-space />
-        <q-input borderless dense v-model.lazy.trim="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
+        <q-input standout="bg-primary" rounded dense v-model.lazy.trim="filterText" :placeholder="$t('BUTTONS.SEARCH')" @keydown.esc="filterText = ''">
           <template v-slot:append>
             <q-icon v-if="!filterText" name="search" />
             <q-icon v-else name="clear" class="cursor-pointer" @click="filterText = ''" />
@@ -333,7 +351,7 @@
     private expandedTableInfo: boolean = true
 
     get fhirResourceList (): string[] { return this.$store.getters[types.Fhir.RESOURCE_LIST] }
-    get fhirProfileList (): any[] { return this.$store.getters[types.Fhir.PROFILE_LIST].map(_ => _.url) }
+    get fhirProfileList (): string[] { return this.$store.getters[types.Fhir.PROFILE_LIST].map(_ => _.url) }
     set fhirProfileList (value) { this.$store.commit(types.Fhir.SET_PROFILE_LIST, value) }
 
     get currentFHIRRes (): string { return this.$store.getters[types.Fhir.CURRENT_RESOURCE] }
@@ -379,6 +397,7 @@
           this.$notify.error(String(this.$t('ERROR.ST_WRONG_FETCHING_X', {name: 'resources'})))
         })
       if (this.currentFHIRRes) this.onFHIRResourceChanged()
+      this.expandedTableInfo = (localStorage.getItem('expandedTableInfo') || '').toLowerCase() === 'true'
     }
 
     @Watch('currentFHIRRes')
@@ -429,6 +448,11 @@
     onChangedSelectedStr () {
       if (this.selectedStr) this.splitterModel = 50
       else this.splitterModel = 100
+    }
+
+    @Watch('expandedTableInfo')
+    onExpandedTableInfoChanged () {
+      localStorage.setItem('expandedTableInfo', String(this.expandedTableInfo))
     }
 
     filterFn (val, update) {
@@ -495,6 +519,13 @@
       return this.$_.includes(this.baseElementList, element.label)
     }
 
+    sortProfiles (profiles: string[]) {
+      return profiles.sort((p1, p2) => {
+        const p1Name = p1.split('/').pop().toLowerCase()
+        const p2Name = p2.split('/').pop().toLowerCase()
+        return (p1Name > p2Name) ? 1 : ((p2Name > p1Name) ? -1 : 0)
+      })
+    }
   }
 </script>
 

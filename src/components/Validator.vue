@@ -1,9 +1,21 @@
 <template>
   <div>
     <q-toolbar class="bg-grey-4 top-fix-column">
-      <q-toolbar-title class="text-grey-8">
-        {{ $t('TITLES.CURATION') }} - <span class="text-subtitle1">{{ $t('TITLES.VALIDATOR') }}</span>
+      <div class="col-3">
+        <q-btn flat :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" :disable="isInProgress(validationStatus)" no-caps />
+      </div>
+      <q-toolbar-title class="text-grey-8" align="center">
+        <q-icon name="fas fa-check-circle" color="primary" class="q-px-md" />
+        {{ $t('TITLES.VALIDATOR') }}
       </q-toolbar-title>
+      <div class="col-3 row">
+        <q-space />
+        <div class="q-gutter-sm">
+          <q-btn unelevated :label="isError(validationStatus) ? $t('BUTTONS.CONTINUE_ANYWAY') : $t('BUTTONS.NEXT')"
+                 :icon-right="isError(validationStatus) ? 'error_outline' : 'chevron_right'" color="primary"
+                 :disable="!isSuccess(validationStatus) && !isError(validationStatus)" @click="nextStep" no-caps />
+        </div>
+      </div>
     </q-toolbar>
     <q-card flat bordered class="q-ma-sm">
       <q-card-section>
@@ -213,16 +225,6 @@
         </div>
       </q-card-section>
     </q-card>
-    <div class="row q-pa-sm">
-      <q-btn unelevated :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" :disable="isInProgress(validationStatus)" no-caps />
-      <q-space />
-      <div class="q-gutter-sm">
-        <q-btn outline :label="$t('BUTTONS.CONTINUE_ANYWAY')" icon-right="error_outline" color="primary" v-if="isError(validationStatus)"
-               @click="nextStep" no-caps />
-        <q-btn unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" color="primary" :disable="!isSuccess(validationStatus)"
-               @click="nextStep" no-caps />
-      </div>
-    </div>
   </div>
 </template>
 

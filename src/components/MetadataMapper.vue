@@ -1,9 +1,13 @@
 <template>
   <div>
     <q-toolbar class="bg-grey-4 top-fix-column">
-      <q-toolbar-title class="text-grey-8">
-        {{ $t('TITLES.CURATION') }} - <span class="text-subtitle1">{{ $t('TITLES.METADATA_MAPPER') }}</span>
+      <q-btn flat :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" no-caps />
+      <q-toolbar-title class="text-grey-8" align="center">
+        <q-icon name="fas fa-list-ul" color="primary" class="q-px-md" />
+        {{ $t('TITLES.METADATA_MAPPER') }}
       </q-toolbar-title>
+      <q-btn v-if="fileSourceList.length" unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" :disable="!savedRecords.length"
+             color="primary" @click="nextStep" no-caps />
     </q-toolbar>
     <div class="q-ma-sm">
       <q-expansion-item
@@ -48,7 +52,7 @@
                    color="primary" @click="openDefaultValueAssigner" no-caps />
             <q-space />
             <div class="q-gutter-sm">
-              <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" unelevated :label="$t('BUTTONS.MATCH')"
+              <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" unelevated :label="$t('BUTTONS.MATCH_ATTRIBUTE')"
                      color="primary" @click="matchFields" no-caps />
               <q-btn unelevated v-show="!editRecordId" color="positive" :label="$t('BUTTONS.ADD_MAPPING')" icon="check" @click="addRecord" no-caps />
               <q-btn unelevated v-show="editRecordId" color="primary" :label="$t('BUTTONS.UPDATE')" icon="edit" @click="addRecord" no-caps />
@@ -182,12 +186,6 @@
           </q-card-section>
         </q-card>
       </q-expansion-item>
-    </div>
-    <div class="row q-pa-sm">
-      <q-btn unelevated :label="$t('BUTTONS.BACK')" color="primary" icon="chevron_left" @click="previousStep" no-caps />
-      <q-space />
-      <q-btn v-if="fileSourceList.length" unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" :disable="!savedRecords.length"
-             color="primary" @click="nextStep" no-caps />
     </div>
   </div>
 </template>

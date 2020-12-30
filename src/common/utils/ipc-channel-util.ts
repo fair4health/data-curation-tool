@@ -18,6 +18,8 @@ export class IpcChannelUtil {
     public static SELECTED_MAPPING = 'selected-mapping'
     public static GET_TABLE_HEADERS = 'get-table-headers'
     public static READY_TABLE_HEADERS = 'ready-table-headers'
+    public static PREPARE_SNAPSHOT_DATA = 'prepare-snapshot-data'
+    public static READY_SNAPSHOT_DATA = 'ready-snapshot-data'
   }
 
   public static ElectronStore = class {

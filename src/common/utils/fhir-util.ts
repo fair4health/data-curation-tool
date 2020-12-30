@@ -79,6 +79,9 @@ export class FHIRUtil {
             const list: fhir.ElementTree[] = []
             Promise.all(resource?.snapshot?.element.map((element: fhir.ElementDefinition) => {
               return new Promise(resolveElement => {
+                // Mark the id field as required field
+                const idSplitted = element.id.split('.')
+                if (idSplitted.length === 2 && idSplitted[1] === 'id') element.min = 1
                 const parts = element.id?.split('.') || []
                 let tmpList = list
 
