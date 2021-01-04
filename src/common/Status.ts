@@ -9,7 +9,8 @@ enum Status {
   IN_PROGRESS = 'in-progress',
   PENDING = 'pending',
   VALIDATING = 'validating',
-  TRANSFORMING = 'transforming'
+  TRANSFORMING = 'transforming',
+  NONE = 'none'
 }
 
 export default Status

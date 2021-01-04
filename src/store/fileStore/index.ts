@@ -1,4 +1,4 @@
-import { BufferElement, FileSource, Sheet, SourceDataElement } from '@/common/model/file-source'
+import { BufferElement, FileSource, Sheet, SourceDataElement } from '@/common/model/data-source'
 import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 import i18n from '@/i18n'
 

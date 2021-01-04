@@ -230,7 +230,7 @@
 
 <script lang="ts">
   import { Component, Vue, Mixins } from 'vue-property-decorator'
-  import { FileSource, Record, Sheet, SourceDataElement } from '@/common/model/file-source'
+  import { FileSource, Record, Sheet, SourceDataElement } from '@/common/model/data-source'
   import { ipcRenderer } from 'electron'
   import { validatorTable } from '@/common/model/data-table'
   import { FHIRUtil } from '@/common/utils/fhir-util'

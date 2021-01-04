@@ -192,7 +192,7 @@
 
 <script lang="ts">
   import { Component, Vue, Watch } from 'vue-property-decorator'
-  import { BufferElement, FileSource, Record, Sheet, SourceDataElement, TargetResource } from '@/common/model/file-source'
+  import { BufferElement, FileSource, Record, Sheet, SourceDataElement, TargetResource } from '@/common/model/data-source'
   import { ipcRenderer } from 'electron'
   import { QTree } from 'quasar'
   import Loading from '@/components/Loading.vue'

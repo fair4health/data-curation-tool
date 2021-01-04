@@ -64,7 +64,7 @@
   import { Component, Prop, Mixins } from 'vue-property-decorator'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import Loading from '@/components/Loading.vue'
-  import { BufferElement } from '@/common/model/file-source'
+  import { BufferElement } from '@/common/model/data-source'
   import ModalMixin from '@/common/mixins/modalMixin'
 
   @Component({

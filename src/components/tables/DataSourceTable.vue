@@ -181,7 +181,7 @@
 <script lang="ts">
   import { Component, Vue, Mixins, Watch } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
-  import { SourceDataElement, FileSource, Sheet, BufferElement } from '@/common/model/file-source'
+  import { SourceDataElement, FileSource, Sheet, BufferElement } from '@/common/model/data-source'
   import { sourceDataTable, cellType } from '@/common/model/data-table'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
@@ -309,6 +309,9 @@
       ipcRenderer.on(ipcChannels.File.READY_SNAPSHOT_DATA, (event, entries) => {
         this.$q.loading.hide()
         ipcRenderer.removeAllListeners(ipcChannels.File.READY_SNAPSHOT_DATA)
+        if (!entries?.length) {
+          this.$notify.error(String(this.$t('ERROR.NO_DATA_AVAILABLE')))
+        }
         this.$q.dialog({
           component: SnapshotDataCard,
           parent: this,

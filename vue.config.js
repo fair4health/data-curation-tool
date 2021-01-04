@@ -4,6 +4,7 @@ module.exports = {
       treeShake: true
     },
     electronBuilder: {
+      externals: ['typeorm', 'pg'],
       appId: 'fair4health-data-curation-tool',
       customFileProtocol: 'fair4health://./',
       mainProcessFile: 'src/electron-main.ts',

@@ -6,6 +6,7 @@ export class IpcChannelUtil {
   public static TO_RENDERER = 'to-renderer'
   public static READY = 'ready'
   public static SET_WORKBOOK_MAP = 'set-workbook-map'
+  public static SET_DATA_SOURCE_TYPE = 'set-data-source-type'
 
   public static File = class {
     public static READ_FILE = 'read-file'
@@ -20,6 +21,14 @@ export class IpcChannelUtil {
     public static READY_TABLE_HEADERS = 'ready-table-headers'
     public static PREPARE_SNAPSHOT_DATA = 'prepare-snapshot-data'
     public static READY_SNAPSHOT_DATA = 'ready-snapshot-data'
+  }
+
+  public static Database = class {
+    public static CREATE_CONNECTION = 'create-connection'
+    public static CLOSE_CONNECTION = 'close-connection'
+    public static CLOSE_CONNECTION_RES = 'close-connection-res'
+    public static CONNECTION_ESTABLISHED = 'connection-established'
+    public static SELECT_DB = 'select-db'
   }
 
   public static ElectronStore = class {

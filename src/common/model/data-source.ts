@@ -1,9 +1,25 @@
+import { DatabaseType } from 'typeorm'
+
+export enum DataSourceType {
+  FILE = 'file',
+  DB = 'db'
+}
+
 export interface File {
   path: string
   extension: string
   label: string
   sheets?: Sheet[]
   currentSheet?: Sheet | null
+}
+
+export interface DBConnectionOptions {
+  dbType: DatabaseType
+  host: string
+  port: number
+  database: string
+  username: string
+  password: string
 }
 
 export interface SourceDataElement {

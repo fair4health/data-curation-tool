@@ -13,6 +13,9 @@ import { Component, Vue } from 'vue-property-decorator'
 import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
 import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 import { environment } from '@/common/environment'
+import { Connection, ConnectionOptions, createConnection, getConnectionManager } from 'typeorm'
+import { DataSourceType, DBConnectionOptions } from '@/common/model/data-source'
+import { DbUtil } from '@/common/utils/db-util'
 
 @Component
 export default class BackgroundEngine extends Vue {
@@ -20,6 +23,8 @@ export default class BackgroundEngine extends Vue {
   private electronStore: ElectronStore
   private fhirBaseUrl: fhir.uri
   private terminologyBaseUrl: fhir.uri
+  private dataSourceType: DataSourceType
+  private dbConnection: Connection
 
   private abortValidation: AbortController
 
@@ -93,6 +98,12 @@ export default class BackgroundEngine extends Vue {
   public initListeners () {
     this.setFhirBaseUrl()
     this.setTerminologyBaseUrl()
+    this.setDataSourceType()
+
+    // DB listeners
+    this.onCreateDbConnection()
+    this.onSelectDb()
+    this.onCloseDbConnection()
 
     // File listeners
     this.onBrowseFile()
@@ -174,6 +185,101 @@ export default class BackgroundEngine extends Vue {
   }
 
   /**
+   * Data source type SET operation.
+   * The source type must be DB or FILE.
+   */
+  public setDataSourceType () {
+    ipcRenderer.on(ipcChannels.SET_DATA_SOURCE_TYPE, (event, type: DataSourceType) => {
+      this.dataSourceType = type
+    })
+  }
+
+  /**
+   * Establishes a database connection with the given connection options.
+   */
+  public onCreateDbConnection () {
+    ipcRenderer.on(ipcChannels.Database.CREATE_CONNECTION, async (event, options: DBConnectionOptions) => {
+      // Get Connection Manager
+      const connectionManager = getConnectionManager()
+      // If the connection has not been already established
+      if (!this.dbConnection || !this.dbConnection.isConnected) {
+        createConnection({
+          name: 'f4h-curation-connection',
+          type: options.dbType,
+          host: options.host,
+          port: options.port,
+          database: options.database,
+          username: options.username,
+          password: options.password,
+          synchronize: true,
+          logging: false,
+        } as ConnectionOptions)
+          .then(connection => {
+            this.dbConnection = connection
+            log.info(`Database connection established host:${options.host} port:${options.port} database:${options.database} for thread: ${remote.getCurrentWindow().getTitle()}`)
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CONNECTION_ESTABLISHED, {status: Status.SUCCESS, message: 'Database connection established'})
+            this.ready()
+          })
+          .catch(err => {
+            log.error(`Database connection error. ${err.message}`)
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CONNECTION_ESTABLISHED, {status: Status.ERROR, message: `Database connection error. ${err.message}`})
+            this.ready()
+          })
+
+      } else {
+        log.info(`Already have a connection with host:${options.host} port:${options.port} database:${options.database} for thread: ${remote.getCurrentWindow().getTitle()}`)
+        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CONNECTION_ESTABLISHED, {status: Status.SUCCESS, message: `Already have a connection with host:${options.host} port:${options.port} database:${options.database}`})
+        this.ready()
+      }
+    })
+  }
+
+  /**
+   * Closes the database connection
+   */
+  onCloseDbConnection () {
+    ipcRenderer.on(ipcChannels.Database.CLOSE_CONNECTION, (event) => {
+      if (this.dbConnection && this.dbConnection.isConnected) {
+        this.dbConnection.close().then(res => {
+          log.info(`Database connection has been closed for thread: ${remote.getCurrentWindow().getTitle()}`)
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CLOSE_CONNECTION_RES, {status: Status.SUCCESS, message: 'Database connection has been closed.'})
+        })
+          .catch(err => {
+            log.error(`Error occurred while trying to close database connection. ${err.message}`)
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CLOSE_CONNECTION_RES, {status: Status.ERROR, message: `${err.message}`})
+          })
+      } else {
+        log.info(`No active connection found.`)
+        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CLOSE_CONNECTION_RES, {status: Status.SUCCESS, message: 'No active connection found.'})
+      }
+    })
+  }
+
+  /**
+   * Retrieves the Public tables in the selected DB.
+   */
+  public onSelectDb () {
+    ipcRenderer.on(ipcChannels.Database.SELECT_DB, () => {
+      if (this.dbConnection) {
+        this.dbConnection.query(DbUtil.getTablesQuery())
+          .then(tables => {
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_FILES, tables.map(_ => _.table_name))
+            this.ready()
+          })
+          .catch(err => {
+            log.error(`Get tables in db error: ${err.message}`)
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_FILES, undefined)
+            this.ready()
+          })
+      } else {
+        log.error('Database connection is broken!')
+        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_FILES, undefined)
+        this.ready()
+      }
+    })
+  }
+
+  /**
    * Browses files with extensions [xls, xlsx, csv] and sends back their paths as a list
    */
   public onBrowseFile () {
@@ -204,38 +310,50 @@ export default class BackgroundEngine extends Vue {
   public onReadFile () {
     ipcRenderer.on(ipcChannels.File.READ_FILE, (event, path) => {
       if (path) {
-        try {
-          // workbook = Excel.readFile(path, {type: 'binary', sheetRows: 1})
-          const stream = fs.createReadStream(path)
-          const buffers = []
-          stream.on('error', () => {
+        if (this.dataSourceType === DataSourceType.DB) {
+          if (this.dbConnection) {
+            log.info('Reading table: ' + path)
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, [path])
+            this.ready()
+          } else {
+            log.error('Database connection is broken!')
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, undefined)
+            this.ready()
+          }
+        } else {
+          try {
+            // workbook = Excel.readFile(path, {type: 'binary', sheetRows: 1})
+            const stream = fs.createReadStream(path)
+            const buffers = []
+            stream.on('error', () => {
+              log.error(`Cannot read file ${path}`)
+              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, undefined)
+              this.ready()
+              return
+            })
+            stream.on('data', (data) => { buffers.push(data) })
+            stream.on('end', () => {
+              const buffer = Buffer.concat(buffers)
+              const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', sheetRows: 11})
+
+              // workbookMap.set(path, workbook)
+              ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: path, value: workbook})
+              log.info('Read file ' + path)
+              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, workbook.SheetNames)
+              this.ready()
+            })
+          } catch (err) {
             log.error(`Cannot read file ${path}`)
             ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, undefined)
             this.ready()
             return
-          })
-          stream.on('data', (data) => { buffers.push(data) })
-          stream.on('end', () => {
-            const buffer = Buffer.concat(buffers)
-            const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', sheetRows: 11})
-
-            // workbookMap.set(path, workbook)
-            ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: path, value: workbook})
-            log.info('Read file ' + path)
-            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, workbook.SheetNames)
-          })
-        } catch (err) {
-          log.error(`Cannot read file ${path}`)
-          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, undefined)
-          this.ready()
-          return
+          }
         }
       } else {
-        log.warn('Cannot read undefined path')
+        log.warn('Cannot read undefined path / table')
         ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, undefined)
+        this.ready()
       }
-
-      this.ready()
     })
   }
 
@@ -245,40 +363,64 @@ export default class BackgroundEngine extends Vue {
   public onGetTableHeaders () {
     ipcRenderer.on(ipcChannels.File.GET_TABLE_HEADERS, (event, data) => {
       const headers: object[] = []
-      if (!workbookMap.has(data.path) || data.noCache) {
-        try {
-          workbookMap.set(data.path, Excel.readFile(data.path, {type: 'binary', sheetRows: 11}))
-          // ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: data.path, value: Excel.readFile(data.path, {type: 'binary', cellDates: true})})
-        } catch (e) {
-          log.error(`Cannot read file ${data.path}`)
+      if (this.dataSourceType === DataSourceType.DB) {
+        // TODO: DB
+        if (!workbookMap.has(data.path) || data.noCache) {
+          if (this.dbConnection) {
+            this.dbConnection.query(DbUtil.getColumnNamesQuery(data.path))
+              .then(columns => {
+                columns.forEach(column => {
+                  headers.push({type: cellType['s'], value: column.column_name})
+                })
+                ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_TABLE_HEADERS, headers)
+                this.ready()
+              })
+              .catch(err => {
+                log.error(`Get table column names error: ${err.message}`)
+                ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_TABLE_HEADERS, [])
+                this.ready()
+              })
+          } else {
+            log.error('Database connection is broken!')
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_TABLE_HEADERS, [])
+            this.ready()
+          }
+        }
+      } else {
+        if (!workbookMap.has(data.path) || data.noCache) {
+          try {
+            workbookMap.set(data.path, Excel.readFile(data.path, {type: 'binary', sheetRows: 11}))
+            // ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: data.path, value: Excel.readFile(data.path, {type: 'binary', cellDates: true})})
+          } catch (e) {
+            log.error(`Cannot read file ${data.path}`)
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_TABLE_HEADERS, [])
+            this.ready()
+            return
+          }
+        }
+        const workbook = workbookMap.get(data.path)
+        const sheet: Excel.WorkSheet | null = workbook ? workbook.Sheets[data.sheet] : null
+        if (!(sheet && sheet['!ref'])) {
           ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_TABLE_HEADERS, [])
+          log.warn(`No columns found in ${data.path} - ${data.sheet}`)
           this.ready()
           return
         }
-      }
-      const workbook = workbookMap.get(data.path)
-      const sheet: Excel.WorkSheet | null = workbook ? workbook.Sheets[data.sheet] : null
-      if (!(sheet && sheet['!ref'])) {
-        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_TABLE_HEADERS, [])
-        log.warn(`No columns found in ${data.path} - ${data.sheet}`)
+        const range = Excel.utils.decode_range(sheet['!ref'] as string)
+        const R = range.s.r
+
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          // Cells in the first row
+          const cell: Excel.CellObject = sheet[Excel.utils.encode_cell({c: C, r: R})]
+
+          let header: any = {type: 's', value: `UNKNOWN ${C}`}
+          if (cell && cell.t) header = {type: cellType[cell.t] || 'ErrorType', value: cell.v}
+
+          headers.push(header)
+        }
+        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_TABLE_HEADERS, headers)
         this.ready()
-        return
       }
-      const range = Excel.utils.decode_range(sheet['!ref'] as string)
-      const R = range.s.r
-
-      for (let C = range.s.c; C <= range.e.c; C++) {
-        // Cells in the first row
-        const cell: Excel.CellObject = sheet[Excel.utils.encode_cell({c: C, r: R})]
-
-        let header: any = {type: 's', value: `UNKNOWN ${C}`}
-        if (cell && cell.t) header = {type: cellType[cell.t] || 'ErrorType', value: cell.v}
-
-        headers.push(header)
-      }
-      ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_TABLE_HEADERS, headers)
-
-      this.ready()
     })
   }
 
@@ -287,29 +429,54 @@ export default class BackgroundEngine extends Vue {
    */
   public onPrepareSnapshotData () {
     ipcRenderer.on(ipcChannels.File.PREPARE_SNAPSHOT_DATA, (event, data) => {
-      if (!workbookMap.has(data.path) || data.noCache) {
-        try {
-          workbookMap.set(data.path, Excel.readFile(data.path, {type: 'binary', sheetRows: 11}))
-        } catch (e) {
-          log.error(`Cannot read file ${data.path}`)
+      if (this.dataSourceType === DataSourceType.DB) {
+        if (this.dbConnection) {
+          this.dbConnection.query(DbUtil.getTop10EntriesQuery(data.path))
+            .then(entries => {
+              entries.forEach(entry => {
+                Object.entries(entry).forEach(([key, value]) => {
+                  if (value instanceof Date) {
+                    entry[key] = value.toString()
+                  }
+                })
+              })
+
+              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_SNAPSHOT_DATA, entries)
+              this.ready()
+            })
+            .catch(err => {
+              log.error(`Prepare snapshot error: ${err.message}`)
+              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_SNAPSHOT_DATA, [])
+              this.ready()
+            })
+        } else {
+          log.error('Database connection is broken!')
+          this.ready()
+        }
+      } else {
+        if (!workbookMap.has(data.path) || data.noCache) {
+          try {
+            workbookMap.set(data.path, Excel.readFile(data.path, {type: 'binary', sheetRows: 11}))
+          } catch (e) {
+            log.error(`Cannot read file ${data.path}`)
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_SNAPSHOT_DATA, [])
+            this.ready()
+            return
+          }
+        }
+        const workbook = workbookMap.get(data.path)
+        const sheet: Excel.WorkSheet | null = workbook ? workbook.Sheets[data.sheet] : null
+        if (!(sheet && sheet['!ref'])) {
           ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_SNAPSHOT_DATA, [])
+          log.warn(`No columns found in ${data.path} - ${data.sheet}`)
           this.ready()
           return
         }
-      }
-      const workbook = workbookMap.get(data.path)
-      const sheet: Excel.WorkSheet | null = workbook ? workbook.Sheets[data.sheet] : null
-      if (!(sheet && sheet['!ref'])) {
-        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_SNAPSHOT_DATA, [])
-        log.warn(`No columns found in ${data.path} - ${data.sheet}`)
+        const entries: any[] = Excel.utils.sheet_to_json(sheet, {raw: false, dateNF: 'mm/dd/yyyy'}) || []
+
+        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_SNAPSHOT_DATA, entries)
         this.ready()
-        return
       }
-      const entries: any[] = Excel.utils.sheet_to_json(sheet, {raw: false, dateNF: 'mm/dd/yyyy'}) || []
-
-      ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READY_SNAPSHOT_DATA, entries)
-
-      this.ready()
     })
   }
 
@@ -386,6 +553,48 @@ export default class BackgroundEngine extends Vue {
     })
   }
 
+  public prepareDataFromDb (table: string): Promise<any[]> {
+    return new Promise<any[]>((resolve, reject) => {
+      if (this.dbConnection) {
+        this.dbConnection.query(DbUtil.getEntriesQuery(table))
+          .then(entries => {
+            resolve(entries)
+          })
+          .catch(err => {
+            log.error(`Prepare data from db error: ${err.message}`)
+            reject(err.message)
+          })
+      } else {
+        log.error('Database connection is broken!')
+        reject('Database connection is broken!')
+      }
+    })
+  }
+
+  public prepareDataFromFile (filePath: string): Promise<Excel.WorkBook> {
+    return new Promise<Excel.WorkBook>((resolve, reject) => {
+      try {
+        const stream = fs.createReadStream(filePath)
+        const buffers = []
+        stream.on('error', (err) => { reject(err) })
+        stream.on('data', (data) => { buffers.push(data) })
+        stream.on('end', () => {
+          const buffer = Buffer.concat(buffers)
+          const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', cellDates: true, cellText: false})
+
+          // Save buffer workbook to map
+          workbookMap.set(filePath, workbook)
+          // ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: filePath, value: workbook})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-read-file-${filePath}`, [])
+          resolve(workbook)
+        })
+      } catch (err) {
+        reject(err)
+      }
+    })
+
+  }
+
   /**
    * Create and validate resources
    */
@@ -408,6 +617,8 @@ export default class BackgroundEngine extends Vue {
   public validate (data: any, reqChunkSize: number, abortSignal: AbortSignal): Promise<any> {
     // Update chunk size
     this.CHUNK_SIZE = reqChunkSize
+    // Is the data source database?
+    const isDbSource = this.dataSourceType === DataSourceType.DB
 
     return new Promise((resolveValidation, rejectValidation) => {
       const filePath = data.filePath
@@ -420,27 +631,9 @@ export default class BackgroundEngine extends Vue {
         rejectValidation('Validation has been aborted')
       })
 
-      const getWorkbooks = new Promise<Excel.WorkBook>(((resolve, reject) => {
-        try {
-          const stream = fs.createReadStream(filePath)
-          const buffers = []
-          stream.on('error', (err) => { reject(err) })
-          stream.on('data', (data) => { buffers.push(data) })
-          stream.on('end', () => {
-            const buffer = Buffer.concat(buffers)
-            const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', cellDates: true, cellText: false})
+      const dataPromise: Promise<any> = isDbSource ? this.prepareDataFromDb(filePath) : this.prepareDataFromFile(filePath)
 
-            // Save buffer workbook to map
-            workbookMap.set(filePath, workbook)
-            // ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: filePath, value: workbook})
-            ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-read-file-${filePath}`, [])
-            resolve(workbook)
-          })
-        } catch (err) {
-          reject(err)
-        }
-      }))
-      getWorkbooks.then(workbook => {
+      dataPromise.then(workbook => {
         const conceptMap: Map<string, fhir.ConceptMap> = new Map<string, fhir.ConceptMap>()
         this.electronStore.get(`${this.terminologyBaseUrl}-ConceptMapList`)?.map(_ => {
           conceptMap.set(_.id, _)
@@ -448,7 +641,7 @@ export default class BackgroundEngine extends Vue {
         data.sheets.reduce((promise: Promise<any>, sheet: store.Sheet) =>
             promise.then(() => new Promise((resolveSheet, rejectSheet) => {
 
-              const entries: any[] = Excel.utils.sheet_to_json(workbook.Sheets[sheet.sheetName], {raw: false, dateNF: 'mm/dd/yyyy'}) || []
+              const entries: any[] = isDbSource ? workbook : Excel.utils.sheet_to_json(workbook.Sheets[sheet.sheetName], {raw: false, dateNF: 'mm/dd/yyyy'}) || []
               const sheetRecords: store.Record[] = sheet.records
 
               ipcRenderer.send(ipcChannels.TO_RENDERER, `info-${filePath}-${sheet.sheetName}`, {total: entries.length})
@@ -731,8 +924,8 @@ export default class BackgroundEngine extends Vue {
           })
       })
         .catch(err => {
-          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-error-${filePath}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, message: `File not found : ${filePath}`, resourceType: 'OperationOutcome'}]})
-          log.error(`File not found. ${err}`)
+          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-error-${filePath}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, message: `File/table not found : ${filePath}`, resourceType: 'OperationOutcome'}]})
+          log.error(`File/table not found. ${err}`)
           resolveValidation()
         })
     })
