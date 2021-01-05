@@ -83,7 +83,7 @@
                 <q-btn dense round flat size="sm" :icon="props.expand ? 'arrow_drop_up' : 'arrow_drop_down'" @click="props.expand = !props.expand" />
                 {{ props.row.file }}
               </q-td>
-              <q-td key="sheet" :props="props">
+              <q-td v-if="dataSourceType === 'file'" key="sheet" :props="props">
                 {{ props.row.sheet }}
               </q-td>
               <q-td key="targets" :props="props" class="text-weight-bold">
@@ -230,7 +230,7 @@
 
 <script lang="ts">
   import { Component, Vue, Mixins } from 'vue-property-decorator'
-  import { FileSource, Record, Sheet, SourceDataElement } from '@/common/model/data-source'
+  import { DataSourceType, FileSource, Record, Sheet, SourceDataElement } from '@/common/model/data-source'
   import { ipcRenderer } from 'electron'
   import { validatorTable } from '@/common/model/data-table'
   import { FHIRUtil } from '@/common/utils/fhir-util'
@@ -244,7 +244,6 @@
   export default class Validator extends Mixins(StatusMixin) {
     // Mapping data grouped by file and sheets
     private mappingObj: Map<string, any> = new Map<string, any>()
-    private columns = validatorTable.columns
     private pagination = validatorTable.pagination
     private filterText: string = ''
     private loading: boolean = false
@@ -267,6 +266,19 @@
 
     get transformList (): TransformListItem[] { return this.$store.getters[types.TRANSFORM_LIST] }
     set transformList (value) { this.$store.commit(types.SET_TRANSFORM_LIST, value) }
+
+    get dataSourceType (): DataSourceType { return this.$store.getters[types.DATA_SOURCE_TYPE] }
+    get columns () {
+      if (this.dataSourceType === DataSourceType.DB) {
+        return [
+          { name: 'status', align: 'center', label: 'TABLE.STATUS', field: 'status', icon: 'fas fa-info-circle', classes: 'bg-grey-2', headerClasses: 'bg-primary text-white' },
+          { name: 'file', align: 'left', label: 'TABLE.TABLE', field: 'file', icon: 'fas fa-database', sortable: true },
+          { name: 'targets', align: 'center', label: 'TABLE.TARGET_MAPPINGS', field: 'targets', icon: 'fas fa-hashtag', sortable: true }
+        ]
+      } else {
+        return validatorTable.columns
+      }
+    }
 
     mounted () {
       this.loading = true

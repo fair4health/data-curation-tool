@@ -1,7 +1,28 @@
 <template>
   <div>
     <q-card flat class="bg-white">
-      <q-card-section class="row q-col-gutter-sm">
+      <q-card-section v-if="dataSourceType === 'db'" class="row q-col-gutter-sm">
+        <div class="col-12">
+          <q-item-label class="text-weight-bold">
+            <span><q-icon name="fas fa-database" size="xs" color="primary" class="q-mr-xs" /> {{ $t('LABELS.TABLES') }}</span>
+          </q-item-label>
+          <q-separator spaced />
+          <q-select outlined dense options-dense v-model="currentSource" class="ellipsis" :options="fileSourceList" option-value="path"
+                    :label="$t('LABELS.TABLES')">
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+                <q-item-section avatar>
+                  <q-icon name="fas fa-database" size="xs" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label v-html="scope.opt.label" />
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+        </div>
+      </q-card-section>
+      <q-card-section v-else class="row q-col-gutter-sm">
         <div class="col-xs-12 col-sm-12 col-md-6">
           <q-item-label class="text-weight-bold">
             <span><q-icon name="fas fa-file" size="xs" color="primary" class="q-mr-xs" /> {{ $t('LABELS.SOURCE_FILE') }}</span>
@@ -181,7 +202,7 @@
 <script lang="ts">
   import { Component, Vue, Mixins, Watch } from 'vue-property-decorator'
   import { ipcRenderer } from 'electron'
-  import { SourceDataElement, FileSource, Sheet, BufferElement } from '@/common/model/data-source'
+  import { SourceDataElement, FileSource, Sheet, BufferElement, DataSourceType } from '@/common/model/data-source'
   import { sourceDataTable, cellType } from '@/common/model/data-table'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
@@ -199,6 +220,7 @@
     private showMappedFields: boolean = false
 
     get fieldTypes (): string[] { return Object.values(cellType) }
+    get dataSourceType (): DataSourceType { return this.$store.getters[types.DATA_SOURCE_TYPE] }
 
     get fileSourceList (): FileSource[] { return this.$store.getters[types.File.SOURCE_LIST] }
     set fileSourceList (value) { this.$store.commit(types.File.UPDATE_SOURCE_LIST, value) }

@@ -89,16 +89,16 @@
             <q-tab-panel name="db">
               <q-card-section class="row flex-center center">
                 <div class="q-gutter-sm col-xs-12 col-sm-12 col-md-10 text-center">
-                  <q-select standout="bg-primary text-white" dense label="Database Type" :options="availableDBTypes"
+                  <q-select standout="bg-primary text-white" dense :label="$t('LABELS.DATABASE_TYPE')" :options="availableDBTypes"
                             v-model="dbConnectionOptions.dbType" :readonly="isSuccess(dbConnectionStatus)" />
-                  <q-input outlined dense label="Hostname" v-model.lazy.trim="dbConnectionOptions.host" input-class="text-grey-8" :readonly="isSuccess(dbConnectionStatus)" />
-                  <q-input outlined dense label="Port" v-model.lazy.trim="dbConnectionOptions.port" type="number" input-class="text-grey-8" :readonly="isSuccess(dbConnectionStatus)" />
-                  <q-input outlined dense label="Database" v-model.lazy.trim="dbConnectionOptions.database" input-class="text-grey-8" :readonly="isSuccess(dbConnectionStatus)" />
+                  <q-input outlined dense :label="$t('LABELS.HOSTNAME')" v-model.lazy.trim="dbConnectionOptions.host" input-class="text-grey-8" :readonly="isSuccess(dbConnectionStatus)" />
+                  <q-input outlined dense :label="$t('LABELS.PORT')" v-model.lazy.trim="dbConnectionOptions.port" type="number" input-class="text-grey-8" :readonly="isSuccess(dbConnectionStatus)" />
+                  <q-input outlined dense :label="$t('LABELS.DATABASE')" v-model.lazy.trim="dbConnectionOptions.database" input-class="text-grey-8" :readonly="isSuccess(dbConnectionStatus)" />
                   <q-separator class="q-my-md" inset />
-                  <q-select standout="bg-primary text-white" dense label="Authentication" :options="dbAuthTypes"
+                  <q-select standout="bg-primary text-white" dense :label="$t('LABELS.AUTHENTICATION')" :options="dbAuthTypes"
                             v-model="dbConnectionOptions.dbAuth" :readonly="isSuccess(dbConnectionStatus)" />
-                  <q-input v-show="dbConnectionOptions.dbAuth.value !== 'none'" outlined dense label="Username" v-model.lazy.trim="dbConnectionOptions.username" input-class="text-grey-8" :readonly="isSuccess(dbConnectionStatus)" />
-                  <q-input v-show="dbConnectionOptions.dbAuth.value !== 'none'" outlined dense label="Password" v-model.lazy.trim="dbConnectionOptions.password" :type="isPwd ? 'password' : 'text'" :readonly="isSuccess(dbConnectionStatus)">
+                  <q-input v-show="dbConnectionOptions.dbAuth.value !== 'none'" outlined dense :label="$t('LABELS.USERNAME')" v-model.lazy.trim="dbConnectionOptions.username" input-class="text-grey-8" :readonly="isSuccess(dbConnectionStatus)" />
+                  <q-input v-show="dbConnectionOptions.dbAuth.value !== 'none'" outlined dense :label="$t('LABELS.PASSWORD')" v-model.lazy.trim="dbConnectionOptions.password" :type="isPwd ? 'password' : 'text'" :readonly="isSuccess(dbConnectionStatus)">
                     <template v-slot:append>
                       <q-icon
                         :name="isPwd ? 'visibility_off' : 'visibility'"
