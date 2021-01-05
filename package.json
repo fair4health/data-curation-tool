@@ -34,7 +34,6 @@
     "isomorphic-fetch": "^2.2.1",
     "ng-fhir": "^2.3.0",
     "pg": "^8.5.1",
-    "pg-native": "^3.0.0",
     "quasar": "^1.9.12",
     "readline-sync": "^1.4.10",
     "spectron": "^11.1.0",
