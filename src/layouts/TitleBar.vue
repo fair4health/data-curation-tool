@@ -7,7 +7,7 @@
           <div class="col-auto">
             <img class="flex flex-center" src="../assets/FAIR4Health-logo.png" width="80px">
           </div>
-          <div class="col text-weight-bold text-size-xl">{{ $t('COMMON.APP_NAME') }}</div>
+          <div class="col text-weight-bold text-size-xl">{{ $t('COMMON.APP_NAME') }} {{ appVersion }}</div>
         </div>
       </div>
       <template v-if="!isDarwin">
@@ -124,7 +124,8 @@
         }
       ]
     }
-    get projectHomePage (): string { return window.process.env.ELECTRON_WEBPACK_APP_F4H_HOMEPAGE }
+    get projectHomePage (): string { return window.process.env.APP_HOMEPAGE }
+    get appVersion (): string { return window.process.env.APP_VERSION }
     get isDarwin (): boolean { return remote.process.platform === 'darwin' }
 
     get drawerOpen (): boolean { return this.$store.getters[types.DRAWER_OPEN] }

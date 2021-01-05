@@ -1,4 +1,11 @@
+const fs = require('fs')
+const packageJson = JSON.parse(fs.readFileSync('./package.json'))
+
 module.exports = {
+  configureWebpack: config => {
+    process.env.APP_VERSION = packageJson.version
+    process.env.APP_HOMEPAGE = packageJson.homepage
+  },
   pluginOptions: {
     quasar: {
       treeShake: true

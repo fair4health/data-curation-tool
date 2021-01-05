@@ -11,8 +11,6 @@ import { TerminologyService } from '@/common/services/terminology.service'
 import _ from 'lodash'
 import i18n from './i18n'
 
-window.process.env.ELECTRON_WEBPACK_APP_F4H_HOMEPAGE = require('./../package.json').homepage
-
 webFrame.setZoomFactor(0.9)
 
 Vue.config.productionTip = false
