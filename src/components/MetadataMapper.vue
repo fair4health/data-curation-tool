@@ -192,7 +192,7 @@
 
 <script lang="ts">
   import { Component, Vue, Watch } from 'vue-property-decorator'
-  import { BufferElement, FileSource, Record, Sheet, SourceDataElement, TargetResource } from '@/common/model/data-source'
+  import { BufferElement, FileSource, Record, Sheet, SourceDataElement, TargetResource, DataSourceType, DBConnectionOptions } from '@/common/model/data-source'
   import { ipcRenderer } from 'electron'
   import { QTree } from 'quasar'
   import Loading from '@/components/Loading.vue'
@@ -255,6 +255,9 @@
     set mappingList (value) { this.$store.commit(types.SET_MAPPING_LIST, value) }
 
     get fhirElementList (): fhir.ElementTree[] { return this.$store.getters[types.Fhir.ELEMENT_LIST] }
+
+    get dataSourceType (): DataSourceType { return this.$store.getters[types.DATA_SOURCE_TYPE] }
+    get dbConnectionOptions (): DBConnectionOptions { return this.$store.getters[types.DB_CONNECTION_OPTIONS] }
 
     @Watch('currentSource')
     @Watch('currentSheet')
@@ -337,18 +340,21 @@
       const mappingState: FileSource[] = this.$store.getters[types.File.SOURCE_LIST]
       this.$q.loading.show({spinner: undefined})
 
-      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.EXPORT_FILE, JSON.stringify(
-        {
-          fileSourceList: mappingState.map(_ =>
-            ({
-              extension: _.extension,
-              label: _.label,
-              path: _.path,
-              sheets: _.sheets,
-              currentSheet: null
-            })
-          )
-        })
+      const state = {
+        fileSourceList: mappingState.map(_ =>
+          ({
+            extension: _.extension,
+            label: _.label,
+            path: _.path,
+            sheets: _.sheets,
+            currentSheet: null
+          })
+        )
+      }
+      if (this.dataSourceType === DataSourceType.DB) {
+        state['dbConnectionOptions'] = this.dbConnectionOptions
+      }
+      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.EXPORT_FILE, JSON.stringify(state)
       )
       ipcRenderer.on(ipcChannels.File.EXPORT_DONE, (event, result) => {
         if (result) {
@@ -372,11 +378,15 @@
         persistent: true
       }).onOk(mappingName => {
         let fileStore: any = localStorage.getItem('store-fileSourceList')
+        const state = {date: new Date(), name: mappingName, data: this.$store.state.file}
+        if (this.dataSourceType === DataSourceType.DB) {
+          state['dbConnectionOptions'] = this.dbConnectionOptions
+        }
         if (fileStore) {
           fileStore = JSON.parse(fileStore) as any[]
-          fileStore.push({date: new Date(), name: mappingName, data: this.$store.state.file})
+          fileStore.push(state)
         } else {
-          fileStore = [{date: new Date(), name: mappingName, data: this.$store.state.file}]
+          fileStore = [state]
         }
         localStorage.setItem('store-fileSourceList', JSON.stringify(fileStore))
         this.$notify.success(String(this.$t('SUCCESS.MAPPINGS_HAVE_BEEN_SAVED')))

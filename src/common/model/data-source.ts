@@ -20,6 +20,7 @@ export interface DBConnectionOptions {
   database: string
   username: string
   password: string
+  dbAuth?: {value: string, label: string}
 }
 
 export interface SourceDataElement {

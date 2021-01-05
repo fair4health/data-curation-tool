@@ -13,6 +13,7 @@ export class VuexStoreUtil {
   public static TRANSFORM_OUTCOME_DETAILS = 'transformOutcomeDetails'
   public static DATA_SOURCE_TYPE = 'dataSourceType'
   public static DB_CONNECTION_STATUS = 'dbConnectionStatus'
+  public static DB_CONNECTION_OPTIONS = 'dbConnectionOptions'
 
   // Mutations
   public static SET_DRAWER_OPEN = 'setDrawerOpen'
@@ -28,6 +29,7 @@ export class VuexStoreUtil {
   public static SET_TRANSFORM_OUTCOME_DETAILS = 'setTransformOutcomeDetails'
   public static SET_DATA_SOURCE_TYPE = 'setDataSourceType'
   public static SET_DB_CONNECTION_STATUS = 'setDbConnectionStatus'
+  public static SET_DB_CONNECTION_OPTIONS = 'setDbConnectionOptions'
 
   // Actions
   // ...

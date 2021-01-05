@@ -1,4 +1,3 @@
-import Status from '@/common/Status'
 <template>
   <div>
     <q-toolbar class="bg-grey-4 top-fix-column">
@@ -7,7 +6,8 @@ import Status from '@/common/Status'
         <q-icon name="fas fa-database" color="primary" class="q-px-md" />
         {{ $t('TITLES.DATA_SOURCE_ANALYZER') }}
       </q-toolbar-title>
-      <q-btn unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" color="primary" :disable="!fileSourceList.length"
+      <q-btn unelevated :label="$t('BUTTONS.NEXT')" icon-right="chevron_right" color="primary"
+             :disable="!(fileSourceList.length && (dataSourceType === 'file' || (dataSourceType === 'db' && isSuccess(dbConnectionStatus))))"
              @click="nextStep" no-caps />
     </q-toolbar>
     <div class="q-ma-sm row">
@@ -96,9 +96,9 @@ import Status from '@/common/Status'
                   <q-input outlined dense label="Database" v-model.lazy.trim="dbConnectionOptions.database" input-class="text-grey-8" :readonly="isSuccess(dbConnectionStatus)" />
                   <q-separator class="q-my-md" inset />
                   <q-select standout="bg-primary text-white" dense label="Authentication" :options="dbAuthTypes"
-                            v-model="dbAuth" :readonly="isSuccess(dbConnectionStatus)" />
-                  <q-input v-show="dbAuth.value !== 'none'" outlined dense label="Username" v-model.lazy.trim="dbConnectionOptions.username" input-class="text-grey-8" :readonly="isSuccess(dbConnectionStatus)" />
-                  <q-input v-show="dbAuth.value !== 'none'" outlined dense label="Password" v-model.lazy.trim="dbConnectionOptions.password" :type="isPwd ? 'password' : 'text'" :readonly="isSuccess(dbConnectionStatus)">
+                            v-model="dbConnectionOptions.dbAuth" :readonly="isSuccess(dbConnectionStatus)" />
+                  <q-input v-show="dbConnectionOptions.dbAuth.value !== 'none'" outlined dense label="Username" v-model.lazy.trim="dbConnectionOptions.username" input-class="text-grey-8" :readonly="isSuccess(dbConnectionStatus)" />
+                  <q-input v-show="dbConnectionOptions.dbAuth.value !== 'none'" outlined dense label="Password" v-model.lazy.trim="dbConnectionOptions.password" :type="isPwd ? 'password' : 'text'" :readonly="isSuccess(dbConnectionStatus)">
                     <template v-slot:append>
                       <q-icon
                         :name="isPwd ? 'visibility_off' : 'visibility'"
@@ -124,16 +124,16 @@ import Status from '@/common/Status'
                 </div>
               </q-card-section>
               <q-card-section v-if="dataSourceType === 'db' && fileSourceList.length > 0" class="row flex-center center">
-                <q-list separator class="bg-white col-xs-12 col-sm-12 col-md-10">
+                <q-list separator bordered class="bg-white col-xs-12 col-sm-12 col-md-10">
                   <q-item class="bg-grey-3 text-h5 text-grey-8">
                     {{ $t('LABELS.TABLES') }}
                   </q-item>
-                  <q-item v-for="(file, index) in fileSourceList" :key="index">
+                  <q-item v-for="(file, index) in fileSourceList" :key="index" clickable>
                     <q-item-section avatar>
-                      <q-avatar icon="fas fa-database" color="primary" text-color="white" />
+                      <q-avatar icon="fas fa-database" color="primary" text-color="white" size="md" />
                     </q-item-section>
                     <q-item-section>
-                      <q-item-label>{{ file.label }}</q-item-label>
+                      <q-item-label class="text-size-lg">{{ file.label }}</q-item-label>
                     </q-item-section>
                   </q-item>
                 </q-list>
@@ -234,14 +234,14 @@ import Status from '@/common/Status'
 </template>
 
 <script lang="ts">
-  import {Component, Mixins} from 'vue-property-decorator'
-  import {ipcRenderer} from 'electron'
-  import {DataSourceType, DBConnectionOptions, FileSource} from '@/common/model/data-source'
-  import {IpcChannelUtil as ipcChannels} from '@/common/utils/ipc-channel-util'
-  import {VuexStoreUtil as types} from '@/common/utils/vuex-store-util'
-  import {savedMappingTable} from '@/common/model/data-table'
-  import {Connection} from 'typeorm'
-  import {environment} from '@/common/environment'
+  import { Component, Mixins } from 'vue-property-decorator'
+  import { ipcRenderer } from 'electron'
+  import { DataSourceType, DBConnectionOptions, FileSource } from '@/common/model/data-source'
+  import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
+  import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+  import { savedMappingTable } from '@/common/model/data-table'
+  import { Connection } from 'typeorm'
+  import { environment } from '@/common/environment'
   import StatusMixin from '@/common/mixins/statusMixin'
   import Status from '@/common/Status'
 
@@ -252,16 +252,7 @@ import Status from '@/common/Status'
     private columns = savedMappingTable.columns
     private pagination = savedMappingTable.pagination
     private connection: Connection
-    private dbConnectionOptions: DBConnectionOptions = {
-      dbType: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      database: '',
-      username: '',
-      password: ''
-    }
     private isPwd: boolean = true
-    private dbAuth = {value: 'none', label: 'None'}
 
     get step (): number { return this.$store.getters[types.CURATION_STEP] }
 
@@ -287,7 +278,7 @@ import Status from '@/common/Status'
         && this.dbConnectionOptions.host
         && this.dbConnectionOptions.port
         && this.dbConnectionOptions.database
-        && (this.dbAuth.value === 'none' || (this.dbConnectionOptions.username && this.dbConnectionOptions.password))
+        && (this.dbConnectionOptions.dbAuth.value === 'none' || (this.dbConnectionOptions.username && this.dbConnectionOptions.password))
       )
     }
 
@@ -297,10 +288,12 @@ import Status from '@/common/Status'
     get dbConnectionStatus (): Status { return this.$store.getters[types.DB_CONNECTION_STATUS] }
     set dbConnectionStatus (value) { this.$store.commit(types.SET_DB_CONNECTION_STATUS, value) }
 
+    get dbConnectionOptions (): DBConnectionOptions { return this.$store.getters[types.DB_CONNECTION_OPTIONS] }
+    set dbConnectionOptions (value) { this.$store.commit(types.SET_DB_CONNECTION_OPTIONS, value) }
+
     mounted () {
       // Init database connection options from local storage
       if (localStorage.getItem('db-connection-options')) this.dbConnectionOptions = JSON.parse(localStorage.getItem('db-connection-options'))
-      if (localStorage.getItem('db-auth')) this.dbAuth = JSON.parse(localStorage.getItem('db-auth'))
       // Drag and drop handlers
       const holder = document.getElementById('drag-file')
       if (holder) {
@@ -329,9 +322,26 @@ import Status from '@/common/Status'
     loadFromStorage (mapping: store.MappingObject) {
       if (mapping) {
         this.$q.loading.show()
-        this.$store.dispatch(types.File.INITIALIZE_STORE, this.$_.cloneDeep(mapping.data))
-          .then(() => this.$q.loading.hide())
-          .catch(() => this.$q.loading.hide())
+        if (mapping.dbConnectionOptions) {
+          this.dataSourceType = DataSourceType.DB
+          this.dbConnectionOptions = mapping.dbConnectionOptions
+          this.establishDbConnection().then(() => {
+            this.$store.dispatch(types.File.INITIALIZE_STORE, this.$_.cloneDeep(mapping.data))
+            this.$q.loading.hide()
+          })
+            .catch(() => {
+              this.$notify.error(String(this.$t('ERROR.DATA_COULDNT_BE_IMPORTED')))
+              this.$q.loading.hide()
+            })
+        } else {
+          this.dataSourceType = DataSourceType.FILE
+          this.$store.dispatch(types.File.INITIALIZE_STORE, this.$_.cloneDeep(mapping.data))
+            .then(() => this.$q.loading.hide())
+            .catch(() => {
+              this.$notify.error(String(this.$t('ERROR.DATA_COULDNT_BE_IMPORTED')))
+              this.$q.loading.hide()
+            })
+        }
       } else {
         this.$notify.error(String(this.$t('ERROR.EMPTY_MAPPING_SHEET')))
       }
@@ -356,10 +366,22 @@ import Status from '@/common/Status'
       ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.BROWSE_MAPPING)
       ipcRenderer.on(ipcChannels.File.SELECTED_MAPPING, (event, data) => {
         if (data) {
-          this.$store.dispatch(types.File.INITIALIZE_STORE, data)
-            .catch(() => {
+          if (data.dbConnectionOptions) {
+            this.dataSourceType = DataSourceType.DB
+            this.dbConnectionOptions = data.dbConnectionOptions
+            this.establishDbConnection().then(() => {
+              this.$store.dispatch(types.File.INITIALIZE_STORE, data)
+            })
+            .catch(err => {
               this.$notify.error(String(this.$t('ERROR.DATA_COULDNT_BE_IMPORTED')))
             })
+          } else {
+            this.dataSourceType = DataSourceType.FILE
+            this.$store.dispatch(types.File.INITIALIZE_STORE, data)
+              .catch(() => {
+                this.$notify.error(String(this.$t('ERROR.DATA_COULDNT_BE_IMPORTED')))
+              })
+          }
         }
         this.$q.loading.hide()
         ipcRenderer.removeAllListeners(ipcChannels.File.SELECTED_MAPPING)
@@ -372,7 +394,11 @@ import Status from '@/common/Status'
         const mapping = listOfSavedMappings.find(_ => _.name === name)
         if (mapping) {
           this.$q.loading.show({spinner: undefined})
-          ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.EXPORT_FILE, JSON.stringify({fileSourceList: mapping.data.fileSourceList}))
+          const state = {
+            fileSourceList: mapping.data.fileSourceList,
+            dbConnectionOptions: mapping.dbConnectionOptions
+          }
+          ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.File.EXPORT_FILE, JSON.stringify(state))
           ipcRenderer.on(ipcChannels.File.EXPORT_DONE, (event, result) => {
             if (result) {
               this.$notify.success(String(this.$t('SUCCESS.FILE_IS_EXPORTED')))
@@ -391,31 +417,37 @@ import Status from '@/common/Status'
       return (new Date(date)).toUTCString()
     }
 
-    establishDbConnection () {
+    establishDbConnection (): Promise<any> {
       this.$q.loading.show()
-      this.dbConnectionStatus = Status.IN_PROGRESS
-      const dbConnectionOptions: DBConnectionOptions = {
-        dbType: this.dbConnectionOptions.dbType,
-        host: this.dbConnectionOptions.host,
-        port: this.dbConnectionOptions.port,
-        database: this.dbConnectionOptions.database,
-        username: this.dbAuth.value !== 'none' ? this.dbConnectionOptions.username : '',
-        password: this.dbAuth.value !== 'none' ? this.dbConnectionOptions.password : ''
-      }
-      ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.Database.CREATE_CONNECTION, dbConnectionOptions)
-      ipcRenderer.on(ipcChannels.Database.CONNECTION_ESTABLISHED, (event, res: OutcomeDetail) => {
-        ipcRenderer.removeAllListeners(ipcChannels.Database.CONNECTION_ESTABLISHED)
-        this.$q.loading.hide()
-        localStorage.setItem('db-connection-options', JSON.stringify(dbConnectionOptions))
-        localStorage.setItem('db-auth', JSON.stringify(this.dbAuth))
-        if (this.isSuccess(res.status)) {
-          this.$notify.success(res.message)
-          this.dbConnectionStatus = Status.SUCCESS
-          this.selectDB()
-        } else if (this.isError(res.status)) {
-          this.$notify.error(res.message)
-          this.dbConnectionStatus = Status.ERROR
+      return new Promise((resolve, reject) => {
+        this.dbConnectionStatus = Status.IN_PROGRESS
+        const dbConnectionOptions: DBConnectionOptions = {
+          dbType: this.dbConnectionOptions.dbType,
+          host: this.dbConnectionOptions.host,
+          port: this.dbConnectionOptions.port,
+          database: this.dbConnectionOptions.database,
+          username: this.dbConnectionOptions.dbAuth.value !== 'none' ? this.dbConnectionOptions.username : '',
+          password: this.dbConnectionOptions.dbAuth.value !== 'none' ? this.dbConnectionOptions.password : ''
         }
+        ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.Database.CREATE_CONNECTION, dbConnectionOptions)
+        ipcRenderer.on(ipcChannels.Database.CONNECTION_ESTABLISHED, (event, res: OutcomeDetail) => {
+          ipcRenderer.removeAllListeners(ipcChannels.Database.CONNECTION_ESTABLISHED)
+          this.$q.loading.hide()
+          localStorage.setItem('db-connection-options', JSON.stringify(this.dbConnectionOptions))
+          if (this.isSuccess(res.status)) {
+            this.$notify.success(res.message)
+            this.dbConnectionStatus = Status.SUCCESS
+            this.selectDB().then(() => {
+              resolve()
+            }).catch(() => {
+              reject()
+            })
+          } else {
+            this.$notify.error(res.message)
+            this.dbConnectionStatus = Status.ERROR
+            reject()
+          }
+        })
       })
     }
 
@@ -435,20 +467,24 @@ import Status from '@/common/Status'
       })
     }
 
-    selectDB (): void {
+    selectDB (): Promise<any> {
       this.$q.loading.show()
-      ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Database.SELECT_DB)
-      ipcRenderer.on(ipcChannels.File.SELECTED_FILES, (event, data) => {
-        this.fileSourceList = []
-        if (data) {
-          data.map(file => {
-            this.$store.commit(types.File.ADD_FILE, file)
-          })
-        } else {
-          this.$notify.error(String(this.$t('ERROR.NO_TABLES_FOUND')))
-        }
-        this.$q.loading.hide()
-        ipcRenderer.removeAllListeners(ipcChannels.File.SELECTED_FILES)
+      return new Promise((resolve, reject) => {
+        ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Database.SELECT_DB)
+        ipcRenderer.on(ipcChannels.File.SELECTED_FILES, (event, data) => {
+          this.fileSourceList = []
+          if (data) {
+            data.map(file => {
+              this.$store.commit(types.File.ADD_FILE, file)
+            })
+            resolve()
+          } else {
+            this.$notify.error(String(this.$t('ERROR.NO_TABLES_FOUND')))
+            reject()
+          }
+          this.$q.loading.hide()
+          ipcRenderer.removeAllListeners(ipcChannels.File.SELECTED_FILES)
+        })
       })
     }
 

@@ -5,7 +5,7 @@ import fhir from './fhirStore'
 import terminology from './terminologyStore'
 import iDB from './iDBStore'
 import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
-import { DataSourceType } from '@/common/model/data-source'
+import { DataSourceType, DBConnectionOptions } from '@/common/model/data-source'
 import Status from '@/common/Status'
 
 Vue.use(Vuex)
@@ -28,7 +28,16 @@ export default new Vuex.Store({
     transformStatus: '',
     transformOutcomeDetails: [] as OutcomeDetail[],
     dataSourceType: DataSourceType.FILE,
-    dbConnectionStatus: Status.NONE
+    dbConnectionStatus: Status.NONE,
+    dbConnectionOptions: {
+      dbType: 'postgres',
+      host: 'localhost',
+      port: 5432,
+      database: '',
+      username: '',
+      password: '',
+      dbAuth: {value: 'none', label: 'None'}
+    } as DBConnectionOptions
   },
   getters: {
     [types.DRAWER_OPEN]: state => state.drawerOpen,
@@ -41,7 +50,8 @@ export default new Vuex.Store({
     [types.TRANSFORM_STATUS]: state => state.transformStatus,
     [types.TRANSFORM_OUTCOME_DETAILS]: state => state.transformOutcomeDetails || [],
     [types.DATA_SOURCE_TYPE]: state => state.dataSourceType,
-    [types.DB_CONNECTION_STATUS]: state => state.dbConnectionStatus
+    [types.DB_CONNECTION_STATUS]: state => state.dbConnectionStatus,
+    [types.DB_CONNECTION_OPTIONS]: state => state.dbConnectionOptions
   },
   mutations: {
     [types.SET_DRAWER_OPEN] (state, value: boolean) {
@@ -82,6 +92,9 @@ export default new Vuex.Store({
     },
     [types.SET_DB_CONNECTION_STATUS] (state, status: Status) {
       state.dbConnectionStatus = status
+    },
+    [types.SET_DB_CONNECTION_OPTIONS] (state, options: DBConnectionOptions) {
+      state.dbConnectionOptions = options
     }
   },
   actions: {}
