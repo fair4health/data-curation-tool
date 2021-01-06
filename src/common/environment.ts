@@ -16,6 +16,7 @@ export let environment = {
     compatibleFhirVersions: ['4.0.0', '4.0.1']
   },
   langs: ['en'],
+  databaseTypes: ['postgres'],
   hl7: hl7Base,
   codesystems: {
     ATC: 'http://www.whocc.no/atc',

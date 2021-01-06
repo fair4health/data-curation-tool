@@ -115,7 +115,7 @@
     set currentStep (value) { this.$store.commit(types.SET_STEP, value) }
 
     get isCollapsed () { return (this.$q.screen.gt.xs && (this.$q.screen.lt.lg || this.drawerMiniState)) }
-    get projectHomePage (): string { return window.process.env.ELECTRON_WEBPACK_APP_F4H_HOMEPAGE }
+    get projectHomePage (): string { return window.process.env.APP_HOMEPAGE }
 
     changeStep (newStep: number) {
       if (this.currentStep > newStep) {

@@ -4844,6 +4844,7 @@ declare namespace store {
     data: object
     name: string
     index: number
+    dbConnectionOptions?: any
   }
   interface SavedRecord {
     fileName: string

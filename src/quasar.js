@@ -60,7 +60,12 @@ import {
   QBar,
   QFooter,
   QCheckbox,
-  QBtnDropdown
+  QBtnDropdown,
+  QBtnToggle,
+  QTabPanels,
+  QTabPanel,
+  QTabs,
+  QTab
 } from 'quasar'
 
 Vue.use(Quasar, {
@@ -128,7 +133,12 @@ Vue.use(Quasar, {
     QBar,
     QFooter,
     QCheckbox,
-    QBtnDropdown
+    QBtnDropdown,
+    QBtnToggle,
+    QTabPanels,
+    QTabPanel,
+    QTabs,
+    QTab
   },
   directives: {
     ClosePopup
