@@ -4806,6 +4806,7 @@ declare namespace fhir {
     error?: boolean
     fixedUri?: string
     selectedUri?: string
+    selectedReference?: string
   }
   type Resource = (DomainResource|Account|ActivityDefinition|AllergyIntolerance|Appointment|AppointmentResponse|
     AuditEvent|Basic|Binary|BodySite|Bundle|CarePlan|CareTeam|Claim|ClaimResponse|ClinicalImpression|CodeSystem|
