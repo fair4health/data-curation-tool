@@ -19,6 +19,29 @@ export class Observation implements Generator {
         observation.id = String(resource.get('Observation.id')?.value || '')
       }
 
+      const _meta = keys.filter(_ => _.startsWith('Observation.meta'))
+      if (_meta.length) {
+        const meta: fhir.Meta = {}
+        if (resource.has('Observation.meta.Meta.versionId')) {
+          meta.versionId = String(resource.get('Observation.meta.Meta.versionId')?.value || '')
+        }
+        if (resource.has('Observation.meta.Meta.source')) {
+          meta.source = String(resource.get('Observation.meta.Meta.source')?.value || '')
+        }
+        if (resource.has('Observation.meta.Meta.profile')) {
+          meta.profile = [String(resource.get('Observation.meta.Meta.profile')?.value || '')]
+        }
+        if (resource.has('Observation.meta.Meta.security')) {
+          const item = resource.get('Observation.meta.Meta.security')
+          meta.security = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        if (resource.has('Observation.meta.Meta.tag')) {
+          const item = resource.get('Observation.meta.Meta.tag')
+          meta.tag = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        observation.meta = {...observation.meta, ...meta}
+      }
+
       const observationIdentifier = keys.filter(_ => _.startsWith('Observation.identifier'))
       if (observationIdentifier.length) {
         const identifier: fhir.Identifier = {}

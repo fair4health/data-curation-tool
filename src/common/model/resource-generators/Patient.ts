@@ -19,6 +19,29 @@ export class Patient implements Generator {
         patient.id = String(resource.get('Patient.id')?.value || '')
       }
 
+      const _meta = keys.filter(_ => _.startsWith('Patient.meta'))
+      if (_meta.length) {
+        const meta: fhir.Meta = {}
+        if (resource.has('Patient.meta.Meta.versionId')) {
+          meta.versionId = String(resource.get('Patient.meta.Meta.versionId')?.value || '')
+        }
+        if (resource.has('Patient.meta.Meta.source')) {
+          meta.source = String(resource.get('Patient.meta.Meta.source')?.value || '')
+        }
+        if (resource.has('Patient.meta.Meta.profile')) {
+          meta.profile = [String(resource.get('Patient.meta.Meta.profile')?.value || '')]
+        }
+        if (resource.has('Patient.meta.Meta.security')) {
+          const item = resource.get('Patient.meta.Meta.security')
+          meta.security = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        if (resource.has('Patient.meta.Meta.tag')) {
+          const item = resource.get('Patient.meta.Meta.tag')
+          meta.tag = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        patient.meta = {...patient.meta, ...meta}
+      }
+
       const patientIdentifier = keys.filter(_ => _.startsWith('Patient.identifier'))
       if (patientIdentifier.length) {
         const identifier: fhir.Identifier = {}

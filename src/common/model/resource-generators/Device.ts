@@ -22,6 +22,29 @@ export class Device implements Generator {
         device.id = String(resource.get('Device.id')?.value || '')
       }
 
+      const _meta = keys.filter(_ => _.startsWith('Device.meta'))
+      if (_meta.length) {
+        const meta: fhir.Meta = {}
+        if (resource.has('Device.meta.Meta.versionId')) {
+          meta.versionId = String(resource.get('Device.meta.Meta.versionId')?.value || '')
+        }
+        if (resource.has('Device.meta.Meta.source')) {
+          meta.source = String(resource.get('Device.meta.Meta.source')?.value || '')
+        }
+        if (resource.has('Device.meta.Meta.profile')) {
+          meta.profile = [String(resource.get('Device.meta.Meta.profile')?.value || '')]
+        }
+        if (resource.has('Device.meta.Meta.security')) {
+          const item = resource.get('Device.meta.Meta.security')
+          meta.security = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        if (resource.has('Device.meta.Meta.tag')) {
+          const item = resource.get('Device.meta.Meta.tag')
+          meta.tag = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        device.meta = {...device.meta, ...meta}
+      }
+
       const deviceIdentifier = keys.filter(_ => _.startsWith('Device.identifier'))
       if (deviceIdentifier.length) {
         const identifier: fhir.Identifier = {}

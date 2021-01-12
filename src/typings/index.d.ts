@@ -76,6 +76,7 @@ declare namespace fhir {
   interface Meta extends Element {
     versionId?: id;
     lastUpdated?: instant;
+    source?: uri,
     profile?: uri[];
     security?: Coding[];
     tag?: Coding[];
