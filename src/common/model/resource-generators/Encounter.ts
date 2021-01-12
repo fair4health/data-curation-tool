@@ -19,6 +19,29 @@ export class Encounter implements Generator {
         encounter.id = String(resource.get('Encounter.id')?.value || '')
       }
 
+      const _meta = keys.filter(_ => _.startsWith('Encounter.meta'))
+      if (_meta.length) {
+        const meta: fhir.Meta = {}
+        if (resource.has('Encounter.meta.Meta.versionId')) {
+          meta.versionId = String(resource.get('Encounter.meta.Meta.versionId')?.value || '')
+        }
+        if (resource.has('Encounter.meta.Meta.source')) {
+          meta.source = String(resource.get('Encounter.meta.Meta.source')?.value || '')
+        }
+        if (resource.has('Encounter.meta.Meta.profile')) {
+          meta.profile = [String(resource.get('Encounter.meta.Meta.profile')?.value || '')]
+        }
+        if (resource.has('Encounter.meta.Meta.security')) {
+          const item = resource.get('Encounter.meta.Meta.security')
+          meta.security = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        if (resource.has('Encounter.meta.Meta.tag')) {
+          const item = resource.get('Encounter.meta.Meta.tag')
+          meta.tag = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        encounter.meta = {...encounter.meta, ...meta}
+      }
+
       const encounterIdentifier = keys.filter(_ => _.startsWith('Encounter.identifier'))
       if (encounterIdentifier.length) {
         const identifier: fhir.Identifier = {}

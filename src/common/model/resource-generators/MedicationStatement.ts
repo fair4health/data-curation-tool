@@ -21,6 +21,29 @@ export class MedicationStatement implements Generator {
         medicationStatement.id = String(resource.get('MedicationStatement.id')?.value || '')
       }
 
+      const _meta = keys.filter(_ => _.startsWith('MedicationStatement.meta'))
+      if (_meta.length) {
+        const meta: fhir.Meta = {}
+        if (resource.has('MedicationStatement.meta.Meta.versionId')) {
+          meta.versionId = String(resource.get('MedicationStatement.meta.Meta.versionId')?.value || '')
+        }
+        if (resource.has('MedicationStatement.meta.Meta.source')) {
+          meta.source = String(resource.get('MedicationStatement.meta.Meta.source')?.value || '')
+        }
+        if (resource.has('MedicationStatement.meta.Meta.profile')) {
+          meta.profile = [String(resource.get('MedicationStatement.meta.Meta.profile')?.value || '')]
+        }
+        if (resource.has('MedicationStatement.meta.Meta.security')) {
+          const item = resource.get('MedicationStatement.meta.Meta.security')
+          meta.security = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        if (resource.has('MedicationStatement.meta.Meta.tag')) {
+          const item = resource.get('MedicationStatement.meta.Meta.tag')
+          meta.tag = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        medicationStatement.meta = {...medicationStatement.meta, ...meta}
+      }
+
       const medicationStatementIdentifier = keys.filter(_ => _.startsWith('MedicationStatement.identifier'))
       if (medicationStatementIdentifier.length) {
         const identifier: fhir.Identifier = {}

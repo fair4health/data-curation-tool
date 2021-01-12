@@ -19,6 +19,29 @@ export class Practitioner implements Generator {
         practitioner.id = String(resource.get('Practitioner.id')?.value || '')
       }
 
+      const _meta = keys.filter(_ => _.startsWith('Practitioner.meta'))
+      if (_meta.length) {
+        const meta: fhir.Meta = {}
+        if (resource.has('Practitioner.meta.Meta.versionId')) {
+          meta.versionId = String(resource.get('Practitioner.meta.Meta.versionId')?.value || '')
+        }
+        if (resource.has('Practitioner.meta.Meta.source')) {
+          meta.source = String(resource.get('Practitioner.meta.Meta.source')?.value || '')
+        }
+        if (resource.has('Practitioner.meta.Meta.profile')) {
+          meta.profile = [String(resource.get('Practitioner.meta.Meta.profile')?.value || '')]
+        }
+        if (resource.has('Practitioner.meta.Meta.security')) {
+          const item = resource.get('Practitioner.meta.Meta.security')
+          meta.security = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        if (resource.has('Practitioner.meta.Meta.tag')) {
+          const item = resource.get('Practitioner.meta.Meta.tag')
+          meta.tag = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        practitioner.meta = {...practitioner.meta, ...meta}
+      }
+
       const practitionerIdentifier = keys.filter(_ => _.startsWith('Practitioner.identifier'))
       if (practitionerIdentifier.length) {
         const identifier: fhir.Identifier = {}

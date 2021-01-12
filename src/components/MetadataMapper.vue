@@ -56,7 +56,7 @@
                      color="primary" @click="matchFields" no-caps />
               <q-btn unelevated v-show="!editRecordId" color="positive" :label="$t('BUTTONS.ADD_MAPPING')" icon="check" @click="addRecord" no-caps />
               <q-btn unelevated v-show="editRecordId" color="primary" :label="$t('BUTTONS.UPDATE')" icon="edit" @click="addRecord" no-caps />
-              <q-btn unelevated v-show="editRecordId" color="negative" :label="$t('BUTTONS.CLOSE_EDIT_MODE')" @click="closeEditMode" no-caps />
+              <q-btn unelevated v-show="editRecordId" color="negative" :label="$t('BUTTONS.DISCARD_CHANGES')" @click="closeEditMode" no-caps />
             </div>
           </q-card-section>
         </q-card>
@@ -436,15 +436,22 @@
         this.tickedFHIRAttr = tickedNodes.map((node: fhir.ElementTree) => {
           if (node.error) delete node.error
           let type: string
+          const fixedUri = node.fixedUri || node.selectedUri
           if (FHIRUtil.isMultiDataTypeForm(node.value) && node.type?.length === 1) {
             type = node.type[0].value
           }
+          if (node.selectedType) {
+            type = node.selectedType
+            node.selectedType = undefined
+          }
+          if (node.selectedReference) node.selectedReference = undefined
+          if (node.selectedUri) node.selectedUri = undefined
           return {
             value: node.value,
             resource: this.currentFHIRRes,
             profile: this.currentFHIRProf,
-            type: node.selectedType || type,
-            fixedUri: node.fixedUri || node.selectedUri
+            type,
+            fixedUri
           } as store.Target
         })
         for (const column of this.selectedAttr) {
@@ -687,15 +694,22 @@
               this.tickedFHIRAttr = tickedNodes.map((node: fhir.ElementTree) => {
                 if (node.error) delete node.error
                 let type: string
+                const fixedUri = node.fixedUri || node.selectedUri
                 if (FHIRUtil.isMultiDataTypeForm(node.value) && node.type?.length === 1) {
                   type = node.type[0].value
                 }
+                if (node.selectedType) {
+                  type = node.selectedType
+                  node.selectedType = undefined
+                }
+                if (node.selectedReference) node.selectedReference = undefined
+                if (node.selectedUri) node.selectedUri = undefined
                 return {
                   value: node.value,
                   resource: this.currentFHIRRes,
                   profile: this.currentFHIRProf,
-                  type: node.selectedType || type,
-                  fixedUri: node.fixedUri || node.selectedUri
+                  type,
+                  fixedUri
                 } as store.Target
               })
               abstractColumn.defaultValue = value

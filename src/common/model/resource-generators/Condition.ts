@@ -19,6 +19,29 @@ export class Condition implements Generator {
         condition.id = String(resource.get('Condition.id')?.value || '')
       }
 
+      const _meta = keys.filter(_ => _.startsWith('Condition.meta'))
+      if (_meta.length) {
+        const meta: fhir.Meta = {}
+        if (resource.has('Condition.meta.Meta.versionId')) {
+          meta.versionId = String(resource.get('Condition.meta.Meta.versionId')?.value || '')
+        }
+        if (resource.has('Condition.meta.Meta.source')) {
+          meta.source = String(resource.get('Condition.meta.Meta.source')?.value || '')
+        }
+        if (resource.has('Condition.meta.Meta.profile')) {
+          meta.profile = [String(resource.get('Condition.meta.Meta.profile')?.value || '')]
+        }
+        if (resource.has('Condition.meta.Meta.security')) {
+          const item = resource.get('Condition.meta.Meta.security')
+          meta.security = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        if (resource.has('Condition.meta.Meta.tag')) {
+          const item = resource.get('Condition.meta.Meta.tag')
+          meta.tag = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        condition.meta = {...condition.meta, ...meta}
+      }
+
       const conditionIdentifier = keys.filter(_ => _.startsWith('Condition.identifier'))
       if (conditionIdentifier.length) {
         const identifier: fhir.Identifier = {}

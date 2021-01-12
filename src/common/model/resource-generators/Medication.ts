@@ -18,6 +18,29 @@ export class Medication implements Generator {
         medication.id = String(resource.get('Medication.id')?.value || '')
       }
 
+      const _meta = keys.filter(_ => _.startsWith('Medication.meta'))
+      if (_meta.length) {
+        const meta: fhir.Meta = {}
+        if (resource.has('Medication.meta.Meta.versionId')) {
+          meta.versionId = String(resource.get('Medication.meta.Meta.versionId')?.value || '')
+        }
+        if (resource.has('Medication.meta.Meta.source')) {
+          meta.source = String(resource.get('Medication.meta.Meta.source')?.value || '')
+        }
+        if (resource.has('Medication.meta.Meta.profile')) {
+          meta.profile = [String(resource.get('Medication.meta.Meta.profile')?.value || '')]
+        }
+        if (resource.has('Medication.meta.Meta.security')) {
+          const item = resource.get('Medication.meta.Meta.security')
+          meta.security = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        if (resource.has('Medication.meta.Meta.tag')) {
+          const item = resource.get('Medication.meta.Meta.tag')
+          meta.tag = [DataTypeFactory.createCoding({system: item.fixedUri, code: String(item.value)})]
+        }
+        medication.meta = {...medication.meta, ...meta}
+      }
+
       const medicationIdentifier = keys.filter(_ => _.startsWith('Medication.identifier'))
       if (medicationIdentifier.length) {
         const identifier: fhir.Identifier = {}

@@ -39,6 +39,7 @@ export let environment = {
     Extension: `${hl7Base}/StructureDefinition/Extension`,
     HumanName: `${hl7Base}/StructureDefinition/HumanName`,
     Identifier: `${hl7Base}/StructureDefinition/Identifier`,
+    Meta: `${hl7Base}/StructureDefinition/Meta`,
     Money: `${hl7Base}/StructureDefinition/Money`,
     Period: `${hl7Base}/StructureDefinition/Period`,
     Quantity: `${hl7Base}/StructureDefinition/Quantity`,
