@@ -13,6 +13,7 @@
     "CONTINUE_ANYWAY": "Continue Anyway",
     "DELETE": "@:COMMON.DELETE",
     "DETAILS": "Details",
+    "DISCARD_CHANGES": "Discard Changes",
     "EDIT": "Edit",
     "EXPORT": "Export",
     "EXPORT_RESOURCES": "Export Resources",

@@ -56,7 +56,7 @@
                      color="primary" @click="matchFields" no-caps />
               <q-btn unelevated v-show="!editRecordId" color="positive" :label="$t('BUTTONS.ADD_MAPPING')" icon="check" @click="addRecord" no-caps />
               <q-btn unelevated v-show="editRecordId" color="primary" :label="$t('BUTTONS.UPDATE')" icon="edit" @click="addRecord" no-caps />
-              <q-btn unelevated v-show="editRecordId" color="negative" :label="$t('BUTTONS.CLOSE_EDIT_MODE')" @click="closeEditMode" no-caps />
+              <q-btn unelevated v-show="editRecordId" color="negative" :label="$t('BUTTONS.DISCARD_CHANGES')" @click="closeEditMode" no-caps />
             </div>
           </q-card-section>
         </q-card>
