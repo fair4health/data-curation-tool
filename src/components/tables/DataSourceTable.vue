@@ -148,6 +148,34 @@
               </q-tooltip>
             </q-th>
           </template>
+
+          <template v-slot:top-row="props" v-if="getDefaultAssignedOnes.length">
+            <q-tr v-for="(item, index) in getDefaultAssignedOnes" :key="index" class="bg-grey-3">
+              <td class="text-center">
+                <q-icon color="primary" name="fas fa-thumbtack" size="xs" />
+              </td>
+              <q-td>
+                <span class="text-size-md text-grey-8">
+                  {{ item.defaultValue }}
+                </span>
+              </q-td>
+              <q-td/>
+              <q-td>
+                <div v-for="(target, index) in item.target" :key="index">
+                  <q-chip dense color="orange" text-color="white">
+                    <span class="q-mx-xs text-size-sm">{{ target.value }}</span>
+                  </q-chip>
+                  <q-chip v-if="!!target.type" dense class="text-size-sm" color="grey-2" text-color="grey-7">
+                    {{ target.type }}
+                  </q-chip>
+                  <span v-if="target.fixedUri" class="text-size-sm text-grey-7">
+                    ({{ target.fixedUri }})
+                  </span>
+                </div>
+              </q-td>
+              <q-td/>
+            </q-tr>
+          </template>
           <template v-slot:body-cell-type="props">
             <q-td :props="props">
               <div class="cursor-pointer">
@@ -242,6 +270,9 @@
 
     get filteredBufferSheetHeaders (): BufferElement[] {
       return this.bufferSheetHeaders.filter(_ => _.value && (!this.showMappedFields || _.target))
+    }
+    get getDefaultAssignedOnes (): BufferElement[] {
+      return this.bufferSheetHeaders.filter(_ => !_.value && _.defaultValue)
     }
     get tBaseVerificationStatus (): status { return this.$store.getters[types.Terminology.T_BASE_VERIFICATION_STATUS] }
     get filterCount (): number {
