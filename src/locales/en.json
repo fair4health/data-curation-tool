@@ -149,6 +149,7 @@
   "MENU": {
     "ABOUT": "About",
     "ANALYZE_DATA_SOURCE": "@:COMMON.ANALYZE_DATA_SOURCE",
+    "COLLAPSE_SIDEBAR": "Collapse sidebar",
     "CONFIRM_AND_TRANSFORM": "Confirm and Transform",
     "CURATION": "Curation",
     "EXIT": "Exit",

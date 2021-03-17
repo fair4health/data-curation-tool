@@ -19,7 +19,7 @@ export default new Vuex.Store({
   },
   state: {
     drawerOpen: true,
-    drawerMiniState: true,
+    drawerMiniState: false,
     curationStep: 1,
     mappingList: [],
     validationStatus: '',
