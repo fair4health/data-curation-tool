@@ -67,7 +67,15 @@ The tool writes logs to the following locations:
 - on **Windows**: `%USERPROFILE%\AppData\Roaming\FAIR4Health Data Curation Tool\logs\log.txt`
 - on **Linux**: `~/.config/FAIR4Health Data Curation Tool/logs/log.txt`
 
-### Acknowledgement
+## Terminology Server Connection
+The tool is compatible with FHIR based Terminology Servers, in order to translate values from one system to another. As the sample API https://terminology-service.atosresearch.eu provided by ATOS was used.
+
+Currently, in the tool:
+- For the translation operation, the ConceptMap translate API: `/ConceptMap/$translate` is consumed.
+- For listing the Codesystems, the Codesystem metadata API: `/Codesystem/$metadata` is consumed.
+
+
+## Acknowledgement
 
 This research has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 824666,
 [FAIR4Health Project](https://www.fair4health.eu/) (Improving Health Research in EU through FAIR Data).
