@@ -190,6 +190,14 @@
           </template>
           <template v-slot:body-cell-target="props">
             <q-td :props="props">
+              <q-chip v-if="props.row.defaultValue" dense square
+                      color="grey-4" text-color="grey-8" class="q-pa-sm no-margin">
+                <div class="ellipsis text-size-md">
+                  <q-icon name="fas fa-thumbtack" class="q-mr-xs" />
+                  {{ props.row.defaultValue }}
+                </div>
+                <q-tooltip>{{ props.row.defaultValue }}</q-tooltip>
+              </q-chip>
               <div v-for="(target, index) in props.row.target" :key="index">
                 <q-chip dense removable @remove="removeTarget(props.row.value, index)" color="orange" text-color="white">
                   <span class="q-mx-xs text-size-sm">{{ target.value }}</span>
@@ -197,6 +205,9 @@
                 <q-chip v-if="!!target.type" dense class="text-size-sm" color="grey-2" text-color="grey-8">
                   {{ target.type }}
                 </q-chip>
+                <span v-if="target.fixedUri" class="text-size-sm text-grey-7">
+                    ({{ target.fixedUri }})
+                  </span>
               </div>
             </q-td>
           </template>
@@ -383,6 +394,7 @@
       if (filtered.length) {
         filtered[0].target!.splice(Number(index), 1)
         if (!filtered[0].target?.length) Vue.delete(filtered[0], 'target')
+        Vue.delete(filtered[0], 'defaultValue')
         this.bufferSheetHeaders = this.bufferSheetHeaders.slice()
       }
     }

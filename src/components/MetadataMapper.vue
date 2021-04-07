@@ -676,16 +676,40 @@
         })
 
         // If there is an attribute selected from the data source, choose its defaultValue.
+        const tickedNode = tickedNodes[0]
         // Otherwise, the defaultValue of the column containing the currently selected fhir element in its target will be selected.
-        const defaultValueProp = this.selectedAttr?.length && this.selectedAttr[0].target?.length ? this.selectedAttr[0].defaultValue : abstractColumn?.defaultValue
+        let currentElementType = tickedNode.type[0].value
+        if (tickedNode.type[0]?.children?.length) {
+          let selectedComplexType
+          tickedNode.type[0].children.forEach(_ => {
+            if (_.value === tickedNode.selectedType) {
+              selectedComplexType = _.type[0].value
+            }
+          })
+          if (selectedComplexType) {
+            currentElementType = selectedComplexType
+          }
+        } else if (tickedNode.selectedType) {
+          currentElementType = tickedNode.selectedType.split('.').pop()
+        }
+        const defaultValuePropReq: DefaultValueAssignerItem = {
+          defaultValue: this.selectedAttr?.length && this.selectedAttr[0].target?.length ? this.selectedAttr[0].defaultValue : abstractColumn?.defaultValue,
+          defaultSystem: tickedNode.fixedUri || tickedNode.selectedUri || (this.selectedAttr?.length && this.selectedAttr[0].target?.length ? this.selectedAttr[0].target[0].fixedUri :  abstractColumn?.target && abstractColumn.target[0].fixedUri),
+          isCodeable: this.isCodeableElement(currentElementType),
+          isFixedUri: this.isCodeableElement(currentElementType) && !!tickedNode.fixedUri
+        }
         this.$q.dialog({
           component: DefaultValueAssigner,
           parent: this,
-          defaultValueProp
+          defaultValueProp: defaultValuePropReq
         })
-          .onOk(value => {
+          .onOk((defaultValueProp: DefaultValueAssignerItem) => {
             if (this.selectedAttr?.length && this.selectedAttr[0].target?.length) {
-              this.selectedAttr[0].defaultValue = value
+              this.selectedAttr[0].defaultValue = defaultValueProp.defaultValue
+              if (defaultValuePropReq.isCodeable) {
+                tickedNode.selectedUri = defaultValueProp.defaultSystem
+                this.selectedAttr[0].target.forEach(_ => _.fixedUri = defaultValueProp.defaultSystem)
+              }
             } else {
               if (!abstractColumn) {
                 abstractColumn = {}
@@ -694,7 +718,7 @@
               this.tickedFHIRAttr = tickedNodes.map((node: fhir.ElementTree) => {
                 if (node.error) delete node.error
                 let type: string
-                const fixedUri = node.fixedUri || node.selectedUri
+                const fixedUri = defaultValuePropReq.isCodeable ? defaultValueProp.defaultSystem || (node.fixedUri || node.selectedUri) : undefined
                 if (FHIRUtil.isMultiDataTypeForm(node.value) && node.type?.length === 1) {
                   type = node.type[0].value
                 }
@@ -703,7 +727,9 @@
                   node.selectedType = undefined
                 }
                 if (node.selectedReference) node.selectedReference = undefined
-                if (node.selectedUri) node.selectedUri = undefined
+                if (defaultValuePropReq.isCodeable) {
+                  node.selectedUri = defaultValueProp.defaultSystem
+                }
                 return {
                   value: node.value,
                   resource: this.currentFHIRRes,
@@ -712,10 +738,13 @@
                   fixedUri
                 } as store.Target
               })
-              abstractColumn.defaultValue = value
+              abstractColumn.defaultValue = defaultValueProp.defaultValue
               abstractColumn.target = [...this.tickedFHIRAttr]
             }
-
+            // While removing the default value
+            if (!defaultValueProp) {
+              this.bufferSheetHeaders = this.bufferSheetHeaders.filter(_ => _.value || _.defaultValue)
+            }
             this.tickedFHIRAttr = []
             this.selectedAttr = []
             this.$notify.success(String(this.$t('SUCCESS.DEFAULT_VALUE_HAS_BEEN_ASSIGNED')))
@@ -738,6 +767,10 @@
         .onOk(() => {
           this.editRecord(fileName, sheetName, mappingRecord)
         })
+    }
+
+    isCodeableElement (type: string): boolean {
+      return type === 'CodeableConcept' || type === 'Coding'
     }
 
   }

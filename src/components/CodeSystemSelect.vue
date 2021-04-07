@@ -14,6 +14,7 @@
             @filter="filterCodeSystems"
             @input-value="updateUrl"
             @input="updateUrl"
+            :disable="!edit"
   >
     <template v-slot:no-option>
       <q-item>
@@ -34,6 +35,7 @@
   export default class CodeSystemSelect extends Vue {
     @Prop({required: true}) label: string
     @Prop({required: true}) value: string
+    @Prop({required: false, default: true}) edit: boolean
 
     private systemUrls: string[] = []
     private url: string = this.value || ''
@@ -52,7 +54,7 @@
     }
 
     updateUrl (val: string) {
-      this.url = val
+      this.url = val?.trim() || ''
       this.$emit('input', this.url)
     }
   }

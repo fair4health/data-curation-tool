@@ -27,7 +27,8 @@
           </q-item-label>
           <q-separator spaced />
           <q-select outlined dense options-dense v-model="currentFHIRProf" class="ellipsis" :options="sortProfiles(fhirProfileList)"
-                     :option-label="item => item.split('/').pop()" :label="$t('LABELS.PROFILES')" :disable="!fhirProfileList.length">
+                    :option-label="item => item.split('/').pop()" :label="$t('LABELS.PROFILES')" :disable="!fhirProfileList.length"
+                    clearable @clear="onFHIRResourceChanged">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>

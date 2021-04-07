@@ -4928,3 +4928,10 @@ declare interface MenuItem {
   afterIcon?: any
   action? (): void
 }
+
+declare interface DefaultValueAssignerItem {
+  defaultValue: string
+  defaultSystem?: string
+  isCodeable?: boolean
+  isFixedUri?: boolean
+}
