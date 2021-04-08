@@ -692,9 +692,10 @@
         } else if (tickedNode.selectedType) {
           currentElementType = tickedNode.selectedType.split('.').pop()
         }
+        const selectedDataSourceAttr = this.selectedAttr?.length && this.selectedAttr[0].target?.length ? this.selectedAttr[0] : undefined
         const defaultValuePropReq: DefaultValueAssignerItem = {
-          defaultValue: this.selectedAttr?.length && this.selectedAttr[0].target?.length ? this.selectedAttr[0].defaultValue : abstractColumn?.defaultValue,
-          defaultSystem: tickedNode.fixedUri || tickedNode.selectedUri || (this.selectedAttr?.length && this.selectedAttr[0].target?.length ? this.selectedAttr[0].target[0].fixedUri :  abstractColumn?.target && abstractColumn.target[0].fixedUri),
+          defaultValue: selectedDataSourceAttr ? selectedDataSourceAttr.defaultValue : abstractColumn?.defaultValue,
+          defaultSystem: (selectedDataSourceAttr ? selectedDataSourceAttr.target[0].fixedUri : abstractColumn?.target && abstractColumn.target[0].fixedUri) || tickedNode.fixedUri || tickedNode.selectedUri,
           isCodeable: this.isCodeableElement(currentElementType),
           isFixedUri: this.isCodeableElement(currentElementType) && !!tickedNode.fixedUri
         }

@@ -173,7 +173,17 @@
                   </span>
                 </div>
               </q-td>
-              <q-td/>
+              <q-td>
+                <q-btn dense
+                       unelevated
+                       icon="edit"
+                       :label="$t('BUTTONS.EDIT')"
+                       color="primary"
+                       class="q-px-sm q-mr-sm text-size-md absolute-center"
+                       @click="editDefaultValue(item)"
+                       no-caps
+                />
+              </q-td>
             </q-tr>
           </template>
           <template v-slot:body-cell-type="props">
@@ -219,14 +229,12 @@
                      unelevated
                      :icon="props.row.conceptMap && props.row.conceptMap.source ? 'edit' : 'add'"
                      :label="props.row.conceptMap && props.row.conceptMap.source ? 'Edit' : ''"
-                     color="grey-2"
-                     text-color="grey-9"
-                     class="q-px-sm q-mr-sm text-size-md"
+                     :color="props.row.conceptMap && props.row.conceptMap.source ? 'primary' : 'grey-2'"
+                     :text-color="props.row.conceptMap && props.row.conceptMap.source ? 'white' : 'grey-9'"
+                     class="q-px-sm q-mr-sm text-size-md absolute-center"
                      @click="editConceptMap(props.row)"
                      no-caps
-              >
-                <q-badge v-if="props.row.conceptMap && props.row.conceptMap.source" color="primary" class="text-size-xs" label="1" floating />
-              </q-btn>
+              />
             </q-td>
           </template>
           <template v-slot:no-data="{ icon, message, filter }">
@@ -248,6 +256,7 @@
   import StatusMixin from '@/common/mixins/statusMixin'
   import ConceptMapCard from '@/components/modals/ConceptMapCard.vue'
   import SnapshotDataCard from '@/components/modals/SnapshotDataCard.vue'
+  import DefaultValueAssigner from '@/components/modals/DefaultValueAssigner.vue'
 
   @Component
   export default class DataSourceTable extends Mixins(StatusMixin) {
@@ -407,6 +416,34 @@
       }).onOk(() => {
         this.bufferSheetHeaders = this.bufferSheetHeaders.slice()
       })
+    }
+
+    editDefaultValue (element: BufferElement) {
+      if (element.target?.length) {
+        const defaultValuePropReq: DefaultValueAssignerItem = {
+          defaultValue: element.defaultValue,
+          defaultSystem: element.target[0].fixedUri,
+          isCodeable: !!element.target[0].fixedUri,
+          isFixedUri: false
+        }
+        this.$q.dialog({
+          component: DefaultValueAssigner,
+          parent: this,
+          defaultValueProp: defaultValuePropReq
+        })
+          .onOk((defaultValueProp: DefaultValueAssignerItem) => {
+            element.defaultValue = defaultValueProp.defaultValue
+            if (defaultValuePropReq.isCodeable) {
+              element.target[0].fixedUri = defaultValueProp.defaultSystem
+            }
+            // Refresh the buffer headers, while removing the default value assigned
+            if (!defaultValueProp) {
+              this.bufferSheetHeaders = this.bufferSheetHeaders.filter(_ => _.value || _.defaultValue)
+            }
+            this.$notify.success(String(this.$t('SUCCESS.DEFAULT_VALUE_HAS_BEEN_ASSIGNED')))
+            this.$forceUpdate()
+          })
+      }
     }
 
   }
