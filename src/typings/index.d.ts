@@ -4935,3 +4935,10 @@ declare interface DefaultValueAssignerItem {
   isCodeable?: boolean
   isFixedUri?: boolean
 }
+
+declare interface ValidationReqBody {
+  data: {filePath: string, sheets: store.Sheet[]}
+  chunkSize: number
+  // Number of rows to be validated e.g. First 10 rows. If it is undefined, all is going to be validated
+  rowNumber?: number
+}

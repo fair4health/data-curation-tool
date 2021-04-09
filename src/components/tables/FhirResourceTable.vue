@@ -42,7 +42,7 @@
           </q-select>
         </div>
       </q-card-section>
-      <div class="row q-px-md bg-grey-1">
+      <div class="row q-px-md bg-grey-1 flex-center">
         <div class="col q-gutter-xs">
           <q-toggle v-model="showMandatoryElements"
                     checked-icon="check"

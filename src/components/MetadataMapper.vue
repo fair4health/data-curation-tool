@@ -54,7 +54,7 @@
             <div class="q-gutter-sm">
               <q-btn :disable="!(tickedFHIRAttr.length && selectedAttr.length)" unelevated :label="$t('BUTTONS.MATCH_ATTRIBUTE')"
                      color="primary" @click="matchFields" no-caps />
-              <q-btn unelevated v-show="!editRecordId" color="positive" :label="$t('BUTTONS.ADD_MAPPING')" icon="check" @click="addRecord" no-caps />
+              <q-btn unelevated v-show="!editRecordId" color="positive" :label="$t('BUTTONS.ADD_MAPPING')" icon="check" @click="addRecord" no-caps :disable="isBufferMappingEmpty()" />
               <q-btn unelevated v-show="editRecordId" color="primary" :label="$t('BUTTONS.UPDATE')" icon="edit" @click="addRecord" no-caps />
               <q-btn unelevated v-show="editRecordId" color="negative" :label="$t('BUTTONS.DISCARD_CHANGES')" @click="closeEditMode" no-caps />
             </div>
@@ -108,11 +108,16 @@
                             <q-chip square class="text-grey-7 text-size-md" color="grey-4">#{{ record.recordId }}</q-chip>
                             <q-space />
                             <div class="q-gutter-xs">
-                              <q-btn flat round dense size="sm" icon="visibility" color="grey-9"
-                                     @click="openMappingDetail(file.fileName, sheet.sheetName, record)" />
-                              <q-btn flat round dense size="sm" icon="edit" color="grey-9"
-                                     @click="editRecord(file.fileName, sheet.sheetName, record)" />
-                              <q-btn unelevated round dense size="sm" icon="close" color="white" text-color="grey-9"
+                              <q-btn unelevated rounded size="sm" icon="fas fa-check-circle" color="primary"
+                                     text-color="white" :label="$t('BUTTONS.VALIDATE_MAPPING')"
+                                     @click="validateMapping(file.fileName, sheet.sheetName, record)" no-caps />
+                              <q-btn unelevated rounded size="sm" icon="visibility" color="white" text-color="primary"
+                                     :label="$t('BUTTONS.SEE_DETAILS')"
+                                     @click="openMappingDetail(file.fileName, sheet.sheetName, record)" no-caps />
+                              <q-btn unelevated rounded size="sm" icon="edit" color="white" text-color="primary"
+                                     :label="$t('BUTTONS.EDIT')"
+                                     @click="editRecord(file.fileName, sheet.sheetName, record)" no-caps />
+                              <q-btn unelevated round dense size="sm" icon="delete" color="white" text-color="negative"
                                      @click="removeRecordPopup(file.fileName, sheet.sheetName, record.recordId)" />
                             </div>
                           </div>
@@ -191,7 +196,7 @@
 </template>
 
 <script lang="ts">
-  import { Component, Vue, Watch } from 'vue-property-decorator'
+  import { Component, Vue, Mixins, Watch } from 'vue-property-decorator'
   import { BufferElement, FileSource, Record, Sheet, SourceDataElement, TargetResource, DataSourceType, DBConnectionOptions } from '@/common/model/data-source'
   import { ipcRenderer } from 'electron'
   import { QTree } from 'quasar'
@@ -203,6 +208,8 @@
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import DefaultValueAssigner from '@/components/modals/DefaultValueAssigner.vue'
   import MappingDetailCard from '@/components/modals/MappingDetailCard.vue'
+  import StatusMixin from '@/common/mixins/statusMixin'
+  import OutcomeCard from '@/components/modals/OutcomeCard.vue'
 
   @Component({
     components: {
@@ -218,7 +225,7 @@
       })
     } as any
   })
-  export default class MetadataMapper extends Vue {
+  export default class MetadataMapper extends Mixins(StatusMixin) {
     private splitPercentage: number = 50
     private mappingObj: Map<string, any> = new Map<string, any>()
     private savedRecords: store.SavedRecord[] = []
@@ -770,8 +777,61 @@
         })
     }
 
+    validateMapping (fileName: string, sheetName: string, mappingRecord: store.Record) {
+      this.$q.dialog({
+        title: `<span class="text-primary"><i class="fas fa-check-circle q-pr-sm"></i>${this.$t('TITLES.VALIDATE_CURRENT_MAPPING')}</span>`,
+        message: `${this.$t('INFO.VALIDATING_ONLY_10_ROWS')}`,
+        class: 'text-grey-9',
+        ok: this.$t('BUTTONS.CONTINUE'),
+        cancel: this.$t('BUTTONS.CANCEL'),
+        html: true
+      }).onOk(() => {
+        this.$q.loading.show()
+        new Promise(resolve => {
+          let sheets = this.savedRecords.find((files: store.SavedRecord) => files.fileName === fileName)!.sheets
+          sheets = sheets.filter((sheet: store.Sheet) => sheet.sheetName === sheetName)
+
+          const validationReqBody: ValidationReqBody = {
+            chunkSize: environment.FHIRBatchOperationSize,
+            data: {filePath: fileName, sheets},
+            rowNumber: 11 // Validate the first 10-row. The top row is header.
+          }
+          ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.VALIDATE, validationReqBody)
+
+          // In case of file reading failure
+          ipcRenderer.on(ipcChannels.Fhir.VALIDATE_ERROR_X(fileName), (event, result) => {
+            this.$q.loading.hide()
+            // Because an error occurred, remove the sheets listeners for the current file
+            ipcRenderer.removeAllListeners(ipcChannels.Fhir.VALIDATE_ERROR_X(fileName))
+            ipcRenderer.removeAllListeners(ipcChannels.Fhir.VALIDATE_X(fileName, sheetName))
+            resolve(result)
+          })
+          ipcRenderer.on(ipcChannels.Fhir.VALIDATE_X(fileName, sheetName), (event, result) => {
+            this.$q.loading.hide()
+            ipcRenderer.removeAllListeners(ipcChannels.Fhir.VALIDATE_X(fileName, sheetName))
+            resolve(result)
+          })
+        })
+          .then((validationOutcome: OutcomeDetail) => {
+            this.$store.commit(types.Fhir.SET_OUTCOME_DETAILS, validationOutcome.outcomeDetails)
+            this.$q.dialog({
+              component: OutcomeCard,
+              parent: this
+            })
+          })
+          .catch(() => {
+            this.$q.loading.hide()
+          })
+      })
+    }
+
     isCodeableElement (type: string): boolean {
       return type === 'CodeableConcept' || type === 'Coding'
+    }
+
+    isBufferMappingEmpty () {
+      const bufferItems: BufferElement[] = this.bufferSheetHeaders.filter(_ => _.target && _.target.length && (_.value || _.defaultValue))
+      return !bufferItems?.length
     }
 
   }

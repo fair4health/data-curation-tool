@@ -61,7 +61,7 @@
           </q-select>
         </div>
       </q-card-section>
-      <div class="row q-px-md bg-grey-1">
+      <div class="row q-px-md bg-grey-1 flex-center">
         <div class="col q-gutter-xs">
           <q-toggle v-model="showMappedFields"
                     checked-icon="check"
@@ -148,7 +148,6 @@
               </q-tooltip>
             </q-th>
           </template>
-
           <template v-slot:top-row="props" v-if="getDefaultAssignedOnes.length">
             <q-tr v-for="(item, index) in getDefaultAssignedOnes" :key="index" class="bg-grey-3">
               <td class="text-center">

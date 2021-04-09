@@ -43,6 +43,12 @@ export class IpcChannelUtil {
     public static TRANSFORM = 'transform'
     public static TRANSFORM_RESULT = 'transform-result'
     public static ABORT_VALIDATION = 'abort-validation'
+    public static VALIDATE_X = (fileName: string, sheetName: string) => `validate-${fileName}-${sheetName}`
+    public static VALIDATE_READ_FILE_X = (fileName: string) => `validate-read-file-${fileName}`
+    public static VALIDATE_ERROR_X = (fileName: string) => `validate-error-${fileName}`
+    public static INFO_X = (fileName: string, sheetName: string) => `info-${fileName}-${sheetName}`
+    public static GENERATED_RESOURCES_X = (fileName: string, sheetName: string) => `generated-resources-${fileName}-${sheetName}`
+    public static TRANSFORM_X = (resourceType: string) => `transform-${resourceType}`
   }
 
   public static Terminology = class {

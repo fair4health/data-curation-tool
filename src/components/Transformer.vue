@@ -181,7 +181,7 @@
         })
         this.transformList.map((item: TransformListItem) => {
 
-          ipcRenderer.on(`transform-${item.resourceType}`, (event, result: OutcomeDetail) => {
+          ipcRenderer.on(ipcChannels.Fhir.TRANSFORM_X(item.resourceType), (event, result: OutcomeDetail) => {
             if (this.isInProgress(result.status)) {
 
               this.transformList = this.transformList.map(_ => {
@@ -198,7 +198,7 @@
                 }
                 return _
               })
-              ipcRenderer.removeAllListeners(`transform-${item.resourceType}`)
+              ipcRenderer.removeAllListeners(ipcChannels.Fhir.TRANSFORM_X(item.resourceType))
 
             }
 
