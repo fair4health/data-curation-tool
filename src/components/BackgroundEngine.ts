@@ -644,7 +644,7 @@ export default class BackgroundEngine extends Vue {
               const entries: any[] = isDbSource ? workbook : Excel.utils.sheet_to_json(workbook.Sheets[sheet.sheetName], {raw: false, dateNF: 'mm/dd/yyyy'}) || []
               const sheetRecords: store.Record[] = sheet.records
 
-              ipcRenderer.send(ipcChannels.TO_RENDERER, `info-${filePath}-${sheet.sheetName}`, {total: entries.length})
+              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.INFO_X(filePath, sheet.sheetName), {total: entries.length})
               log.info(`Creating resources in ${sheet.sheetName} in ${filePath}`)
 
               // Create resources row by row in entries
@@ -783,7 +783,7 @@ export default class BackgroundEngine extends Vue {
                       })
                     }))
                       .then(() => {
-                        ipcRenderer.send(ipcChannels.TO_RENDERER, `generated-resources-${filePath}-${sheet.sheetName}`, {status: Status.VALIDATING})
+                        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.GENERATED_RESOURCES_X(filePath, sheet.sheetName), {status: Status.VALIDATING})
                         if (entries.length) {
 
                           Promise.all(Array.from(resources.keys()).map(resourceType => {
