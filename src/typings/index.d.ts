@@ -2777,6 +2777,7 @@ declare namespace fhir {
     valueCodeableConcept?: CodeableConcept;
     valueString?: string;
     valueBoolean?: boolean;
+    valueInteger?: integer;
     valueRange?: Range;
     valueRatio?: Ratio;
     valueSampledData?: SampledData;
@@ -3151,19 +3152,27 @@ declare namespace fhir {
   }
   interface Procedure extends DomainResource {
     identifier?: Identifier[];
+    instantiatesCanonical?: uri[];
+    instantiatesUri?: uri[];
+    basedOn?: Reference[];
+    partOf?: Reference[];
     status: code;
-    notDone?: boolean;
-    notDoneReason?: CodeableConcept;
+    statusReason?: CodeableConcept;
     category?: CodeableConcept;
     code?: CodeableConcept;
     subject: Reference;
-    context?: Reference;
+    encounter?: Reference;
     performedDateTime?: dateTime;
     performedPeriod?: Period;
+    performedString?: string;
+    performedAge?: Age;
+    performedRange?: Range;
+    recorder?: Reference;
+    asserter?: Reference;
     performer?: ProcedurePerformer[];
     location?: Reference;
-    reasonReference?: Reference[];
     reasonCode?: CodeableConcept[];
+    reasonReference?: Reference[];
     bodySite?: CodeableConcept[];
     outcome?: CodeableConcept;
     report?: Reference[];
@@ -3176,8 +3185,8 @@ declare namespace fhir {
     usedCode?: CodeableConcept[];
   }
   interface ProcedurePerformer extends Element {
+    function?: CodeableConcept;
     actor: Reference;
-    role?: CodeableConcept;
     onBehalfOf?: Reference;
   }
   interface ProcedureFocalDevice extends Element {
