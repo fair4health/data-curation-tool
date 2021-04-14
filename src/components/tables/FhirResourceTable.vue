@@ -198,7 +198,7 @@
                                                       :label="!prop.node.selectedReference ? 'Resource Type' : 'Resource'"
                                                       :ref="prop.node.value"
                                                       v-model="prop.node.selectedReference"
-                                                      :options="fhirResourceOptions"
+                                                      :options="getTargetResourceOptions(prop.node, propType.node)"
                                                       @filter="filterFn"
                                                       option-label="name"
                                                       option-value="id"
@@ -518,6 +518,30 @@
         const p2Name = p2.split('/').pop().toLowerCase()
         return (p1Name > p2Name) ? 1 : ((p2Name > p1Name) ? -1 : 0)
       })
+    }
+
+    getTargetResourceOptions (node: fhir.ElementTree, subNode: fhir.ElementTree): string[] {
+      // The reference resource constraints may come from current element node or its descendants.
+      // So we need to take the intersection of these target resources/profiles.
+      const mergedNodesToBeChecked = []
+      // Final reference resource target list
+      const targetList: string[] = []
+      // Consider the current element node and sub element node
+      mergedNodesToBeChecked.push(...[...node.type.filter(_ => _.value === 'Reference'), subNode, ...subNode.type])
+      mergedNodesToBeChecked.forEach(type => {
+        targetList.push(...(type?.targetProfile?.map(_ => {
+          const resourceType = _.split('/').pop()
+          if (resourceType !== 'Resource' && !targetList.includes(resourceType)) {
+            return resourceType
+          }
+        }) || []).filter(_ => _))
+      })
+      // If the targetList is empty, list all resources
+      if (!targetList.length) {
+        return this.fhirResourceOptions
+      } else {
+        return targetList
+      }
     }
   }
 </script>
