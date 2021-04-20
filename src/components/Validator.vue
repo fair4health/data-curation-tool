@@ -239,6 +239,7 @@
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
   import Status from '@/common/Status'
   import StatusMixin from '@/common/mixins/statusMixin'
+  import {environment} from '@/common/environment'
 
   @Component
   export default class Validator extends Mixins(StatusMixin) {
@@ -250,7 +251,7 @@
     private Status = Status
     private tablesToValidate = []
     private abortValidation: AbortController
-    private chunkSize: number = 1000
+    private chunkSize: number = environment.FHIRBatchOperationSize
 
     get fileSourceList (): FileSource[] { return this.$store.getters[types.File.SOURCE_LIST] }
     get savedRecords (): store.SavedRecord[] { return this.$store.getters[types.File.SAVED_RECORDS] }
@@ -368,18 +369,19 @@
                 let sheets = this.savedRecords.find((files: store.SavedRecord) => files.fileName === filePath)!.sheets
                 sheets = sheets.filter((sheet: store.Sheet) => selectedSheetList.includes(sheet.sheetName))
 
-                ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.VALIDATE, {chunkSize: this.chunkSize, data: {filePath, sheets}})
+                const validationReqBody: ValidationReqBody = {chunkSize: this.chunkSize, data: {filePath, sheets}}
+                ipcRenderer.send(ipcChannels.TO_BACKGROUND, ipcChannels.Fhir.VALIDATE, validationReqBody)
 
-                ipcRenderer.on(`validate-read-file-${filePath}`, (event, result) => {
+                ipcRenderer.on(ipcChannels.Fhir.VALIDATE_READ_FILE_X(filePath), (event, result) => {
                   this.$q.loading.hide()
-                  ipcRenderer.removeAllListeners(`validate-read-file-${filePath}`)
+                  ipcRenderer.removeAllListeners(ipcChannels.Fhir.VALIDATE_READ_FILE_X(filePath))
                 })
 
                 // In case of file reading failure
                 // Delete all other sheets listeners in that file
-                ipcRenderer.on(`validate-error-${filePath}`, (event, result) => {
+                ipcRenderer.on(ipcChannels.Fhir.VALIDATE_ERROR_X(filePath), (event, result) => {
                   this.$q.loading.hide()
-                  ipcRenderer.removeAllListeners(`validate-error-${filePath}`)
+                  ipcRenderer.removeAllListeners(ipcChannels.Fhir.VALIDATE_ERROR_X(filePath))
                   // Remove all listeners for sheets in the file
                   Object.keys(this.mappingObj[filePath]).map(sheet => {
                     this.mappingList = this.mappingList.map(_ => {
@@ -388,14 +390,14 @@
                       }
                       return _
                     })
-                    ipcRenderer.removeAllListeners(`validate-${filePath}-${sheet}`)
+                    ipcRenderer.removeAllListeners(ipcChannels.Fhir.VALIDATE_X(filePath, sheet))
                   })
                   rejectFile(false)
                 })
 
                 Promise.all(selectedSheetList.map(sheet => {
                   return new Promise((resolveSheet, rejectSheet) => {
-                    ipcRenderer.on(`info-${filePath}-${sheet}`, (event, result) => {
+                    ipcRenderer.on(ipcChannels.Fhir.INFO_X(filePath, sheet), (event, result) => {
                       this.mappingList = this.mappingList.map(_ => {
                         if (_.file === filePath && _.sheet === sheet) {
                           if (!_.info) _.info = {}
@@ -403,11 +405,10 @@
                         }
                         return _
                       })
-                      // TODO:
-                      ipcRenderer.removeAllListeners(`info-${filePath}-${sheet}`)
+                      ipcRenderer.removeAllListeners(ipcChannels.Fhir.INFO_X(filePath, sheet))
                     })
-                    ipcRenderer.on(`generated-resources-${filePath}-${sheet}`, (event, result) => {
-                      ipcRenderer.removeAllListeners(`generated-resources-${filePath}-${sheet}`)
+                    ipcRenderer.on(ipcChannels.Fhir.GENERATED_RESOURCES_X(filePath, sheet), (event, result) => {
+                      ipcRenderer.removeAllListeners(ipcChannels.Fhir.GENERATED_RESOURCES_X(filePath, sheet))
 
                       // Update status of mapping entries
                       this.mappingList = this.mappingList.map(_ => {
@@ -417,8 +418,8 @@
                         return _
                       })
                     })
-                    ipcRenderer.on(`validate-${filePath}-${sheet}`, (event, result) => {
-                      ipcRenderer.removeAllListeners(`validate-${filePath}-${sheet}`)
+                    ipcRenderer.on(ipcChannels.Fhir.VALIDATE_X(filePath, sheet), (event, result) => {
+                      ipcRenderer.removeAllListeners(ipcChannels.Fhir.VALIDATE_X(filePath, sheet))
 
                       // Update status of mapping entries
                       this.mappingList = this.mappingList.map(_ => {

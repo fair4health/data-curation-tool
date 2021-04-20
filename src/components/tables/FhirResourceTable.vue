@@ -27,7 +27,8 @@
           </q-item-label>
           <q-separator spaced />
           <q-select outlined dense options-dense v-model="currentFHIRProf" class="ellipsis" :options="sortProfiles(fhirProfileList)"
-                     :option-label="item => item.split('/').pop()" :label="$t('LABELS.PROFILES')" :disable="!fhirProfileList.length">
+                    :option-label="item => item.split('/').pop()" :label="$t('LABELS.PROFILES')" :disable="!fhirProfileList.length"
+                    clearable @clear="onFHIRResourceChanged">
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                 <q-item-section avatar>
@@ -41,7 +42,7 @@
           </q-select>
         </div>
       </q-card-section>
-      <div class="row q-px-md bg-grey-1">
+      <div class="row q-px-md bg-grey-1 flex-center">
         <div class="col q-gutter-xs">
           <q-toggle v-model="showMandatoryElements"
                     checked-icon="check"
@@ -112,206 +113,202 @@
         </div>
       </div>
       <q-card-section class="q-pt-none">
-        <div>
-          <div class="overflow-auto">
-            <q-splitter v-model="splitterModel" :limits="[50, 98]">
-              <!--Fhir Element Tree Part-->
-              <template v-slot:before>
-                <q-scroll-area class="fhir-table-height overflow-hidden q-pa-sm">
-                  <q-tree :nodes="filteredFhirElementList"
-                          ref="fhirTree"
-                          node-key="value"
-                          label-key="label"
-                          tick-strategy="strict"
-                          :ticked.sync="tickedFHIRAttr"
-                          :expanded.sync="expanded"
-                          :filter="filterText"
-                          :no-nodes-label="$t('LABELS.PLEASE_SELECT_A_RESOURCE')"
-                          :no-results-label="$t('LABELS.NO_RESULT')"
-                          selected-color="primary"
-                          default-expand-all
-                  >
-                    <template v-slot:default-header="prop">
-                      <div class="row full-width q-pa-xs" :class="{'bg-grey-1': !prop.node.error,'bg-red-1': prop.node.error}">
-                        <div class="col">
-                          <div class="row items-center">
-                            <q-icon :name="prop.node.children && prop.node.children.length ? 'account_tree' : 'lens'"
-                                    color="orange-5"
-                                    :size="prop.node.children && prop.node.children.length ? 'sm' : 'xs'"
-                                    class="q-mr-sm"
-                            />
-                            <div class="cursor-pointer fhir-element-text" v-bind:class="{'text-primary': selectedStr === prop.node.value}"
-                                  @click="onSelected(prop.node.value)">
-                              {{ prop.node.label }}
-                              <span class="text-red">{{ prop.node.min ? '*' : '' }}</span>
-                            </div>
-                            <q-chip v-if="prop.node.selectedType" :label="prop.node.selectedType" size="sm"
-                                    :removable="prop.node.type && prop.node.type.length > 0"
-                                    @remove="prop.node.selectedType = ''; updateElementList(); prop.ticked = false"
-                            />
-                          </div>
-                          <div class="row">
-                            <div v-if="prop.node.type
-                                       && prop.node.type.length
-                                       && prop.node.type.length > 1 || (env.datatypes[prop.node.type[0].value]
-                                       && prop.node.type[0].value !== 'CodeableConcept'
-                                       && prop.node.type[0].value !== 'Coding'
-                                       && prop.node.type[0].value !== 'Extension')"
-                                 class="full-width">
-                              <q-list dense class="q-ma-sm text-size-lg">
-                                <q-tree :nodes="prop.node.type"
-                                        node-key="value"
-                                        label-key="label"
-                                        @lazy-load="getDataType"
-                                        accordion
-                                >
-                                  <template v-slot:default-header="propType">
-                                    <div class="row full-width">
-                                      <div class="row full-width items-center">
-                                        <div>
-                                          <template
-                                            v-if="
-                                                   propType.node.type
-                                                   && propType.node.type.length
-                                                   && propType.node.type.length > 1 || (env.datatypes[propType.node.type[0].value]
-                                                   && propType.node.type[0].value !== 'CodeableConcept'
-                                                   && propType.node.type[0].value !== 'Coding'
-                                                   && propType.node.type[0].value !== 'Reference')
-                                                 "
-                                          >
-                                            <span class="text-grey-8 text-weight-bold">{{ propType.node.label }}</span>
-                                          </template>
-                                          <template v-else>
-                                            <div class="row items-center">
-                                              <div v-if="propType.node.type[0].value !== 'Reference' && (!propType.node.children || !propType.node.children.length)">
-                                                <q-radio dense v-model="prop.node.selectedType" class="text-grey-8 text-weight-medium full-width" :val="propType.node.value"
-                                                         :label="propType.node.label" size="xs" @input="updateElementList(); prop.ticked = true"
-                                                />
-                                              </div>
-                                              <div class="text-grey-8 text-weight-medium" v-else>
-                                                {{ propType.node.label }}
-                                              </div>
-                                              <q-space />
-                                              <div v-if="propType.node.type[0].value === 'Reference'" class="select-reference">
-                                                <q-select dense class="q-pl-xs ellipsis text-size-md select-input"
-                                                          options-dense
-                                                          standout="bg-primary text-white"
-                                                          :label="!prop.node.selectedReference ? 'Resource Type' : 'Resource'"
-                                                          :ref="prop.node.value"
-                                                          v-model="prop.node.selectedReference"
-                                                          :options="fhirResourceOptions"
-                                                          @filter="filterFn"
-                                                          option-label="name"
-                                                          option-value="id"
-                                                          @input="prop.node.selectedReference ? prop.node.selectedType = propType.node.value + '.' + prop.node.selectedReference : undefined;
-                                                                  updateElementList(); prop.ticked = true;
-                                                                  $refs[prop.node.value].blur();"
-                                                          @clear="prop.node.selectedReference = ''; $refs[prop.node.value].blur(); updateElementList()"
-                                                />
-                                              </div>
-                                            </div>
-                                          </template>
-                                        </div>
-                                        <q-space />
-                                        <div>
-                                          <code-system-popup
-                                            v-if="!propType.node.fixedUri
-                                                  && propType.node.type.length === 1
-                                                  && (propType.node.type[0].value === 'CodeableConcept'
-                                                      || propType.node.type[0].value === 'Coding')"
-                                            :prop="prop"
-                                            @update-prop="(value) => prop = value"
-                                          />
-                                          <span v-if="propType.node.type" class="text-caption text-primary">{{ propType.node.type.map(_ => _.label).join(', ') }}</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </template>
-                                </q-tree>
-                              </q-list>
-                            </div>
-                          </div>
+        <q-splitter v-model="splitterModel" :limits="[50, 100]">
+          <!--Fhir Element Tree Part-->
+          <template v-slot:before>
+            <q-scroll-area class="fhir-table-height overflow-hidden q-pa-sm">
+              <q-tree :nodes="filteredFhirElementList"
+                      ref="fhirTree"
+                      node-key="value"
+                      label-key="label"
+                      tick-strategy="strict"
+                      :ticked.sync="tickedFHIRAttr"
+                      :expanded.sync="expanded"
+                      :filter="filterText"
+                      :no-nodes-label="$t('LABELS.PLEASE_SELECT_A_RESOURCE')"
+                      :no-results-label="$t('LABELS.NO_RESULT')"
+                      selected-color="primary"
+                      default-expand-all
+              >
+                <template v-slot:default-header="prop">
+                  <div class="row full-width q-pa-xs" :class="{'bg-grey-1': !prop.node.error,'bg-red-1': prop.node.error}">
+                    <div class="col">
+                      <div class="row items-center">
+                        <q-icon :name="prop.node.children && prop.node.children.length ? 'account_tree' : 'lens'"
+                                color="orange-5"
+                                :size="prop.node.children && prop.node.children.length ? 'sm' : 'xs'"
+                                class="q-mr-sm"
+                        />
+                        <div class="cursor-pointer fhir-element-text" v-bind:class="{'text-primary': selectedStr === prop.node.value}"
+                             @click="onSelected(prop.node.value)">
+                          {{ prop.node.label }}
+                          <span class="text-red">{{ prop.node.min ? '*' : '' }}</span>
                         </div>
-                        <div class="col-4 text-right">
-                          <code-system-popup
-                            v-if="!prop.node.fixedUri
-                                  && prop.node.type.length === 1
-                                  && (prop.node.type[0].value === 'CodeableConcept'
-                                      || prop.node.type[0].value === 'Coding')"
-                            :prop="prop"
-                            @update-prop="(value) => prop = value"
-                          />
-                          <span v-if="prop.node.type" class="text-caption text-primary">{{ prop.node.type.map(_ => _.value).join(', ') }}</span>
-                          <div class="ellipsis">
-                            <span v-if="prop.node.fixedUri || prop.node.selectedUri" class="cursor-pointer">
-                              <a class="text-size-sm bg-grey-3 text-grey-8" @click="openExternal(prop.node.fixedUri || prop.node.selectedUri)">
-                                <u>{{ prop.node.fixedUri || prop.node.selectedUri }}</u>
-                              </a>
-                              <q-tooltip>
-                                <span class="row items-center">
-                                  <q-icon name="open_in_new" class="q-mr-xs" />
-                                {{ prop.node.fixedUri || prop.node.selectedUri }}
-                                </span>
-                              </q-tooltip>
-                            </span>
-                          </div>
+                        <q-chip v-if="prop.node.selectedType" :label="prop.node.selectedType" size="sm"
+                                :removable="prop.node.type && prop.node.type.length > 0"
+                                @remove="prop.node.selectedType = ''; updateElementList(); prop.ticked = false"
+                        />
+                      </div>
+                      <div class="row">
+                        <div v-if="prop.node.type
+                                     && prop.node.type.length
+                                     && prop.node.type.length > 1 || (env.datatypes[prop.node.type[0].value]
+                                     && prop.node.type[0].value !== 'CodeableConcept'
+                                     && prop.node.type[0].value !== 'Coding'
+                                     && prop.node.type[0].value !== 'Extension')"
+                             class="full-width">
+                          <q-list dense class="q-ma-sm text-size-lg">
+                            <q-tree :nodes="prop.node.type"
+                                    node-key="value"
+                                    label-key="label"
+                                    @lazy-load="getDataType"
+                                    accordion
+                            >
+                              <template v-slot:default-header="propType">
+                                <div class="row full-width">
+                                  <div class="row full-width items-center">
+                                    <div>
+                                      <template
+                                        v-if="
+                                                 propType.node.type
+                                                 && propType.node.type.length
+                                                 && propType.node.type.length > 1 || (env.datatypes[propType.node.type[0].value]
+                                                 && propType.node.type[0].value !== 'CodeableConcept'
+                                                 && propType.node.type[0].value !== 'Coding'
+                                                 && propType.node.type[0].value !== 'Reference')
+                                               "
+                                      >
+                                        <span class="text-grey-8 text-weight-bold">{{ propType.node.label }}</span>
+                                      </template>
+                                      <template v-else>
+                                        <div class="row items-center">
+                                          <div v-if="propType.node.type[0].value !== 'Reference' && (!propType.node.children || !propType.node.children.length)">
+                                            <q-radio dense v-model="prop.node.selectedType" class="text-grey-8 text-weight-medium full-width" :val="propType.node.value"
+                                                     :label="propType.node.label" size="xs" @input="updateElementList(); prop.ticked = true"
+                                            />
+                                          </div>
+                                          <div class="text-grey-8 text-weight-medium" v-else>
+                                            {{ propType.node.label }}
+                                          </div>
+                                          <q-space />
+                                          <div v-if="propType.node.type[0].value === 'Reference'" class="select-reference">
+                                            <q-select dense class="q-pl-xs ellipsis text-size-md select-input"
+                                                      options-dense
+                                                      standout="bg-primary text-white"
+                                                      :label="!prop.node.selectedReference ? 'Resource Type' : 'Resource'"
+                                                      :ref="prop.node.value"
+                                                      v-model="prop.node.selectedReference"
+                                                      :options="getTargetResourceOptions(prop.node, propType.node)"
+                                                      @filter="filterFn"
+                                                      option-label="name"
+                                                      option-value="id"
+                                                      @input="prop.node.selectedReference ? prop.node.selectedType = propType.node.value + '.' + prop.node.selectedReference : undefined;
+                                                                updateElementList(); prop.ticked = true;
+                                                                $refs[prop.node.value].blur();"
+                                                      @clear="prop.node.selectedReference = ''; $refs[prop.node.value].blur(); updateElementList()"
+                                            />
+                                          </div>
+                                        </div>
+                                      </template>
+                                    </div>
+                                    <q-space />
+                                    <div>
+                                      <code-system-popup
+                                        v-if="!propType.node.fixedUri
+                                                && propType.node.type.length === 1
+                                                && (propType.node.type[0].value === 'CodeableConcept'
+                                                    || propType.node.type[0].value === 'Coding')"
+                                        :prop="prop"
+                                        @update-prop="(value) => prop = value"
+                                      />
+                                      <span v-if="propType.node.type" class="text-caption text-primary">{{ propType.node.type.map(_ => _.label).join(', ') }}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </template>
+                            </q-tree>
+                          </q-list>
                         </div>
                       </div>
-                    </template>
-                  </q-tree>
-                  <Loading v-if="loadingFhir" />
-                </q-scroll-area>
-              </template>
-
-              <!--Elements Definition Part-->
-              <template v-slot:after>
-                <q-scroll-area v-if="selectedElem" class="fhir-table-height overflow-hidden">
-                  <div>
-                    <q-toolbar>
-                      <q-item-label class="text-weight-bold text-grey-7 ellipsis">
-                      <span class="text-weight-regular text-primary">
-                        [{{ selectedElem.min }}..{{ selectedElem.max }}]
-                      </span>
-                        <u>
-                          {{ selectedElem.value }}
-                          <q-tooltip>{{ selectedElem.value }}</q-tooltip>
-                        </u>
-                        <span class="text-red">{{ selectedElem.min ? '*' : '' }}</span>
-                      </q-item-label>
-                      <q-space />
-                      <q-btn unelevated round dense size="sm" icon="close" color="white" text-color="grey-9" @click="selectedStr=null; selectedElem=null" />
-                    </q-toolbar>
-                    <q-separator inset />
-                    <div class="q-ma-sm q-gutter-sm">
-                      <q-card flat bordered v-if="selectedElem.short">
-                        <q-card-section>
-                          <div class="text-h6">Short</div>
-                          <q-separator spaced />
-                          <div class="text-grey-10">{{ selectedElem.short }}</div>
-                        </q-card-section>
-                      </q-card>
-                      <q-card flat bordered v-if="selectedElem.definition">
-                        <q-card-section>
-                          <div class="text-h6">Definition</div>
-                          <q-separator spaced />
-                          <div class="text-grey-10">{{ selectedElem.definition }}</div>
-                        </q-card-section>
-                      </q-card>
-                      <q-card flat bordered v-if="selectedElem.comment">
-                        <q-card-section>
-                          <div class="text-h6">Comments</div>
-                          <q-separator spaced />
-                          <div class="text-grey-10">{{ selectedElem.comment }}</div>
-                        </q-card-section>
-                      </q-card>
+                    </div>
+                    <div class="col-4 text-right">
+                      <code-system-popup
+                        v-if="!prop.node.fixedUri
+                                && prop.node.type.length === 1
+                                && (prop.node.type[0].value === 'CodeableConcept'
+                                    || prop.node.type[0].value === 'Coding')"
+                        :prop="prop"
+                        @update-prop="(value) => prop = value"
+                      />
+                      <span v-if="prop.node.type" class="text-caption text-primary">{{ prop.node.type.map(_ => _.value).join(', ') }}</span>
+                      <div class="ellipsis">
+                          <span v-if="prop.node.fixedUri || prop.node.selectedUri" class="cursor-pointer">
+                            <a class="text-size-sm bg-grey-3 text-grey-8" @click="openExternal(prop.node.fixedUri || prop.node.selectedUri)">
+                              <u>{{ prop.node.fixedUri || prop.node.selectedUri }}</u>
+                            </a>
+                            <q-tooltip>
+                              <span class="row items-center">
+                                <q-icon name="open_in_new" class="q-mr-xs" />
+                              {{ prop.node.fixedUri || prop.node.selectedUri }}
+                              </span>
+                            </q-tooltip>
+                          </span>
+                      </div>
                     </div>
                   </div>
-                </q-scroll-area>
-              </template>
-            </q-splitter>
-          </div>
-          <q-separator />
-        </div>
+                </template>
+              </q-tree>
+              <Loading v-if="loadingFhir" />
+            </q-scroll-area>
+          </template>
+
+          <!--Elements Definition Part-->
+          <template v-slot:after>
+            <q-scroll-area v-if="selectedElem" class="fhir-table-height overflow-hidden">
+              <div>
+                <q-toolbar>
+                  <q-item-label class="text-weight-bold text-grey-7 ellipsis">
+                    <span class="text-weight-regular text-primary">
+                      [{{ selectedElem.min }}..{{ selectedElem.max }}]
+                    </span>
+                    <u>
+                      {{ selectedElem.value }}
+                      <q-tooltip>{{ selectedElem.value }}</q-tooltip>
+                    </u>
+                    <span class="text-red">{{ selectedElem.min ? '*' : '' }}</span>
+                  </q-item-label>
+                  <q-space />
+                  <q-btn unelevated round dense size="sm" icon="close" color="white" text-color="grey-9" @click="selectedStr=null; selectedElem=null" />
+                </q-toolbar>
+                <q-separator inset />
+                <div class="q-ma-sm q-gutter-sm">
+                  <q-card flat bordered v-if="selectedElem.short">
+                    <q-card-section>
+                      <div class="text-h6">Short</div>
+                      <q-separator spaced />
+                      <div class="text-grey-10">{{ selectedElem.short }}</div>
+                    </q-card-section>
+                  </q-card>
+                  <q-card flat bordered v-if="selectedElem.definition">
+                    <q-card-section>
+                      <div class="text-h6">Definition</div>
+                      <q-separator spaced />
+                      <div class="text-grey-10">{{ selectedElem.definition }}</div>
+                    </q-card-section>
+                  </q-card>
+                  <q-card flat bordered v-if="selectedElem.comment">
+                    <q-card-section>
+                      <div class="text-h6">Comments</div>
+                      <q-separator spaced />
+                      <div class="text-grey-10">{{ selectedElem.comment }}</div>
+                    </q-card-section>
+                  </q-card>
+                </div>
+              </div>
+            </q-scroll-area>
+          </template>
+        </q-splitter>
+        <q-separator />
       </q-card-section>
     </q-card>
   </div>
@@ -521,6 +518,30 @@
         const p2Name = p2.split('/').pop().toLowerCase()
         return (p1Name > p2Name) ? 1 : ((p2Name > p1Name) ? -1 : 0)
       })
+    }
+
+    getTargetResourceOptions (node: fhir.ElementTree, subNode: fhir.ElementTree): string[] {
+      // The reference resource constraints may come from current element node or its descendants.
+      // So we need to take the intersection of these target resources/profiles.
+      const mergedNodesToBeChecked = []
+      // Final reference resource target list
+      const targetList: string[] = []
+      // Consider the current element node and sub element node
+      mergedNodesToBeChecked.push(...[...node.type.filter(_ => _.value === 'Reference'), subNode, ...subNode.type])
+      mergedNodesToBeChecked.forEach(type => {
+        targetList.push(...(type?.targetProfile?.map(_ => {
+          const resourceType = _.split('/').pop()
+          if (resourceType !== 'Resource' && !targetList.includes(resourceType)) {
+            return resourceType
+          }
+        }) || []).filter(_ => _))
+      })
+      // If the targetList is empty, list all resources
+      if (!targetList.length) {
+        return this.fhirResourceOptions
+      } else {
+        return targetList
+      }
     }
   }
 </script>

@@ -18,6 +18,7 @@ export let environment = {
   langs: ['en'],
   databaseTypes: ['postgres'],
   hl7: hl7Base,
+  FHIRBatchOperationSize: 1000,
   codesystems: {
     ATC: 'http://www.whocc.no/atc',
     SNOMED: 'http://snomed.info/sct',

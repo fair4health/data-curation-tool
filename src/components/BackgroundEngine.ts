@@ -553,10 +553,10 @@ export default class BackgroundEngine extends Vue {
     })
   }
 
-  public prepareDataFromDb (table: string): Promise<any[]> {
+  public prepareDataFromDb (table: string, rowNumber?: number): Promise<any[]> {
     return new Promise<any[]>((resolve, reject) => {
       if (this.dbConnection) {
-        this.dbConnection.query(DbUtil.getEntriesQuery(table))
+        this.dbConnection.query(rowNumber ? DbUtil.getTop10EntriesQuery(table) : DbUtil.getEntriesQuery(table))
           .then(entries => {
             resolve(entries)
           })
@@ -571,7 +571,7 @@ export default class BackgroundEngine extends Vue {
     })
   }
 
-  public prepareDataFromFile (filePath: string): Promise<Excel.WorkBook> {
+  public prepareDataFromFile (filePath: string, rowNumber?: number): Promise<Excel.WorkBook> {
     return new Promise<Excel.WorkBook>((resolve, reject) => {
       try {
         const stream = fs.createReadStream(filePath)
@@ -580,12 +580,12 @@ export default class BackgroundEngine extends Vue {
         stream.on('data', (data) => { buffers.push(data) })
         stream.on('end', () => {
           const buffer = Buffer.concat(buffers)
-          const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', cellDates: true, cellText: false})
+          const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', cellDates: true, cellText: false, sheetRows: rowNumber})
 
           // Save buffer workbook to map
           workbookMap.set(filePath, workbook)
           // ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: filePath, value: workbook})
-          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-read-file-${filePath}`, [])
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_READ_FILE_X(filePath), [])
           resolve(workbook)
         })
       } catch (err) {
@@ -599,10 +599,10 @@ export default class BackgroundEngine extends Vue {
    * Create and validate resources
    */
   public onValidate () {
-    ipcRenderer.on(ipcChannels.Fhir.VALIDATE, (event, validationReqBody: any) => {
+    ipcRenderer.on(ipcChannels.Fhir.VALIDATE, (event, validationReqBody: ValidationReqBody) => {
       this.abortValidation = new AbortController()
 
-      this.validate(validationReqBody.data, validationReqBody.chunkSize, this.abortValidation.signal)
+      this.validate(this.abortValidation.signal, validationReqBody.data, validationReqBody.chunkSize, validationReqBody.rowNumber)
         .then(() => {
           this.ready()
         })
@@ -614,7 +614,7 @@ export default class BackgroundEngine extends Vue {
     })
   }
 
-  public validate (data: any, reqChunkSize: number, abortSignal: AbortSignal): Promise<any> {
+  public validate (abortSignal: AbortSignal, data: any, reqChunkSize: number, rowNumber?: number): Promise<any> {
     // Update chunk size
     this.CHUNK_SIZE = reqChunkSize
     // Is the data source database?
@@ -631,7 +631,7 @@ export default class BackgroundEngine extends Vue {
         rejectValidation('Validation has been aborted')
       })
 
-      const dataPromise: Promise<any> = isDbSource ? this.prepareDataFromDb(filePath) : this.prepareDataFromFile(filePath)
+      const dataPromise: Promise<any> = isDbSource ? this.prepareDataFromDb(filePath, rowNumber) : this.prepareDataFromFile(filePath, rowNumber)
 
       dataPromise.then(workbook => {
         const conceptMap: Map<string, fhir.ConceptMap> = new Map<string, fhir.ConceptMap>()
@@ -644,7 +644,7 @@ export default class BackgroundEngine extends Vue {
               const entries: any[] = isDbSource ? workbook : Excel.utils.sheet_to_json(workbook.Sheets[sheet.sheetName], {raw: false, dateNF: 'mm/dd/yyyy'}) || []
               const sheetRecords: store.Record[] = sheet.records
 
-              ipcRenderer.send(ipcChannels.TO_RENDERER, `info-${filePath}-${sheet.sheetName}`, {total: entries.length})
+              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.INFO_X(filePath, sheet.sheetName), {total: entries.length})
               log.info(`Creating resources in ${sheet.sheetName} in ${filePath}`)
 
               // Create resources row by row in entries
@@ -783,7 +783,7 @@ export default class BackgroundEngine extends Vue {
                       })
                     }))
                       .then(() => {
-                        ipcRenderer.send(ipcChannels.TO_RENDERER, `generated-resources-${filePath}-${sheet.sheetName}`, {status: Status.VALIDATING})
+                        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.GENERATED_RESOURCES_X(filePath, sheet.sheetName), {status: Status.VALIDATING})
                         if (entries.length) {
 
                           Promise.all(Array.from(resources.keys()).map(resourceType => {
@@ -835,7 +835,7 @@ export default class BackgroundEngine extends Vue {
                                             .catch(err => {
                                               log.error(`Batch process error. ${err}`)
                                               rejectBatch(err)
-                                              ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: err.message}]})
+                                              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: err.message}]})
                                             })
                                         })))
                                       }
@@ -883,24 +883,24 @@ export default class BackgroundEngine extends Vue {
                               resolveSheet()
                               const outcomeDetails: OutcomeDetail[] = [].concat.apply([], res)
                               const status = !outcomeDetails.length || !!outcomeDetails.find(_ => _.status === Status.ERROR) ? Status.ERROR : Status.SUCCESS
-                              ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status, outcomeDetails})
+                              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {status, outcomeDetails})
                               log.info(`Validation completed ${sheet.sheetName} in ${filePath}`)
                             })
                             .catch(err => {
                               resolveSheet()
-                              ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, message: 'Batch process error', outcomeDetails: err})
+                              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {status: Status.ERROR, message: 'Batch process error', outcomeDetails: err})
                               log.error(`Batch process error ${filePath}-${sheet.sheetName}`)
                             })
 
                         } else {
                           resolveSheet()
-                          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: 'Empty sheet'}]})
+                          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: 'Empty sheet'}]})
                           log.warn(`Empty sheet: ${sheet.sheetName} in ${filePath}`)
                         }
                       })
                       .catch(err => {
                         resolveSheet()
-                        ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: `Translation Terminology Service error for sheet: ${sheet.sheetName}. ${err}`}]})
+                        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: `Translation Terminology Service error for sheet: ${sheet.sheetName}. ${err}`}]})
                         log.error(`Chunk promise error. ${err}`)
                       })
 
@@ -908,7 +908,7 @@ export default class BackgroundEngine extends Vue {
                 })
                 .catch(err => {
                   resolveSheet()
-                  ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-${filePath}-${sheet.sheetName}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: `Validation error for sheet: ${sheet.sheetName}. ${err}`}]})
+                  ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: `Validation error for sheet: ${sheet.sheetName}. ${err}`}]})
                   log.error(`Validation error for sheet: ${sheet.sheetName} in ${filePath}: ${err}`)
                 })
             }))
@@ -924,7 +924,7 @@ export default class BackgroundEngine extends Vue {
           })
       })
         .catch(err => {
-          ipcRenderer.send(ipcChannels.TO_RENDERER, `validate-error-${filePath}`, {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, message: `File/table not found : ${filePath}`, resourceType: 'OperationOutcome'}]})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_ERROR_X(filePath), {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, message: `File/table not found : ${filePath}`, resourceType: 'OperationOutcome'}]})
           log.error(`File/table not found. ${err}`)
           resolveValidation()
         })
@@ -952,7 +952,7 @@ export default class BackgroundEngine extends Vue {
 
             return new Promise((resolve, reject) => {
 
-              ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: Status.IN_PROGRESS} as OutcomeDetail)
+              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_X(resourceType), {status: Status.IN_PROGRESS} as OutcomeDetail)
 
               // Batch upload resources
               // Max capacity CHUNK_SIZE resources
@@ -1009,12 +1009,12 @@ export default class BackgroundEngine extends Vue {
                   const concatResult: OutcomeDetail[] = [].concat.apply([], res)
                   const status = !concatResult.length || !!concatResult.find(_ => _.status === Status.ERROR) ? Status.ERROR : Status.SUCCESS
                   log.info(`Batch process completed for Resource: ${resourceType}`)
-                  ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status, outcomeDetails: concatResult} as OutcomeDetail)
+                  ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_X(resourceType), {status, outcomeDetails: concatResult} as OutcomeDetail)
                   resolve(concatResult)
                 })
                 .catch(err => {
                   log.error(`Batch process error for Resource: ${resourceType}`)
-                  ipcRenderer.send(ipcChannels.TO_RENDERER, `transform-${resourceType}`, {status: Status.ERROR} as OutcomeDetail)
+                  ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_X(resourceType), {status: Status.ERROR} as OutcomeDetail)
                   reject(err)
                 })
 

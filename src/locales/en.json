@@ -10,6 +10,7 @@
     "CLOSE": "Close",
     "CLOSE_EDIT_MODE": "Close Edit Mode",
     "CONNECT": "Connect",
+    "CONTINUE": "Continue",
     "CONTINUE_ANYWAY": "Continue Anyway",
     "DELETE": "@:COMMON.DELETE",
     "DETAILS": "Details",
@@ -37,6 +38,7 @@
     "REMOVE_MAPPING": "Remove mapping",
     "SAVE": "Save",
     "SEARCH": "Search",
+    "SEE_DETAILS": "See Details",
     "SET": "Set",
     "SHOW_MANDATORY_ELEMENTS_ONLY": "Show mandatory elements only",
     "SHOW_MAPPED_FIELDS_ONLY": "Show mapped fields only",
@@ -45,6 +47,7 @@
     "TRANSFORM": "@:COMMON.TRANSFORM",
     "UPDATE": "Update",
     "VALIDATE": "@:COMMON.VALIDATE",
+    "VALIDATE_MAPPING": "Validate Mapping",
     "VERIFY": "Verify",
     "VERIFY_AND_SAVE": "@:BUTTONS.VERIFY & @:BUTTONS.SAVE",
     "YES": "Yes"
@@ -101,6 +104,7 @@
     "ID_FIELD_INFO": "Mapping of the \"id\" field is mandatory so that the resources can refer to each other. It is important to indicate the relation between resources. e.g. Subject of a Condition resource must be a reference to the related Patient resource through the id field. (Do not confuse this field with \"identifier\". \"Id\" and \"identifier\" are two different fields. The value being put into the id field is hashed and can be referred by other resources. Identifier field is not used for referencing.)",
     "METADATA_MAPPER_INFO": "Map your source data with the FHIR profiles fetched from FHIR repository given at the first step.",
     "TRANSFORMER_INFO": "Put the FHIR resources generated into the repository.",
+    "VALIDATING_ONLY_10_ROWS": "The mapping validation process will be applied on the first 10 rows of data in the source file / table.",
     "VALIDATOR_INFO": "Validate FHIR resources created as a result of mapping, and review details if an inappropriate resource was created."
   },
   "LABELS": {
@@ -149,6 +153,7 @@
   "MENU": {
     "ABOUT": "About",
     "ANALYZE_DATA_SOURCE": "@:COMMON.ANALYZE_DATA_SOURCE",
+    "COLLAPSE_SIDEBAR": "Collapse sidebar",
     "CONFIRM_AND_TRANSFORM": "Confirm and Transform",
     "CURATION": "Curation",
     "EXIT": "Exit",
@@ -218,6 +223,7 @@
     "SAVE_MAPPING": "Save Mapping",
     "SNAPSHOT_OF_DATA": "@:BUTTONS.SNAPSHOT_OF_DATA",
     "TRANSFORMER": "Transformer",
+    "VALIDATE_CURRENT_MAPPING": "Validate Current Mapping",
     "VALIDATOR": "Validator"
   },
   "WARNING": {

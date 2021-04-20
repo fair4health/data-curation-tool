@@ -43,7 +43,8 @@
                     :name="step.stepId"
                     :title="$t(step.title)"
                     :icon="step.icon"
-                    :done-icon="step.icon"
+                    done-icon="check"
+                    :active-icon="step.icon"
                     :done="currentStep > step.stepId"
                     active-color="primary"
                     done-color="secondary"
@@ -69,8 +70,18 @@
               <img src="../assets/github-logo.png" />
             </q-avatar>
           </q-item-section>
-          <q-item-section class="text-grey-7">
+          <q-item-section v-if="!isCollapsed" class="text-grey-7">
             <span>{{ $t('MENU.VIEW_ON') }} <span class="text-weight-bold">GitHub</span></span>
+          </q-item-section>
+        </q-item>
+        <q-separator />
+        <q-item clickable @click="toggleSidebar">
+          <q-item-section avatar>
+            <q-icon :name="isCollapsed ? 'fas fa-angle-double-right' : 'fas fa-angle-double-left'"
+                    size="xs" color="grey-9" />
+          </q-item-section>
+          <q-item-section v-if="!isCollapsed" class="text-grey-7">
+            <span>{{ $t('MENU.COLLAPSE_SIDEBAR') }} </span>
           </q-item-section>
         </q-item>
       </q-list>
@@ -135,6 +146,11 @@
     }
 
     openExternal (url: string) { shell.openExternal(url) }
+
+    toggleSidebar () {
+      if (this.$q.screen.lt.lg || !this.drawerOpen) this.drawerOpen = !this.drawerOpen
+      else this.drawerMiniState = !this.drawerMiniState
+    }
   }
 </script>
 

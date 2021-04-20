@@ -121,7 +121,8 @@
 
       <q-separator />
       <q-card-actions align="right" class="col-auto">
-        <q-btn outline class="q-px-md" color="primary" :label="$t('BUTTONS.EDIT')" icon="edit" @click="onOKClick(mapping)" />
+        <q-btn unelevated rounded class="q-px-md" color="grey-2" text-color="primary" :label="$t('BUTTONS.EDIT')"
+               icon="edit" @click="onOKClick(mapping)" no-caps />
       </q-card-actions>
     </q-card>
   </q-dialog>
