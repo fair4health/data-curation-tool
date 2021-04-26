@@ -197,6 +197,14 @@ export class FHIRUtil {
     }
   }
 
+  /**
+   * Removes the trailing slash in the url
+   * @param url
+   */
+  static trimUrl (url: string): string {
+    return (url || '').replace(/\/$/, '')
+  }
+
   private static readonly secretKey: string = 'E~w*c`r8e?aetZeid]b$y+aIl&p4eNr*a'
 
 }
