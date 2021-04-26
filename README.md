@@ -68,7 +68,8 @@ The tool writes logs to the following locations:
 - on **Linux**: `~/.config/FAIR4Health Data Curation Tool/logs/log.txt`
 
 ## Terminology Server Connection
-The tool is compatible with FHIR based Terminology Servers, in order to translate values from one system to another. As the sample API https://terminology-service.atosresearch.eu provided by ATOS was used.
+The tool is compatible with FHIR based Terminology Servers, in order to translate values from one system to another.
+ As the sample API `https://health-digital-term.ari-health.eu` provided by ATOS was used.
 
 Currently, in the tool:
 - For the translation operation, the ConceptMap translate API: `/ConceptMap/$translate` is consumed.
