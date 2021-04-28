@@ -6,7 +6,7 @@
           <q-item-label class="text-weight-bold q-mb-lg">
             <span class="text-primary"><q-icon name="fas fa-info" size="xs" class="q-mr-xs" /> {{ $t('LABELS.PROVIDE_FHIR_URL') }} </span>
           </q-item-label>
-          <q-input outlined square dense type="url" class="col-10" v-model="onfhirBaseUrl" color="primary"
+          <q-input outlined square dense type="url" class="col-10" v-model.lazy.trim="onfhirBaseUrl" color="primary"
                    @input="fhirBaseVerificationStatus = Status.PENDING"
                    :placeholder="$t('LABELS.FHIR_REPOSITORY_URL')"
                    :disable="isInProgress(fhirBaseVerificationStatus)"
@@ -64,6 +64,7 @@
   import Status from '@/common/Status'
   import StatusMixin from '@/common/mixins/statusMixin'
   import Loading from '@/components/Loading.vue'
+  import {FHIRUtil} from '@/common/utils/fhir-util'
 
   @Component({
     components: {
@@ -96,6 +97,7 @@
 
     verifyFhir () {
       if (this.onfhirBaseUrl) {
+        this.onfhirBaseUrl = FHIRUtil.trimUrl(this.onfhirBaseUrl)
         this.fhirBaseVerificationStatus = Status.IN_PROGRESS
         this.$store.dispatch(types.Fhir.VERIFY_FHIR, this.onfhirBaseUrl)
           .then(() => {

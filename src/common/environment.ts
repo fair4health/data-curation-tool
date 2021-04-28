@@ -2,6 +2,10 @@
 const onfhirBase = 'http://localhost:8080/fhir'
 const hl7Base = 'http://hl7.org/fhir'
 
+// The url representing how many resources created during transformation
+// Placed in the extension part of the Provenance and DocumentManifest resources
+const numberOfResourcesUrlBase = `${hl7Base}/f4h/resource-count`
+
 export let environment = {
   toolID: 'data-curation-tool',
   server: {
@@ -19,6 +23,7 @@ export let environment = {
   databaseTypes: ['postgres'],
   hl7: hl7Base,
   FHIRBatchOperationSize: 1000,
+  numberOfResourcesUrlBase,
   codesystems: {
     ATC: 'http://www.whocc.no/atc',
     SNOMED: 'http://snomed.info/sct',

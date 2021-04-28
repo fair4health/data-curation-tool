@@ -4,7 +4,7 @@
       <q-item-label class="text-weight-bold q-mb-lg text-primary text-h6">
         {{ $t('LABELS.ADD_TERMINOLOGY_SERVICE') }}
       </q-item-label>
-      <q-input outlined dense type="url" class="col-10" v-model="terminologyBaseUrl" color="primary"
+      <q-input outlined dense type="url" class="col-10" v-model.lazy.trim="terminologyBaseUrl" color="primary"
                @input="tBaseVerificationStatus = Status.PENDING"
                :placeholder="$t('LABELS.TERMINOLOGY_SERVICE_URL')"
                :disable="isInProgress(tBaseVerificationStatus)"
@@ -40,6 +40,7 @@
   import Status from '@/common/Status'
   import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
   import { ipcRenderer } from 'electron'
+  import {FHIRUtil} from '@/common/utils/fhir-util'
 
   @Component
   export default class TerminologyConfig extends Mixins(StatusMixin) {
@@ -58,6 +59,7 @@
 
     verifyTerminology () {
       if (this.terminologyBaseUrl) {
+        this.terminologyBaseUrl = FHIRUtil.trimUrl(this.terminologyBaseUrl)
         this.tBaseVerificationStatus = Status.IN_PROGRESS
         this.$store.dispatch(types.Terminology.VERIFY_TERMINOLOGY, this.terminologyBaseUrl)
           .then(() => {

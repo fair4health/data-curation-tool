@@ -30,6 +30,7 @@
   import { Component, Vue, Prop } from 'vue-property-decorator'
   import { environment } from '@/common/environment'
   import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
+  import {FHIRUtil} from '@/common/utils/fhir-util'
 
   @Component
   export default class CodeSystemSelect extends Vue {
@@ -54,7 +55,7 @@
     }
 
     updateUrl (val: string) {
-      this.url = val?.trim() || ''
+      this.url = FHIRUtil.trimUrl(val?.trim() || '')
       this.$emit('input', this.url)
     }
   }

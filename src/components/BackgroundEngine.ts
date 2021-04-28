@@ -1057,12 +1057,29 @@ export default class BackgroundEngine extends Vue {
    */
   createProvenanceAndLicense (author: string, license: License, provenanceTargets: fhir.Reference[], documentManifestContent: fhir.Reference[]): Promise<void> {
     const currentDate: string = new Date().toISOString()
+    const resourceCounts = provenanceTargets.reduce((acc, currReference) => {
+      const reference = currReference.reference.split('/')[0]
+      if (!acc.hasOwnProperty(reference)) {
+        acc[reference] = 0
+      }
+      acc[reference]++
+      return acc
+    }, {})
+    const extension: fhir.Extension[] = []
+    Object.keys(resourceCounts).map((resourceType: string) => {
+      extension.push({
+        url: `${environment.numberOfResourcesUrlBase}/${resourceType}`,
+        valueInteger: resourceCounts[resourceType]
+      })
+    })
     // Modify provenance resource
+    this.provenance.extension = extension
     this.provenance.target = provenanceTargets
     this.provenance.recorded = currentDate
     this.provenance.signature[0].when = currentDate
     this.provenance.agent[0].who.display = author
     // Modify documentManifest resource
+    this.documentManifest.extension = extension
     this.documentManifest.content = documentManifestContent
     this.documentManifest.created = currentDate
     this.documentManifest.related[0].ref.display = license.display
