@@ -54,7 +54,7 @@
             <q-icon name="fas fa-id-card" />
           </template>
         </q-input>
-        <q-checkbox dense v-model="isCustomLicense" label="Add custom license"></q-checkbox>
+        <q-checkbox dense v-model="isCustomLicense" :label="$t('LABELS.ADD_CUSTOM_LICENSE')"></q-checkbox>
       </q-card-section>
 
       <q-separator />

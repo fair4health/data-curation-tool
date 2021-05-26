@@ -108,6 +108,7 @@
     "VALIDATOR_INFO": "Validate FHIR resources created as a result of mapping, and review details if an inappropriate resource was created."
   },
   "LABELS": {
+    "ADD_CUSTOM_LICENSE": "Add custom license",
     "ADD_TERMINOLOGY_SERVICE": "Add Terminology Service",
     "AUTHENTICATION": "Authentication",
     "AUTHOR": "Author",
