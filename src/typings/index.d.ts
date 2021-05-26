@@ -4846,7 +4846,7 @@ declare interface TransformRequest {
 declare interface License {
   display: string
   description?: string
-  uri: string
+  uri?: string
 }
 
 declare namespace store {
