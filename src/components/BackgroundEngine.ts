@@ -19,7 +19,11 @@ import { DbUtil } from '@/common/utils/db-util'
 
 @Component
 export default class BackgroundEngine extends Vue {
-  private CHUNK_SIZE: number = 1000
+  // Chunk size of batch operations to be performed on FHIR repo (Validation and Transform)
+  private FHIR_OP_CHUNK_SIZE: number = 1000
+  // Chunk size of target resource references to be placed in one Provenance.
+  // Each Provenance resource will store this maximum number of references
+  private PROVENANCE_TARGET_CHUNK_SIZE: number = 5000
   private electronStore: ElectronStore
   private fhirBaseUrl: fhir.uri
   private terminologyBaseUrl: fhir.uri
@@ -616,7 +620,7 @@ export default class BackgroundEngine extends Vue {
 
   public validate (abortSignal: AbortSignal, data: any, reqChunkSize: number, rowNumber?: number): Promise<any> {
     // Update chunk size
-    this.CHUNK_SIZE = reqChunkSize
+    this.FHIR_OP_CHUNK_SIZE = reqChunkSize
     // Is the data source database?
     const isDbSource = this.dataSourceType === DataSourceType.DB
 
@@ -718,7 +722,7 @@ export default class BackgroundEngine extends Vue {
 
                   if (conceptMapList.length) {
                     const conceptMappingCountPerResource: number = conceptMapList.length / bufferResourceList.length
-                    const chunkedConceptMapList = this.$_.chunk(conceptMapList, conceptMappingCountPerResource * this.CHUNK_SIZE)
+                    const chunkedConceptMapList = this.$_.chunk(conceptMapList, conceptMappingCountPerResource * this.FHIR_OP_CHUNK_SIZE)
 
                     for (let i = 0; i < chunkedConceptMapList.length; i++) {
                       chunkPromise = chunkPromise.then(() => {
@@ -739,7 +743,7 @@ export default class BackgroundEngine extends Vue {
                                   if (matchConcept) {
 
                                     const key: string = currentChunk[j].resourceKey
-                                    const bufferResource: BufferResource = bufferResourceList[Math.floor((i * this.CHUNK_SIZE + j) / conceptMappingCountPerResource)].data.get(key)
+                                    const bufferResource: BufferResource = bufferResourceList[Math.floor((i * this.FHIR_OP_CHUNK_SIZE + j) / conceptMappingCountPerResource)].data.get(key)
 
                                     bufferResource.value = matchConcept.valueCoding.code
                                     bufferResource.fixedUri = matchConcept.valueCoding.system
@@ -795,14 +799,14 @@ export default class BackgroundEngine extends Vue {
                                   this.$store.dispatch(types.IDB.SAVE, {resource: resourceType, data: (resourcesInDB?.data || []).concat(resourceList)})
                                     .then(() => {
                                       // Batch upload resources
-                                      // Max capacity CHUNK_SIZE resources
-                                      const len = Math.ceil(resourceList.length / this.CHUNK_SIZE)
+                                      // Max capacity FHIR_OP_CHUNK_SIZE resources
+                                      const len = Math.ceil(resourceList.length / this.FHIR_OP_CHUNK_SIZE)
 
                                       const batchPromiseList: Array<Promise<any>> = []
 
                                       for (let i = 0, p = Promise.resolve(); i < len; i++) {
                                         batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
-                                          this.$fhirService.validate(resourceList!.slice(i * this.CHUNK_SIZE, (i + 1) * this.CHUNK_SIZE))
+                                          this.$fhirService.validate(resourceList!.slice(i * this.FHIR_OP_CHUNK_SIZE, (i + 1) * this.FHIR_OP_CHUNK_SIZE))
                                             .then(res => {
                                               const bundle: fhir.Bundle = res.data as fhir.Bundle
                                               const outcomeDetails: OutcomeDetail[] = []
@@ -955,14 +959,14 @@ export default class BackgroundEngine extends Vue {
               ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_X(resourceType), {status: Status.IN_PROGRESS} as OutcomeDetail)
 
               // Batch upload resources
-              // Max capacity CHUNK_SIZE resources
-              const len = Math.ceil(resourceList!.length / this.CHUNK_SIZE)
+              // Max capacity FHIR_OP_CHUNK_SIZE resources
+              const len = Math.ceil(resourceList!.length / this.FHIR_OP_CHUNK_SIZE)
 
               const batchPromiseList: Array<Promise<any>> = []
 
               for (let i = 0, p = Promise.resolve(); i < len; i++) {
                 batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
-                  this.$fhirService.postBatch(resourceList!.slice(i * this.CHUNK_SIZE, (i + 1) * this.CHUNK_SIZE), 'PUT')
+                  this.$fhirService.postBatch(resourceList!.slice(i * this.FHIR_OP_CHUNK_SIZE, (i + 1) * this.FHIR_OP_CHUNK_SIZE), 'PUT')
                     .then(res => {
                       const bundle: fhir.Bundle = res.data as fhir.Bundle
                       const outcomeDetails: OutcomeDetail[] = []
@@ -1057,7 +1061,67 @@ export default class BackgroundEngine extends Vue {
    */
   createProvenanceAndLicense (author: string, license: License, provenanceTargets: fhir.Reference[], documentManifestContent: fhir.Reference[]): Promise<void> {
     const currentDate: string = new Date().toISOString()
-    const resourceCounts = provenanceTargets.reduce((acc, currReference) => {
+    const documentManifestExtension: fhir.Extension[] = this.createExtensionForResourceCounts(provenanceTargets)
+
+    const chunkedReferences = this.$_.chunk(provenanceTargets, this.PROVENANCE_TARGET_CHUNK_SIZE)
+    return Promise.all(chunkedReferences.map((chunkedProvenanceTargets: fhir.Reference[]) => {
+      return new Promise((resolve, reject) => {
+        // Modify provenance resource
+        this.provenance.extension = this.createExtensionForResourceCounts(chunkedProvenanceTargets)
+        this.provenance.target = chunkedProvenanceTargets
+        this.provenance.recorded = currentDate
+        this.provenance.signature[0].when = currentDate
+        this.provenance.agent[0].who.display = author
+
+        // Post the provenance resource
+        this.$fhirService.postResource(this.provenance)
+          .then(res => {
+            const provenanceResource: fhir.Provenance = res.data
+            log.info('Provenance resource has been created with ref: Provenance/' + provenanceResource.id)
+            resolve({reference: 'Provenance/' + provenanceResource.id})
+          }, err => {
+            log.error(`Provenance resource could not be created. Error status: ${err.status}`)
+            reject(err)
+          })
+      })
+    }))
+      .then((createdProvenanceReferences: fhir.Reference[]) => {
+        // Modify documentManifest resource
+        this.documentManifest.extension = documentManifestExtension
+        this.documentManifest.content = createdProvenanceReferences
+        this.documentManifest.created = currentDate
+        this.documentManifest.related[0].ref.display = license.display
+        this.documentManifest.related[0].ref.type = license.uri
+        return new Promise((resolve, reject) => {
+          this.createCurationToolDeviceRes().then(() => {
+            // Post the documentManifest resource
+            this.$fhirService.postResource(this.documentManifest)
+              .then(res => {
+                const documentManifest: fhir.DocumentManifest = res.data
+                log.info('DocumentManifest resource has been created with ref: DocumentManifest/' + documentManifest.id)
+                resolve()
+              }, err => {
+                log.error(`DocumentManifest resource could not be created. Error status: ${err.status}`)
+                reject(err)
+              })
+          })
+            .catch(err => {
+              reject(err)
+            })
+        })
+      })
+  }
+
+  /**
+   * Returns an Extension array containing the generated resource numbers for each resource type, in the following format:
+   *  {
+   *    url: "http://hl7.org/fhir/f4h/resource-count/<ResourceType>"
+   *    valueInteger: 10
+   *  }
+   * @param references
+   */
+  createExtensionForResourceCounts (references: fhir.Reference[]): fhir.Extension[] {
+    const resourceCounts = references.reduce((acc, currReference) => {
       const reference = currReference.reference.split('/')[0]
       if (!acc.hasOwnProperty(reference)) {
         acc[reference] = 0
@@ -1072,43 +1136,7 @@ export default class BackgroundEngine extends Vue {
         valueInteger: resourceCounts[resourceType]
       })
     })
-    // Modify provenance resource
-    this.provenance.extension = extension
-    this.provenance.target = provenanceTargets
-    this.provenance.recorded = currentDate
-    this.provenance.signature[0].when = currentDate
-    this.provenance.agent[0].who.display = author
-    // Modify documentManifest resource
-    this.documentManifest.extension = extension
-    this.documentManifest.content = documentManifestContent
-    this.documentManifest.created = currentDate
-    this.documentManifest.related[0].ref.display = license.display
-    this.documentManifest.related[0].ref.type = license.uri
-    return new Promise((resolve, reject) => {
-      this.createCurationToolDeviceRes().then(() => {
-        // Post the provenance resource
-        this.$fhirService.postResource(this.provenance)
-          .then(() => {
-            log.info('Provenance resource has been created.')
-            resolve()
-          }, err => {
-            log.error(`Provenance resource could not be created. Error status: ${err.status}`)
-            reject(err)
-          })
-        // Post the documentManifest resource
-        this.$fhirService.postResource(this.documentManifest)
-          .then(() => {
-            log.info('DocumentManifest resource has been created.')
-            resolve()
-          }, err => {
-            log.error(`DocumentManifest resource could not be created. Error status: ${err.status}`)
-            reject(err)
-          })
-      })
-        .catch(err => {
-          reject(err)
-        })
-    })
+    return extension
   }
 
   /**
