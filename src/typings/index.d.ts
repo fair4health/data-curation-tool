@@ -4914,7 +4914,7 @@ declare interface BufferResourceDefinition {
   resourceType: string
   profile: string
   data: Map<string, BufferResource>
-  relatedRecordID: string
+  relatedRecordID?: string
 }
 
 declare interface BufferResource {
