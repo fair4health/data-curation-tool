@@ -4890,6 +4890,7 @@ declare namespace store {
     target: string
     value?: string
     resourceKey?: string
+    relatedRecordID?: string
   }
 }
 
@@ -4913,6 +4914,7 @@ declare interface BufferResourceDefinition {
   resourceType: string
   profile: string
   data: Map<string, BufferResource>
+  relatedRecordID: string
 }
 
 declare interface BufferResource {
