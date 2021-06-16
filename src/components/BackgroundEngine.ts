@@ -503,15 +503,21 @@ export default class BackgroundEngine extends Vue {
                 this.ready()
                 return
               }
-              log.info(`Mapping loaded from ${filePaths[0]}`)
-              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, JSON.parse(data.toString()))
+              try {
+                const parsedData = JSON.parse(data.toString())
+                log.info(`Mapping loaded from ${filePaths[0]}`)
+                ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, parsedData)
+              } catch (e) {
+                log.error(`Mapping couldn't be loaded from ${filePaths[0]}. ${e}`)
+                ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, undefined)
+              }
             })
           } else ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, undefined)
-
           this.ready()
         })
         .catch(err => {
           log.error(`Browse file error. ${err}`)
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, undefined)
           this.ready()
         })
     })

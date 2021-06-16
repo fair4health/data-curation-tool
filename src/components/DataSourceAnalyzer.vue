@@ -112,13 +112,13 @@
                   <q-btn v-show="isSuccess(dbConnectionStatus)" unelevated :label="$t('BUTTONS.REMOVE_CONNECTION')" color="negative" @click="closeDbConnection" class="q-px-sm" no-caps />
                   <q-space />
                   <q-btn v-show="isSuccess(dbConnectionStatus)" rounded unelevated :label="$t('BUTTONS.RELOAD_TABLES')" color="grey-2" text-color="grey-7" @click="selectDB" icon="sync" no-caps />
-                  <q-btn outline color="positive" @click="establishDbConnection" :disable="isDBConnectable"
+                  <q-btn outline color="positive" @click="establishDbConnection" :disable="isDBConnectable || isSuccess(dbConnectionStatus)"
                          :loading="isInProgress(dbConnectionStatus)"
                   >
-                  <span v-if="isSuccess(dbConnectionStatus) || isError(dbConnectionStatus)" class="q-mr-sm">
-                    <q-icon name="check" size="xs" color="green" v-show="isSuccess(dbConnectionStatus)" />
-                    <q-icon name="error_outline" size="xs" color="red" v-show="isError(dbConnectionStatus)" />
-                  </span>
+                    <span v-if="isSuccess(dbConnectionStatus) || isError(dbConnectionStatus)" class="q-mr-sm">
+                      <q-icon name="check" size="xs" color="green" v-show="isSuccess(dbConnectionStatus)" />
+                      <q-icon name="error_outline" size="xs" color="red" v-show="isError(dbConnectionStatus)" />
+                    </span>
                     <span>{{ $t('BUTTONS.CONNECT') }}</span>
                   </q-btn>
                 </div>
