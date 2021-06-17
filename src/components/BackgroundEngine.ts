@@ -503,15 +503,21 @@ export default class BackgroundEngine extends Vue {
                 this.ready()
                 return
               }
-              log.info(`Mapping loaded from ${filePaths[0]}`)
-              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, JSON.parse(data.toString()))
+              try {
+                const parsedData = JSON.parse(data.toString())
+                log.info(`Mapping loaded from ${filePaths[0]}`)
+                ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, parsedData)
+              } catch (e) {
+                log.error(`Mapping couldn't be loaded from ${filePaths[0]}. ${e}`)
+                ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, undefined)
+              }
             })
           } else ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, undefined)
-
           this.ready()
         })
         .catch(err => {
           log.error(`Browse file error. ${err}`)
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.SELECTED_MAPPING, undefined)
           this.ready()
         })
     })
@@ -656,6 +662,7 @@ export default class BackgroundEngine extends Vue {
               const resources: Map<string, fhir.Resource[]> = new Map<string, fhir.Resource[]>()
               const bufferResourceList: BufferResourceDefinition[] = []
               const conceptMapList: store.ConceptMap[] = []
+              const recordIDsHavingConceptMap: string[] = []
 
               Promise.all(entries.map((entry) => {
                 return new Promise((resolveOneRow, rejectOneRow) => {
@@ -678,6 +685,8 @@ export default class BackgroundEngine extends Vue {
                                 value = value.replace(',', '.')
                               }
 
+                              const hasConceptMapping: boolean = !!(sourceData.conceptMap && sourceData.conceptMap.source)
+
                               Promise.all(sourceData.target.map((target: store.Target) => {
                                 // Buffer Resource creation
                                 // target.value.substr(target.value.length - 3) === '[x]'
@@ -689,19 +698,22 @@ export default class BackgroundEngine extends Vue {
                                   fixedUri: target.fixedUri
                                 }))
 
-                                if (sourceData.conceptMap && sourceData.conceptMap.source) {
-                                  conceptMapList.push({value, resourceKey: key, ...sourceData.conceptMap})
+                                if (hasConceptMapping) {
+                                  conceptMapList.push({relatedRecordID: record.recordId, value, resourceKey: key, ...sourceData.conceptMap})
                                 }
 
                               }))
-                                .then(() => resolveTargets())
+                                .then(() => resolveTargets(hasConceptMapping))
                                 .catch(() => resolveTargets())
                             } else resolveTargets()
                           })
                         }))
-                          .then(() => {
+                          .then(res => {
                             // End of one record
-                            bufferResourceList.push({resourceType: record.resource, profile: record.profile, data: bufferResourceMap})
+                            if (res.includes(true) && !recordIDsHavingConceptMap.includes(record.recordId)) {
+                              recordIDsHavingConceptMap.push(record.recordId)
+                            }
+                            bufferResourceList.push({resourceType: record.resource, profile: record.profile, relatedRecordID: record.recordId, data: bufferResourceMap})
                             resolveRecord()
 
                           })
@@ -721,45 +733,51 @@ export default class BackgroundEngine extends Vue {
                   let chunkPromise = Promise.resolve()
 
                   if (conceptMapList.length) {
-                    const conceptMappingCountPerResource: number = conceptMapList.length / bufferResourceList.length
-                    const chunkedConceptMapList = this.$_.chunk(conceptMapList, conceptMappingCountPerResource * this.FHIR_OP_CHUNK_SIZE)
+                    // If there is a concept mapping, filter buffer resources by ID numbers based on mapping record
+                    // Buffer resources having concept mapping
+                    for (const recordID of recordIDsHavingConceptMap) {
+                      const bufferResourcesHavingConceptMap = bufferResourceList.filter(_ => _.relatedRecordID === recordID)
+                      const currentConceptMapList = conceptMapList.filter(_ => _.relatedRecordID === recordID)
 
-                    for (let i = 0; i < chunkedConceptMapList.length; i++) {
-                      chunkPromise = chunkPromise.then(() => {
-                        return new Promise((resolveChunk, rejectChunk) => {
-                          const currentChunk = chunkedConceptMapList[i]
+                      const conceptMappingCountPerResource: number = currentConceptMapList.length / bufferResourcesHavingConceptMap.length
+                      const chunkedConceptMapList = this.$_.chunk(currentConceptMapList, conceptMappingCountPerResource * this.FHIR_OP_CHUNK_SIZE)
 
-                          this.$terminologyService.translateBatch(currentChunk)
-                            .then((bundle: fhir.Bundle) => {
+                      for (let i = 0; i < chunkedConceptMapList.length; i++) {
+                        chunkPromise = chunkPromise.then(() => {
+                          return new Promise((resolveChunk, rejectChunk) => {
+                            const currentChunk = chunkedConceptMapList[i]
 
-                              const parametersEntry: fhir.BundleEntry[] = bundle.entry
-                              const bundleEntrySize: number = bundle.entry.length
+                            this.$terminologyService.translateBatch(currentChunk)
+                              .then((bundle: fhir.Bundle) => {
+                                const parametersEntry: fhir.BundleEntry[] = bundle.entry
+                                const bundleEntrySize: number = bundle.entry.length
 
-                              for (let j = 0; j < bundleEntrySize; j++) {
-                                const parametersParameters: fhir.ParametersParameter[] = (parametersEntry[j].resource as fhir.Parameters).parameter
+                                for (let j = 0; j < bundleEntrySize; j++) {
+                                  const parametersParameters: fhir.ParametersParameter[] = (parametersEntry[j].resource as fhir.Parameters).parameter
 
-                                if (parametersParameters.find(_ => _.name === 'result')?.valueBoolean === true) {
-                                  const matchConcept: fhir.ParametersParameter | undefined = parametersParameters.find(_ => _.name === 'match')?.part?.find(_ => _.name === 'concept')
-                                  if (matchConcept) {
+                                  if (parametersParameters.find(_ => _.name === 'result')?.valueBoolean === true) {
+                                    const matchConcept: fhir.ParametersParameter | undefined = parametersParameters.find(_ => _.name === 'match')?.part?.find(_ => _.name === 'concept')
+                                    if (matchConcept) {
 
-                                    const key: string = currentChunk[j].resourceKey
-                                    const bufferResource: BufferResource = bufferResourceList[Math.floor((i * this.FHIR_OP_CHUNK_SIZE + j) / conceptMappingCountPerResource)].data.get(key)
+                                      const key: string = currentChunk[j].resourceKey
+                                      const bufferResource: BufferResource = bufferResourcesHavingConceptMap[Math.floor((i * this.FHIR_OP_CHUNK_SIZE + j) / conceptMappingCountPerResource)].data.get(key)
 
-                                    bufferResource.value = matchConcept.valueCoding.code
-                                    bufferResource.fixedUri = matchConcept.valueCoding.system
+                                      bufferResource.value = matchConcept.valueCoding.code
+                                      bufferResource.fixedUri = matchConcept.valueCoding.system
 
+                                    }
                                   }
                                 }
-                              }
-                              resolveChunk()
-                            })
-                            .catch(err => {
-                              log.error(`Batch translation error. ${err}`)
-                              resolveChunk()
-                            })
+                                resolveChunk()
+                              })
+                              .catch(err => {
+                                log.error(`Batch translation error. ${err}`)
+                                resolveChunk()
+                              })
 
+                          })
                         })
-                      })
+                      }
                     }
                   }
 
