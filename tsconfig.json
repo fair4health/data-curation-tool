@@ -9,6 +9,7 @@
     "noImplicitAny": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "inlineSources": true,
     "sourceMap": true,
     "baseUrl": ".",
     "typeRoots": [

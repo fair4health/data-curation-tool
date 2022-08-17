@@ -2,6 +2,10 @@ import HmacSHA256 from 'crypto-js/hmac-md5'
 import { FhirService } from './../services/fhir.service'
 import { environment } from './../environment'
 import { DataTypeFactory } from './../model/factory/data-type-factory'
+import path from 'path'
+import fs from 'fs'
+import { remote } from 'electron'
+import StructureDefinition = fhir.StructureDefinition;
 
 export class FHIRUtil {
 
@@ -60,6 +64,55 @@ export class FHIRUtil {
     return element.substr(element.length - 3) === '[x]'
   }
 
+  static readStructureDefinitionsOfBaseResources (): fhir.StructureDefinition[] {
+    let structureDefinitionsFilePath = localStorage.getItem('structure-definitions-file')
+
+    if (structureDefinitionsFilePath === undefined || structureDefinitionsFilePath === null || !fs.existsSync(structureDefinitionsFilePath)) {
+      const parsedZipPath = path.parse(environment.FHIRDefinitionsZipPath)
+      const resourcesFilePath = path.join(remote.app.getPath('userData'), parsedZipPath.name, 'profiles-resources.json')
+      structureDefinitionsFilePath = path.join(remote.app.getPath('userData'), parsedZipPath.name, 'tofhir-structure-definitions.json')
+
+      const content = fs.readFileSync(resourcesFilePath)
+      const bundle = JSON.parse(content.toString('utf-8')) as fhir.Bundle
+      const structureDefinitionResources = bundle.entry.flatMap<StructureDefinition>(e => e.resource.resourceType === 'StructureDefinition' ? e.resource as StructureDefinition : [])
+      fs.writeFileSync(structureDefinitionsFilePath, JSON.stringify(structureDefinitionResources))
+
+      localStorage.setItem('structure-definitions-file', structureDefinitionsFilePath)
+
+      return structureDefinitionResources
+    }
+
+    return JSON.parse(fs.readFileSync(structureDefinitionsFilePath).toString('utf-8')) as StructureDefinition[]
+  }
+
+  static getStructureDefinitionFromBaseResources (resourceType: string): Promise<StructureDefinition> {
+    return new Promise((resolve, reject) => {
+      const baseResourceDefinition = this.readStructureDefinitionsOfBaseResources().find(sd => sd.url.split('/').pop() === resourceType)
+      if (baseResourceDefinition === undefined || baseResourceDefinition === null) {
+        reject(`Base resource definition file does not include the resourceType: ${resourceType}`)
+      }
+      resolve(baseResourceDefinition)
+    })
+  }
+
+  static getStructureDefinitionOfProfile (fhirService: FhirService, profileUrl: string): Promise<StructureDefinition> {
+    return new Promise((resolve, reject) => {
+      const query = {}
+      query['url'] = profileUrl
+
+      fhirService.search('StructureDefinition', query, true)
+        .then(res => {
+          const bundle = res.data as fhir.Bundle
+          if (bundle.entry?.length) {
+            resolve(bundle.entry[0].resource as fhir.StructureDefinition)
+          } else {
+            reject(`Returned bundle from the StructureDefinition search endpoint does no include any entries for the profile: ${profileUrl}.`)
+          }
+        })
+        .catch(() => reject(`Cannot invoke the search under StructureDefinition endpoint of the FHIR service for the profile: ${profileUrl}.`))
+    })
+  }
+
   /**
    * Parses elements of a StructureDefinition resource (StructureDefinition.snapshot.element)
    * @param fhirService
@@ -68,69 +121,61 @@ export class FHIRUtil {
    */
   static parseElementDefinitions (fhirService: FhirService, parameter: string, profileId: string): Promise<any> {
     return new Promise((resolveParam, rejectParam) => {
-      const query = {}
-      query[parameter] = profileId
+      const promise = parameter === 'url' ? this.getStructureDefinitionOfProfile(fhirService, profileId) : this.getStructureDefinitionFromBaseResources(profileId)
+      promise.then(resource => {
+        const list: fhir.ElementTree[] = []
+        Promise.all(resource?.snapshot?.element.map((element: fhir.ElementDefinition) => {
+          return new Promise(resolveElement => {
+            // Mark the id field as required field
+            const idSplitted = element.id.split('.')
+            if (idSplitted.length === 2 && idSplitted[1] === 'id') element.min = 1
+            const parts = element.id?.split('.') || []
+            let tmpList = list
 
-      fhirService.search('StructureDefinition', query, true)
-        .then(res => {
-          const bundle = res.data as fhir.Bundle
-          if (bundle.entry?.length) {
-            const resource = bundle.entry[0].resource as fhir.StructureDefinition
-            const list: fhir.ElementTree[] = []
-            Promise.all(resource?.snapshot?.element.map((element: fhir.ElementDefinition) => {
-              return new Promise(resolveElement => {
-                // Mark the id field as required field
-                const idSplitted = element.id.split('.')
-                if (idSplitted.length === 2 && idSplitted[1] === 'id') element.min = 1
-                const parts = element.id?.split('.') || []
-                let tmpList = list
+            // Fixed code-system uri for code fields
+            const fixedUri = element.fixedUri
 
-                // Fixed code-system uri for code fields
-                const fixedUri = element.fixedUri
-
-                Promise.all(parts.map(part => {
-                  return new Promise((resolveElementPart => {
-                    let match = tmpList.findIndex(_ => _.label === part)
-                    if (match === -1) {
-                      match = 0
-                      const item: fhir.ElementTree = {
-                        value: element.id,
-                        label: part,
-                        definition: element.definition,
-                        comment: element.comment,
-                        short: element.short,
-                        min: element.min,
-                        max: element.max,
-                        type: element.type.map(_ => {
-                          const elementType: fhir.ElementTree = {value: _.code, label: _.code, type: [{value: _.code, label: _.code}], targetProfile: _.targetProfile}
-                          if (_.code !== 'CodeableConcept' && _.code !== 'Coding' && _.code !== 'Reference' && environment.datatypes[_.code])
-                            elementType.lazy = true
-                          return FHIRUtil.cleanJSON(elementType)
-                        }),
-                        children: []
-                      }
-                      tmpList.push(item)
-                      resolveElementPart()
-                    }
-                    if (fixedUri) tmpList[match].fixedUri = fixedUri
-                    tmpList = tmpList[match].children as fhir.ElementTree[]
-                    resolveElementPart()
-                  }))
-                })).then(() => resolveElement()).catch(() => resolveElement())
-              })
-            }) || [])
-              .then(() => {
-                list[0].children.map(_ => {
-                  if (_.type[0].value !== 'BackboneElement') _.children = []
-                  else _.noTick = true
-                  return _
-                })
-                resolveParam(list)
-              })
-              .catch(() => rejectParam([]))
-          } else { resolveParam([]) }
-        })
-        .catch(() => rejectParam([]))
+            Promise.all(parts.map(part => {
+              return new Promise((resolveElementPart => {
+                let match = tmpList.findIndex(_ => _.label === part)
+                if (match === -1) {
+                  match = 0
+                  const item: fhir.ElementTree = {
+                    value: element.id,
+                    label: part,
+                    definition: element.definition,
+                    comment: element.comment,
+                    short: element.short,
+                    min: element.min,
+                    max: element.max,
+                    type: element.type.map(_ => {
+                      const elementType: fhir.ElementTree = {value: _.code, label: _.code, type: [{value: _.code, label: _.code}], targetProfile: _.targetProfile}
+                      if (_.code !== 'CodeableConcept' && _.code !== 'Coding' && _.code !== 'Reference' && environment.datatypes[_.code])
+                        elementType.lazy = true
+                      return FHIRUtil.cleanJSON(elementType)
+                    }),
+                    children: []
+                  }
+                  tmpList.push(item)
+                  resolveElementPart()
+                }
+                if (fixedUri) tmpList[match].fixedUri = fixedUri
+                tmpList = tmpList[match].children as fhir.ElementTree[]
+                resolveElementPart()
+              }))
+            })).then(() => resolveElement()).catch(() => resolveElement())
+          })
+        }) || [])
+          .then(() => {
+            list[0].children.map(_ => {
+              if (_.type[0].value !== 'BackboneElement') _.children = []
+              else _.noTick = true
+              return _
+            })
+            resolveParam(list)
+          })
+          .catch(() => rejectParam([]))
+      })
     })
   }
 

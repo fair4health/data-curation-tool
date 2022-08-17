@@ -31,6 +31,7 @@
     "electron-log": "^4.2.2",
     "electron-store": "^5.1.0",
     "es6-promise": "^4.2.8",
+    "extract-zip": "^2.0.1",
     "isomorphic-fetch": "^2.2.1",
     "ng-fhir": "^2.3.0",
     "pg": "^8.5.1",
