@@ -64,6 +64,12 @@ export class FHIRUtil {
     return element.substr(element.length - 3) === '[x]'
   }
 
+  /**
+   * Filter the StructureDefinition resources from standard profiles-resources.json and save them into
+   * tofhir-structure-definitions.json so that subsequent calls do not need to parse a very large file again and again.
+   *
+   * @return Return an array of #fhir.StructureDefinition objects from the base resource definition files.
+   */
   static readStructureDefinitionsOfBaseResources (): fhir.StructureDefinition[] {
     let structureDefinitionsFilePath = localStorage.getItem('structure-definitions-file')
 
@@ -85,6 +91,10 @@ export class FHIRUtil {
     return JSON.parse(fs.readFileSync(structureDefinitionsFilePath).toString('utf-8')) as StructureDefinition[]
   }
 
+  /**
+   * Retrieve the #StructureDefinition of a given resource type from the base FHIR definitions.
+   * @param resourceType
+   */
   static getStructureDefinitionFromBaseResources (resourceType: string): Promise<StructureDefinition> {
     return new Promise((resolve, reject) => {
       const baseResourceDefinition = this.readStructureDefinitionsOfBaseResources().find(sd => sd.url.split('/').pop() === resourceType)
@@ -95,6 +105,11 @@ export class FHIRUtil {
     })
   }
 
+  /**
+   * Retrieve the profile definition from the given FHIR endpoint.
+   * @param fhirService
+   * @param profileUrl
+   */
   static getStructureDefinitionOfProfile (fhirService: FhirService, profileUrl: string): Promise<StructureDefinition> {
     return new Promise((resolve, reject) => {
       const query = {}
