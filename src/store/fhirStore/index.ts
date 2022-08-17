@@ -96,9 +96,11 @@ const fhirStore = {
           .then(res => {
             const bundle = res.data as fhir.Bundle
             if (bundle.total > 0) {
-              profileList.push(...(bundle.entry?.map(e => {
+              profileList.push(...(bundle.entry?.flatMap(e => {
                 const structure = e.resource as fhir.StructureDefinition
-                return {id: structure.id, title: structure.title, url: structure.url} as fhir.StructureDefinition
+                if (structure.snapshot) // Add this profile to the list only if it has the snapshot field.
+                  return {id: structure.id, title: structure.title, url: structure.url} as fhir.StructureDefinition
+                else return []
               }) || []))
 
               Promise.all(profileList.map(profile => {
@@ -107,9 +109,11 @@ const fhirStore = {
                     .then(res => {
                       const bundle = res.data as fhir.Bundle
                       if (bundle.total > 0) {
-                        subProfiles.push(...(bundle.entry?.map(e => {
+                        subProfiles.push(...(bundle.entry?.flatMap(e => {
                           const structure = e.resource as fhir.StructureDefinition
-                          return {id: structure.id, title: structure.title, url: structure.url} as fhir.StructureDefinition
+                          if (structure.snapshot) // Add this profile to the list only if it has the snapshot field.
+                            return {id: structure.id, title: structure.title, url: structure.url} as fhir.StructureDefinition
+                          else return []
                         }) || []))
                       }
                       resolveSubProfile(true)
