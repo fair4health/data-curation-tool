@@ -19,6 +19,7 @@ export let environment = {
     },
     compatibleFhirVersions: ['4.0.0', '4.0.1']
   },
+  FHIRDefinitionsZipPath: './fhir-definitions/definitions-r4.zip',
   langs: ['en'],
   databaseTypes: ['postgres'],
   hl7: hl7Base,

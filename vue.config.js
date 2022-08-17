@@ -26,6 +26,11 @@ module.exports = {
           perMachine: true,
           allowToChangeInstallationDirectory: true,
           createDesktopShortcut: true
+        },
+        extraFiles: {
+          from: 'fhir-definitions',
+          to: 'fhir-definitions',
+          filter: ["**/*"]
         }
       }
     }

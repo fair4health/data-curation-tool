@@ -2,9 +2,13 @@
 
 import { app, protocol, BrowserWindow, dialog, ipcMain, webContents, MessageBoxReturnValue } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import log from 'electron-log'
+import log, {error} from 'electron-log'
 import { IpcChannelUtil as ipcChannels } from './common/utils/ipc-channel-util'
-// import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+import path from 'path'
+import fs from 'fs'
+import extract from 'extract-zip'
+import {environment} from '@/common/environment';
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -22,7 +26,7 @@ app.commandLine.appendSwitch('js-flags', '--max-old-space-size=8096')
 
 // Logger settings
 log.transports.file.fileName = 'log.txt'
-log.transports.console.level = false
+// log.transports.console.level = false
 
 // Stack of available background threads
 const availableThreads: webContents[] = []
@@ -39,7 +43,7 @@ function doWork () {
   // win.webContents.send('status', availableThreads.length, taskQueue.length)
 }
 
-function createWindow () {
+async function createWindow () {
   // Create the browser window.
   win = new BrowserWindow({
     minWidth: 800,
@@ -62,7 +66,7 @@ function createWindow () {
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
-    // if (!process.env.IS_TEST) win.webContents.openDevTools()
+    if (!process.env.IS_TEST) win.webContents.openDevTools()
   } else {
     createProtocol('fair4health')
     // Load the index.html when not in development
@@ -144,6 +148,28 @@ function createBgWindow (id: number): BrowserWindow {
 
 }
 
+async function extractFHIRDefinitionZip () {
+  const definitionsFilePath = path.resolve(environment.FHIRDefinitionsZipPath)
+  const parsedPath = path.parse(definitionsFilePath)
+  const extractionFolderPath = path.join(app.getPath('userData'), parsedPath.name)
+  log.info('Location of definitions-r4.zip -> ' + definitionsFilePath)
+  log.info('Extracted definitions folder -> ' + extractionFolderPath)
+
+  if (fs.existsSync(path.join(extractionFolderPath, 'profiles-resources.json'))) {
+    // ZIP was previously extracted. Do not extract it again.
+    log.info('Definitions ZIP file already extracted, skipping...')
+    return
+  }
+
+  try {
+    await extract(definitionsFilePath, {dir: extractionFolderPath})
+    log.info(`Extraction of ${definitionsFilePath} completed`)
+  } catch (e) {
+    log.error(`Extraction error: ${e}`)
+    throw e
+  }
+}
+
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On macOS, quits the app as Cmd + Q does
@@ -164,11 +190,32 @@ app.on('activate', () => {
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
-    // try {
-    //   await installExtension(VUEJS_DEVTOOLS)
-    // } catch (e) {
-    //   console.error('Vue Devtools failed to install:', e.toString())
-    // }
+    try {
+      await installExtension(VUEJS_DEVTOOLS)
+    } catch (e) {
+      console.error('Vue Devtools failed to install:', e.toString())
+    }
+  }
+
+  try {
+    await extractFHIRDefinitionZip()
+  } catch (e) {
+    const options = {
+      type: 'info',
+      title: 'FHIR Definitions Zip extraction failed.',
+      message: 'Please consult the project\'s GitHub page.',
+      buttons: ['Close']
+    }
+    dialog.showMessageBox(options)
+      .then((messageBoxReturnValue: MessageBoxReturnValue) => {
+        if (messageBoxReturnValue.response === 0) win?.reload()
+        else win?.destroy()
+      })
+      .catch(err => {
+        log.error(err)
+        win?.destroy()
+      })
+    return
   }
 
   // Create Main renderer window
