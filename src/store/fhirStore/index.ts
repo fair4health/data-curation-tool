@@ -1,5 +1,4 @@
 import { environment } from '@/common/environment'
-import StructureDefinition = fhir.StructureDefinition
 import { FHIRUtil } from '@/common/utils/fhir-util'
 import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
 import i18n from '@/i18n'

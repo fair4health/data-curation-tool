@@ -4,22 +4,22 @@ import ElectronStore from 'electron-store'
 import generators from '@/common/model/resource-generators'
 import log from 'electron-log'
 import Status from '@/common/Status'
-import { VNode, CreateElement } from 'vue'
-import { remote, ipcRenderer, OpenDialogReturnValue, SaveDialogReturnValue } from 'electron'
-import { workbookMap } from '@/common/model/workbook'
-import { cellType } from '@/common/model/data-table'
-import { FHIRUtil } from '@/common/utils/fhir-util'
-import { Component, Vue } from 'vue-property-decorator'
-import { IpcChannelUtil as ipcChannels } from '@/common/utils/ipc-channel-util'
-import { VuexStoreUtil as types } from '@/common/utils/vuex-store-util'
-import { environment } from '@/common/environment'
-import { Connection, ConnectionOptions, createConnection, getConnectionManager } from 'typeorm'
-import { DataSourceType, DBConnectionOptions } from '@/common/model/data-source'
-import { DbUtil } from '@/common/utils/db-util'
+import {VNode, CreateElement} from 'vue'
+import {remote, ipcRenderer, OpenDialogReturnValue, SaveDialogReturnValue} from 'electron'
+import {workbookMap} from '@/common/model/workbook'
+import {cellType} from '@/common/model/data-table'
+import {FHIRUtil} from '@/common/utils/fhir-util'
+import {Component, Vue} from 'vue-property-decorator'
+import {IpcChannelUtil as ipcChannels} from '@/common/utils/ipc-channel-util'
+import {VuexStoreUtil as types} from '@/common/utils/vuex-store-util'
+import {environment} from '@/common/environment'
+import {Connection, ConnectionOptions, createConnection, getConnectionManager} from 'typeorm'
+import {DataSourceType, DBConnectionOptions} from '@/common/model/data-source'
+import {DbUtil} from '@/common/utils/db-util'
 
 @Component
 export default class BackgroundEngine extends Vue {
-  // Chunk size of batch operations to be performed on FHIR repo (Validation and Transform)
+  // Chunk size of batch operations to be performed on FHIR repo (Validation and Transform) // Overridden by the environment
   private FHIR_OP_CHUNK_SIZE: number = 1000
   // Chunk size of target resource references to be placed in one Provenance.
   // Each Provenance resource will store this maximum number of references
@@ -81,7 +81,7 @@ export default class BackgroundEngine extends Vue {
     ]
   }
 
-  created () {
+  created() {
 
     // Logger settings
     log.transports.file.fileName = 'log.txt'
@@ -99,7 +99,7 @@ export default class BackgroundEngine extends Vue {
     this.ready()
   }
 
-  public initListeners () {
+  public initListeners() {
     this.setFhirBaseUrl()
     this.setTerminologyBaseUrl()
     this.setDataSourceType()
@@ -134,18 +134,18 @@ export default class BackgroundEngine extends Vue {
   /**
    * Informs main process that this thread is available/ready to perform
    */
-  public ready () {
+  public ready() {
     ipcRenderer.send(ipcChannels.READY)
   }
 
-  public setFhirBaseUrl () {
+  public setFhirBaseUrl() {
     ipcRenderer.on(ipcChannels.Fhir.SET_FHIR_BASE, (event, url) => {
       this.fhirBaseUrl = url
       this.$fhirService.setUrl(this.fhirBaseUrl)
     })
   }
 
-  public setTerminologyBaseUrl () {
+  public setTerminologyBaseUrl() {
     ipcRenderer.on(ipcChannels.Terminology.SET_TERMINOLOGY_BASE_URL, (event, url) => {
       this.terminologyBaseUrl = url
       this.$terminologyService.setUrl(this.terminologyBaseUrl)
@@ -155,7 +155,7 @@ export default class BackgroundEngine extends Vue {
   /**
    * Electron store GET by key operation
    */
-  public getElectronStore () {
+  public getElectronStore() {
     ipcRenderer.on(ipcChannels.ElectronStore.GET_ELECTRON_STORE, (event, key) => {
       ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.ElectronStore.GOT_ELECTRON_STORE, this.electronStore.get(key))
 
@@ -166,7 +166,7 @@ export default class BackgroundEngine extends Vue {
   /**
    * Electron store SET (key, value) pair operation
    */
-  public setElectronStore () {
+  public setElectronStore() {
     ipcRenderer.on(ipcChannels.ElectronStore.SET_ELECTRON_STORE, (event, data) => {
       try {
         this.electronStore.set(data.key, data.value)
@@ -182,7 +182,7 @@ export default class BackgroundEngine extends Vue {
    * WorkbookMap SET operation
    * WorkbookMap stores the current tables with their contents
    */
-  public setWorkbookMap () {
+  public setWorkbookMap() {
     ipcRenderer.on(ipcChannels.SET_WORKBOOK_MAP, (event, data) => {
       workbookMap.set(data.key, data.value)
     })
@@ -192,7 +192,7 @@ export default class BackgroundEngine extends Vue {
    * Data source type SET operation.
    * The source type must be DB or FILE.
    */
-  public setDataSourceType () {
+  public setDataSourceType() {
     ipcRenderer.on(ipcChannels.SET_DATA_SOURCE_TYPE, (event, type: DataSourceType) => {
       this.dataSourceType = type
     })
@@ -201,7 +201,7 @@ export default class BackgroundEngine extends Vue {
   /**
    * Establishes a database connection with the given connection options.
    */
-  public onCreateDbConnection () {
+  public onCreateDbConnection() {
     ipcRenderer.on(ipcChannels.Database.CREATE_CONNECTION, async (event, options: DBConnectionOptions) => {
       // Get Connection Manager
       const connectionManager = getConnectionManager()
@@ -221,18 +221,27 @@ export default class BackgroundEngine extends Vue {
           .then(connection => {
             this.dbConnection = connection
             log.info(`Database connection established host:${options.host} port:${options.port} database:${options.database} for thread: ${remote.getCurrentWindow().getTitle()}`)
-            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CONNECTION_ESTABLISHED, {status: Status.SUCCESS, message: 'Database connection established'})
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CONNECTION_ESTABLISHED, {
+              status: Status.SUCCESS,
+              message: 'Database connection established'
+            })
             this.ready()
           })
           .catch(err => {
             log.error(`Database connection error. ${err.message}`)
-            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CONNECTION_ESTABLISHED, {status: Status.ERROR, message: `Database connection error. ${err.message}`})
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CONNECTION_ESTABLISHED, {
+              status: Status.ERROR,
+              message: `Database connection error. ${err.message}`
+            })
             this.ready()
           })
 
       } else {
         log.info(`Already have a connection with host:${options.host} port:${options.port} database:${options.database} for thread: ${remote.getCurrentWindow().getTitle()}`)
-        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CONNECTION_ESTABLISHED, {status: Status.SUCCESS, message: `Already have a connection with host:${options.host} port:${options.port} database:${options.database}`})
+        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CONNECTION_ESTABLISHED, {
+          status: Status.SUCCESS,
+          message: `Already have a connection with host:${options.host} port:${options.port} database:${options.database}`
+        })
         this.ready()
       }
     })
@@ -241,20 +250,29 @@ export default class BackgroundEngine extends Vue {
   /**
    * Closes the database connection
    */
-  onCloseDbConnection () {
+  onCloseDbConnection() {
     ipcRenderer.on(ipcChannels.Database.CLOSE_CONNECTION, (event) => {
       if (this.dbConnection && this.dbConnection.isConnected) {
         this.dbConnection.close().then(res => {
           log.info(`Database connection has been closed for thread: ${remote.getCurrentWindow().getTitle()}`)
-          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CLOSE_CONNECTION_RES, {status: Status.SUCCESS, message: 'Database connection has been closed.'})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CLOSE_CONNECTION_RES, {
+            status: Status.SUCCESS,
+            message: 'Database connection has been closed.'
+          })
         })
           .catch(err => {
             log.error(`Error occurred while trying to close database connection. ${err.message}`)
-            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CLOSE_CONNECTION_RES, {status: Status.ERROR, message: `${err.message}`})
+            ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CLOSE_CONNECTION_RES, {
+              status: Status.ERROR,
+              message: `${err.message}`
+            })
           })
       } else {
         log.info(`No active connection found.`)
-        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CLOSE_CONNECTION_RES, {status: Status.SUCCESS, message: 'No active connection found.'})
+        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Database.CLOSE_CONNECTION_RES, {
+          status: Status.SUCCESS,
+          message: 'No active connection found.'
+        })
       }
     })
   }
@@ -262,7 +280,7 @@ export default class BackgroundEngine extends Vue {
   /**
    * Retrieves the Public tables in the selected DB.
    */
-  public onSelectDb () {
+  public onSelectDb() {
     ipcRenderer.on(ipcChannels.Database.SELECT_DB, () => {
       if (this.dbConnection) {
         this.dbConnection.query(DbUtil.getTablesQuery())
@@ -286,11 +304,11 @@ export default class BackgroundEngine extends Vue {
   /**
    * Browses files with extensions [xls, xlsx, csv] and sends back their paths as a list
    */
-  public onBrowseFile () {
+  public onBrowseFile() {
     ipcRenderer.on(ipcChannels.File.BROWSE_FILE, () => {
       remote.dialog.showOpenDialog(remote.BrowserWindow.getFocusedWindow(), {
         properties: ['openFile', 'multiSelections'],
-        filters: [{ extensions: ['xls', 'xlsx', 'csv'], name: 'Excel or CSV' }]
+        filters: [{extensions: ['xls', 'xlsx', 'csv'], name: 'Excel or CSV'}]
       })
         .then((openDialogReturnValue: OpenDialogReturnValue) => {
           const filePaths: string[] = openDialogReturnValue.filePaths
@@ -311,7 +329,7 @@ export default class BackgroundEngine extends Vue {
   /**
    * Reads file by path and sends back names of sheets in it
    */
-  public onReadFile () {
+  public onReadFile() {
     ipcRenderer.on(ipcChannels.File.READ_FILE, (event, path) => {
       if (path) {
         if (this.dataSourceType === DataSourceType.DB) {
@@ -335,13 +353,18 @@ export default class BackgroundEngine extends Vue {
               this.ready()
               return
             })
-            stream.on('data', (data) => { buffers.push(data) })
+            stream.on('data', (data) => {
+              buffers.push(data)
+            })
             stream.on('end', () => {
               const buffer = Buffer.concat(buffers)
               const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', sheetRows: 11})
 
               // workbookMap.set(path, workbook)
-              ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {key: path, value: workbook})
+              ipcRenderer.send(ipcChannels.TO_ALL_BACKGROUND, ipcChannels.SET_WORKBOOK_MAP, {
+                key: path,
+                value: workbook
+              })
               log.info('Read file ' + path)
               ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.File.READ_DONE, workbook.SheetNames)
               this.ready()
@@ -364,7 +387,7 @@ export default class BackgroundEngine extends Vue {
   /**
    * Reads and parses table and sends back column headers as a list
    */
-  public onGetTableHeaders () {
+  public onGetTableHeaders() {
     ipcRenderer.on(ipcChannels.File.GET_TABLE_HEADERS, (event, data) => {
       const headers: object[] = []
       if (this.dataSourceType === DataSourceType.DB) {
@@ -431,7 +454,7 @@ export default class BackgroundEngine extends Vue {
   /**
    * Prepares a snapshot of data with a few number of entries
    */
-  public onPrepareSnapshotData () {
+  public onPrepareSnapshotData() {
     ipcRenderer.on(ipcChannels.File.PREPARE_SNAPSHOT_DATA, (event, data) => {
       if (this.dataSourceType === DataSourceType.DB) {
         if (this.dbConnection) {
@@ -487,11 +510,11 @@ export default class BackgroundEngine extends Vue {
   /**
    * Browses files with .json extension and sends back parsed content
    */
-  public onBrowseMapping () {
+  public onBrowseMapping() {
     ipcRenderer.on(ipcChannels.File.BROWSE_MAPPING, () => {
       remote.dialog.showOpenDialog(remote.BrowserWindow.getFocusedWindow(), {
         properties: ['openFile'],
-        filters: [{ extensions: ['json'], name: 'JSON (.json)' }]
+        filters: [{extensions: ['json'], name: 'JSON (.json)'}]
       })
         .then((openDialogReturnValue: OpenDialogReturnValue) => {
           const filePaths: string[] = openDialogReturnValue.filePaths
@@ -526,10 +549,10 @@ export default class BackgroundEngine extends Vue {
   /**
    * File export - opens SAVE dialog and saves file with json extension
    */
-  public onExportFile () {
+  public onExportFile() {
     ipcRenderer.on(ipcChannels.File.EXPORT_FILE, (event, content) => {
       remote.dialog.showSaveDialog(remote.BrowserWindow.getFocusedWindow(), {
-        filters: [{ extensions: ['json'], name: 'JSON (.json)' }]
+        filters: [{extensions: ['json'], name: 'JSON (.json)'}]
       })
         .then((saveDialogReturnValue: SaveDialogReturnValue) => {
           const filename: string = saveDialogReturnValue.filePath
@@ -557,13 +580,13 @@ export default class BackgroundEngine extends Vue {
     })
   }
 
-  public onAbortValidation () {
+  public onAbortValidation() {
     ipcRenderer.on(ipcChannels.Fhir.ABORT_VALIDATION, () => {
       this.abortValidation.abort()
     })
   }
 
-  public prepareDataFromDb (table: string, rowNumber?: number): Promise<any[]> {
+  public prepareDataFromDb(table: string, rowNumber?: number): Promise<any[]> {
     return new Promise<any[]>((resolve, reject) => {
       if (this.dbConnection) {
         this.dbConnection.query(rowNumber ? DbUtil.getTop10EntriesQuery(table) : DbUtil.getEntriesQuery(table))
@@ -581,16 +604,25 @@ export default class BackgroundEngine extends Vue {
     })
   }
 
-  public prepareDataFromFile (filePath: string, rowNumber?: number): Promise<Excel.WorkBook> {
+  public prepareDataFromFile(filePath: string, rowNumber?: number): Promise<Excel.WorkBook> {
     return new Promise<Excel.WorkBook>((resolve, reject) => {
       try {
         const stream = fs.createReadStream(filePath)
         const buffers = []
-        stream.on('error', (err) => { reject(err) })
-        stream.on('data', (data) => { buffers.push(data) })
+        stream.on('error', (err) => {
+          reject(err)
+        })
+        stream.on('data', (data) => {
+          buffers.push(data)
+        })
         stream.on('end', () => {
           const buffer = Buffer.concat(buffers)
-          const workbook: Excel.WorkBook = Excel.read(buffer, {type: 'buffer', cellDates: true, cellText: false, sheetRows: rowNumber})
+          const workbook: Excel.WorkBook = Excel.read(buffer, {
+            type: 'buffer',
+            cellDates: true,
+            cellText: false,
+            sheetRows: rowNumber
+          })
 
           // Save buffer workbook to map
           workbookMap.set(filePath, workbook)
@@ -637,7 +669,7 @@ export default class BackgroundEngine extends Vue {
         rejectValidation('Validation has been aborted')
       }
 
-      abortSignal.addEventListener( 'abort', () => {
+      abortSignal.addEventListener('abort', () => {
         rejectValidation('Validation has been aborted')
       })
 
@@ -651,7 +683,10 @@ export default class BackgroundEngine extends Vue {
         data.sheets.reduce((promise: Promise<any>, sheet: store.Sheet) =>
             promise.then(() => new Promise((resolveSheet, rejectSheet) => {
 
-              const entries: any[] = isDbSource ? workbook : Excel.utils.sheet_to_json(workbook.Sheets[sheet.sheetName], {raw: false, dateNF: 'mm/dd/yyyy'}) || []
+              const entries: any[] = isDbSource ? workbook : Excel.utils.sheet_to_json(workbook.Sheets[sheet.sheetName], {
+                raw: false,
+                dateNF: 'mm/dd/yyyy'
+              }) || []
               const sheetRecords: store.Record[] = sheet.records
 
               ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.INFO_X(filePath, sheet.sheetName), {total: entries.length})
@@ -699,7 +734,11 @@ export default class BackgroundEngine extends Vue {
                                 }))
 
                                 if (hasConceptMapping) {
-                                  conceptMapList.push({relatedRecordID: record.recordId, value, resourceKey: key, ...sourceData.conceptMap})
+                                  conceptMapList.push({
+                                    relatedRecordID: record.recordId,
+                                    value,
+                                    resourceKey: key, ...sourceData.conceptMap
+                                  })
                                 }
 
                               }))
@@ -713,9 +752,13 @@ export default class BackgroundEngine extends Vue {
                             if (res.includes(true) && !recordIDsHavingConceptMap.includes(record.recordId)) {
                               recordIDsHavingConceptMap.push(record.recordId)
                             }
-                            bufferResourceList.push({resourceType: record.resource, profile: record.profile, relatedRecordID: record.recordId, data: bufferResourceMap})
+                            bufferResourceList.push({
+                              resourceType: record.resource,
+                              profile: record.profile,
+                              relatedRecordID: record.recordId,
+                              data: bufferResourceMap
+                            })
                             resolveRecord()
-
                           })
                           .catch(err => rejectRecord(err))
                       } else {
@@ -793,13 +836,17 @@ export default class BackgroundEngine extends Vue {
                           .then((res: fhir.Resource) => {
 
                             currResourceList.push(res)
-                            setTimeout(() => { resolve() }, 0)
+                            setTimeout(() => {
+                              resolve()
+                            }, 0)
 
                           })
                           .catch(err => {
 
                             log.error(bufferResourceDefinition.resourceType + ' Resource generation error.', err)
-                            setTimeout(() => { resolve() }, 0)
+                            setTimeout(() => {
+                              resolve()
+                            }, 0)
 
                           })
                       })
@@ -814,7 +861,10 @@ export default class BackgroundEngine extends Vue {
                             return new Promise((resolve, reject) => {
                               this.$store.dispatch(types.IDB.GET, resourceType)
                                 .then(resourcesInDB => {
-                                  this.$store.dispatch(types.IDB.SAVE, {resource: resourceType, data: (resourcesInDB?.data || []).concat(resourceList)})
+                                  this.$store.dispatch(types.IDB.SAVE, {
+                                    resource: resourceType,
+                                    data: (resourcesInDB?.data || []).concat(resourceList)
+                                  })
                                     .then(() => {
                                       // Batch upload resources
                                       // Max capacity FHIR_OP_CHUNK_SIZE resources
@@ -826,44 +876,90 @@ export default class BackgroundEngine extends Vue {
                                         batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
                                           this.$fhirService.validate(resourceList!.slice(i * this.FHIR_OP_CHUNK_SIZE, (i + 1) * this.FHIR_OP_CHUNK_SIZE))
                                             .then(res => {
-                                              const bundle: fhir.Bundle = res.data as fhir.Bundle
+                                              // log.info('Validation response...')
+                                              // log.info(JSON.stringify(res.data))
                                               const outcomeDetails: OutcomeDetail[] = []
+                                              if (res.data.resourceType === 'Bundle') {
+                                                const bundle: fhir.Bundle = res.data as fhir.Bundle
 
-                                              // Check batch bundle response for errors
-                                              Promise.all(bundle.entry?.map((entry: fhir.BundleEntry) => {
-                                                let operationOutcome: fhir.OperationOutcome
+                                                // Check batch bundle response for errors
+                                                Promise.all(bundle.entry?.map((entry: fhir.BundleEntry) => {
+                                                  let operationOutcome: fhir.OperationOutcome
+                                                  let isValidated: boolean = true
+                                                  if (!entry.resource) {
+                                                    operationOutcome = entry.response.outcome as fhir.OperationOutcome
+                                                  } else {
+                                                    operationOutcome = entry.resource as fhir.OperationOutcome
+                                                  }
+
+                                                  operationOutcome.issue.map(issue => {
+                                                    if (issue.severity === 'error' || issue.severity === 'fatal') {
+                                                      isValidated = false
+                                                      outcomeDetails.push({
+                                                        status: Status.ERROR,
+                                                        resourceType,
+                                                        message: `${issue.location} : ${issue.diagnostics}`
+                                                      } as OutcomeDetail)
+                                                    }
+                                                  })
+
+                                                  if (isValidated) {
+                                                    outcomeDetails.push({
+                                                      status: Status.SUCCESS,
+                                                      resourceType,
+                                                      message: `Status: ${entry.response?.status}`
+                                                    } as OutcomeDetail)
+                                                  }
+
+                                                }) || [])
+                                                  .then(() => resolveBatch(outcomeDetails))
+                                                  .catch(err => rejectBatch(err))
+                                              } else if (res.data.resourceType === 'OperationOutcome') {
+                                                const operationOutcome: fhir.OperationOutcome = res.data as fhir.OperationOutcome
                                                 let isValidated: boolean = true
-                                                if (!entry.resource) {
-                                                  operationOutcome = entry.response.outcome as fhir.OperationOutcome
-                                                } else {
-                                                  operationOutcome = entry.resource as fhir.OperationOutcome
-                                                }
-
                                                 operationOutcome.issue.map(issue => {
                                                   if (issue.severity === 'error' || issue.severity === 'fatal') {
                                                     isValidated = false
-                                                    outcomeDetails.push({status: Status.ERROR, resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
+                                                    outcomeDetails.push({
+                                                      status: Status.ERROR,
+                                                      resourceType,
+                                                      message: `${issue.location} : ${issue.diagnostics}`
+                                                    } as OutcomeDetail)
                                                   }
                                                 })
 
                                                 if (isValidated) {
-                                                  outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${entry.response?.status}`} as OutcomeDetail)
+                                                  outcomeDetails.push({
+                                                    status: Status.SUCCESS,
+                                                    resourceType,
+                                                    message: `Status: The validation was successful`
+                                                  } as OutcomeDetail)
                                                 }
 
-                                              }) || [])
-                                                .then(() => resolveBatch(outcomeDetails))
-                                                .catch(err => rejectBatch(err))
+                                                resolveBatch(outcomeDetails)
+
+                                              } else {
+                                                rejectBatch(`Unknown response retrieved from FHIR endpoint:::${res}`)
+                                              }
                                             })
                                             .catch(err => {
-                                              log.error(`Batch process error. ${err}`)
+                                              log.error(`Batch process error on batches of Resource:${resourceType}. ${JSON.stringify(err)}`)
                                               rejectBatch(err)
-                                              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: err.message}]})
+                                              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {
+                                                status: Status.ERROR,
+                                                outcomeDetails: [{
+                                                  status: Status.ERROR,
+                                                  resourceType: 'OperationOutcome',
+                                                  message: err.message
+                                                }]
+                                              })
                                             })
                                         })))
                                       }
 
                                       Promise.all(batchPromiseList)
                                         .then(res => {
+                                          // log.info('Validation promises completed!!!!')
                                           if (res.length) {
                                             log.info(`Batch process completed for Resource: ${resourceType}`)
                                             resolve([].concat.apply([], res))
@@ -905,24 +1001,45 @@ export default class BackgroundEngine extends Vue {
                               resolveSheet()
                               const outcomeDetails: OutcomeDetail[] = [].concat.apply([], res)
                               const status = !outcomeDetails.length || !!outcomeDetails.find(_ => _.status === Status.ERROR) ? Status.ERROR : Status.SUCCESS
-                              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {status, outcomeDetails})
+                              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {
+                                status,
+                                outcomeDetails
+                              })
                               log.info(`Validation completed ${sheet.sheetName} in ${filePath}`)
                             })
                             .catch(err => {
                               resolveSheet()
-                              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {status: Status.ERROR, message: 'Batch process error', outcomeDetails: err})
+                              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {
+                                status: Status.ERROR,
+                                message: 'Batch process error',
+                                outcomeDetails: err
+                              })
                               log.error(`Batch process error ${filePath}-${sheet.sheetName}`)
                             })
 
                         } else {
                           resolveSheet()
-                          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: 'Empty sheet'}]})
+                          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {
+                            status: Status.ERROR,
+                            outcomeDetails: [{
+                              status: Status.ERROR,
+                              resourceType: 'OperationOutcome',
+                              message: 'Empty sheet'
+                            }]
+                          })
                           log.warn(`Empty sheet: ${sheet.sheetName} in ${filePath}`)
                         }
                       })
                       .catch(err => {
                         resolveSheet()
-                        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: `Translation Terminology Service error for sheet: ${sheet.sheetName}. ${err}`}]})
+                        ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {
+                          status: Status.ERROR,
+                          outcomeDetails: [{
+                            status: Status.ERROR,
+                            resourceType: 'OperationOutcome',
+                            message: `Translation Terminology Service error for sheet: ${sheet.sheetName}. ${err}`
+                          }]
+                        })
                         log.error(`Chunk promise error. ${err}`)
                       })
 
@@ -930,7 +1047,14 @@ export default class BackgroundEngine extends Vue {
                 })
                 .catch(err => {
                   resolveSheet()
-                  ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, resourceType: 'OperationOutcome', message: `Validation error for sheet: ${sheet.sheetName}. ${err}`}]})
+                  ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_X(filePath, sheet.sheetName), {
+                    status: Status.ERROR,
+                    outcomeDetails: [{
+                      status: Status.ERROR,
+                      resourceType: 'OperationOutcome',
+                      message: `Validation error for sheet: ${sheet.sheetName}. ${err}`
+                    }]
+                  })
                   log.error(`Validation error for sheet: ${sheet.sheetName} in ${filePath}: ${err}`)
                 })
             }))
@@ -946,7 +1070,14 @@ export default class BackgroundEngine extends Vue {
           })
       })
         .catch(err => {
-          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_ERROR_X(filePath), {status: Status.ERROR, outcomeDetails: [{status: Status.ERROR, message: `File/table not found : ${filePath}`, resourceType: 'OperationOutcome'}]})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.VALIDATE_ERROR_X(filePath), {
+            status: Status.ERROR,
+            outcomeDetails: [{
+              status: Status.ERROR,
+              message: `File/table not found : ${filePath}`,
+              resourceType: 'OperationOutcome'
+            }]
+          })
           log.error(`File/table not found. ${err}`)
           resolveValidation()
         })
@@ -986,31 +1117,45 @@ export default class BackgroundEngine extends Vue {
                 batchPromiseList.push(p.then(() => new Promise((resolveBatch, rejectBatch) => {
                   this.$fhirService.postBatch(resourceList!.slice(i * this.FHIR_OP_CHUNK_SIZE, (i + 1) * this.FHIR_OP_CHUNK_SIZE), 'PUT')
                     .then(res => {
+                      // log.info('Transform response...')
+                      // log.info(JSON.stringify(res.data))
                       const bundle: fhir.Bundle = res.data as fhir.Bundle
                       const outcomeDetails: OutcomeDetail[] = []
                       let hasError: boolean = false
 
                       // Check batch bundle response for errors
-                      Promise.all(bundle.entry?.map(_ => {
-                        if (!_.resource) {
-                          const operationOutcome: fhir.OperationOutcome = _.response!.outcome as fhir.OperationOutcome
-                          operationOutcome.issue.map(issue => {
-                            if (issue.severity === 'error' || issue.severity === 'fatal') {
-                              hasError = true
-                              outcomeDetails.push({status: Status.ERROR, resourceType, message: `${issue.location} : ${issue.diagnostics}`} as OutcomeDetail)
-                            } else if (issue.severity === 'information') {
-                              outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
-                            }
-                          })
-                        } else {
-                          outcomeDetails.push({status: Status.SUCCESS, resourceType, message: `Status: ${_.response?.status}`} as OutcomeDetail)
+                      Promise.all(bundle.entry?.map(entry => {
+                        if ((entry.response?.status?.includes('200') || entry.response?.status?.includes('201')) && entry.response.location!) {
+                          outcomeDetails.push({
+                            status: Status.SUCCESS,
+                            resourceType,
+                            message: `Status: ${entry.response.status}`
+                          } as OutcomeDetail)
                           // Create Provenance resource for the current batch
-                          const location: string = _.response?.location || ''
+                          const location: string = entry.response?.location || ''
                           const splitted = location.split('/')
                           const referenceWithVersion: string = splitted.slice(splitted.length - 4).join('/')
                           const referenceWithoutVersion: string = splitted.slice(splitted.length - 4, splitted.length - 2).join('/')
-                          provenanceTargets.push({ reference: referenceWithVersion })
-                          documentManifestContent.push({ reference: referenceWithoutVersion })
+                          provenanceTargets.push({reference: referenceWithVersion})
+                          documentManifestContent.push({reference: referenceWithoutVersion})
+                        } else {
+                          const operationOutcome: fhir.OperationOutcome = entry.response!.outcome as fhir.OperationOutcome
+                          operationOutcome.issue.map(issue => {
+                            if (issue.severity === 'error' || issue.severity === 'fatal') {
+                              hasError = true
+                              outcomeDetails.push({
+                                status: Status.ERROR,
+                                resourceType,
+                                message: `${issue.location} : ${issue.diagnostics}`
+                              } as OutcomeDetail)
+                            } else if (issue.severity === 'information') {
+                              outcomeDetails.push({
+                                status: Status.SUCCESS,
+                                resourceType,
+                                message: `Status: ${entry.response?.status}`
+                              } as OutcomeDetail)
+                            }
+                          })
                         }
                       }) || [])
                         .then(() => {
@@ -1031,7 +1176,10 @@ export default class BackgroundEngine extends Vue {
                   const concatResult: OutcomeDetail[] = [].concat.apply([], res)
                   const status = !concatResult.length || !!concatResult.find(_ => _.status === Status.ERROR) ? Status.ERROR : Status.SUCCESS
                   log.info(`Batch process completed for Resource: ${resourceType}`)
-                  ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_X(resourceType), {status, outcomeDetails: concatResult} as OutcomeDetail)
+                  ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_X(resourceType), {
+                    status,
+                    outcomeDetails: concatResult
+                  } as OutcomeDetail)
                   resolve(concatResult)
                 })
                 .catch(err => {
@@ -1044,7 +1192,10 @@ export default class BackgroundEngine extends Vue {
 
           }))
             .then((res: any[]) => {
-              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: Status.SUCCESS, outcomeDetails: [].concat.apply([], res)})
+              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {
+                status: Status.SUCCESS,
+                outcomeDetails: [].concat.apply([], res)
+              })
               log.info(`Transform completed`)
               this.createProvenanceAndLicense(transformRequest.author, transformRequest.license, provenanceTargets, documentManifestContent)
                 .then(() => {
@@ -1055,14 +1206,22 @@ export default class BackgroundEngine extends Vue {
                 })
             })
             .catch(err => {
-              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: Status.ERROR, message: 'Transform error', outcomeDetails: err})
+              ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {
+                status: Status.ERROR,
+                message: 'Transform error',
+                outcomeDetails: err
+              })
               log.error(`Transform error. ${err}`)
 
               this.ready()
             })
         })
         .catch(err => {
-          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {status: Status.ERROR, message: 'Cannot get resources', outcomeDetails: err})
+          ipcRenderer.send(ipcChannels.TO_RENDERER, ipcChannels.Fhir.TRANSFORM_RESULT, {
+            status: Status.ERROR,
+            message: 'Cannot get resources',
+            outcomeDetails: err
+          })
           log.error(`Transform error. ${err}`)
           this.ready()
         })
@@ -1077,7 +1236,7 @@ export default class BackgroundEngine extends Vue {
    * @param provenanceTargets - List of references of created resources with their version numbers [resourceType]/[id]/_history/[version]
    * @param documentManifestContent - List of references of created resources without the version numbers [resourceType]/[id]
    */
-  createProvenanceAndLicense (author: string, license: License, provenanceTargets: fhir.Reference[], documentManifestContent: fhir.Reference[]): Promise<void> {
+  createProvenanceAndLicense(author: string, license: License, provenanceTargets: fhir.Reference[], documentManifestContent: fhir.Reference[]): Promise<void> {
     const currentDate: string = new Date().toISOString()
     const documentManifestExtension: fhir.Extension[] = this.createExtensionForResourceCounts(provenanceTargets)
 
@@ -1138,7 +1297,7 @@ export default class BackgroundEngine extends Vue {
    *  }
    * @param references
    */
-  createExtensionForResourceCounts (references: fhir.Reference[]): fhir.Extension[] {
+  createExtensionForResourceCounts(references: fhir.Reference[]): fhir.Extension[] {
     const resourceCounts = references.reduce((acc, currReference) => {
       const reference = currReference.reference.split('/')[0]
       if (!acc.hasOwnProperty(reference)) {
@@ -1161,7 +1320,7 @@ export default class BackgroundEngine extends Vue {
    * Creates Device resource with id environment.toolID. This Device resource belongs to the Data Curation Tool itself.
    * If it already exists, it just continues.
    */
-  createCurationToolDeviceRes (): Promise<void> {
+  createCurationToolDeviceRes(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.$fhirService.search('Device', {_id: environment.toolID})
         .then(res => {
@@ -1196,7 +1355,7 @@ export default class BackgroundEngine extends Vue {
     })
   }
 
-  render (createElement: CreateElement): VNode {
+  render(createElement: CreateElement): VNode {
     return createElement('div', {}, 'This is the background process window.')
   }
 }
