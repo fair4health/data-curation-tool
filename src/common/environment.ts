@@ -1,5 +1,5 @@
 // const onfhirBase = 'http://f4h.srdc.com.tr/fhir'
-const onfhirBase = 'http://localhost:8080/fhir'
+const onfhirBase = 'http://localhost:8080/fhir/'
 const hl7Base = 'http://hl7.org/fhir'
 
 // The url representing how many resources created during transformation
@@ -23,7 +23,7 @@ export let environment = {
   langs: ['en'],
   databaseTypes: ['postgres'],
   hl7: hl7Base,
-  FHIRBatchOperationSize: 1000,
+  FHIRBatchOperationSize: 1, // If 1, there will be no batched request to the FHIR (validation) endpoint. Use 200 for convenience if batch validation is supported by the FHIR endpoint.
   numberOfResourcesUrlBase,
   codesystems: {
     ATC: 'http://www.whocc.no/atc',

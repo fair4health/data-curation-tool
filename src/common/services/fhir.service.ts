@@ -2,6 +2,7 @@ import { environment } from '../environment'
 import { FhirClient } from 'ng-fhir/FhirClient'
 import axios from 'axios'
 import http from 'http'
+// import log from 'electron-log'
 
 export class FhirService {
 
@@ -10,6 +11,7 @@ export class FhirService {
 
   constructor (baseUrl?: any) {
     if (baseUrl) environment.server.config.baseUrl = baseUrl
+    if (environment.server.config.baseUrl.endsWith('/')) environment.server.config.baseUrl.substr(0, environment.server.config.baseUrl.length - 1)
     this.config = environment.server.config
   }
 
@@ -18,6 +20,7 @@ export class FhirService {
    * @param url
    */
   setUrl (url: string) {
+    if (url.endsWith('/')) url = url.substr(0, url.length - 1)
     this.config.baseUrl = url
     this.client = new FhirClient(this.config)
   }
@@ -126,14 +129,46 @@ export class FhirService {
         request
       })
     }
-    return axios.post(this.config.baseUrl, transactionResource, {headers: this.config.headers, httpAgent})
+    // log.info('Posting for transform...')
+    // log.info(JSON.stringify(transactionResource))
+
+    return axios.create({
+      validateStatus: (status) => {
+        return status >= 200 && status < 500 // We do this because axios directs the processing to its catch upon responses other than 2xx
+      }
+    }).post(this.config.baseUrl, transactionResource, {headers: this.config.headers, httpAgent})
   }
 
-  /**
-   * Validates resources
-   * @param resources
-   */
-  validate (resources: fhir.Resource[]): Promise<any> {
+  validateSingle (resource: fhir.Resource): Promise<any> {
+    const httpAgent = new http.Agent({keepAlive: true})
+    const parametersResource: fhir.Parameters = {
+      resourceType: 'Parameters',
+      parameter: [{
+        name: 'resource',
+        resource
+      }]
+    }
+
+    if (resource.meta?.profile?.length && resource.meta.profile[0]) {
+      parametersResource.parameter.push({
+        name: 'profile',
+        valueUri: resource.meta.profile[0]
+      })
+    }
+
+    const url = this.config.baseUrl + '/' + resource.resourceType + '/$validate'
+    // log.info(`baseUrl:${this.config.baseUrl} resourceType:${resource.resourceType}`)
+    // log.info(`Sending validateSingle to ${url}`)
+    // log.info(JSON.stringify(parametersResource))
+
+    return axios.create({
+      validateStatus: (status) => {
+        return status >= 200 && status < 500 // We do this because axios directs the processing to its catch upon responses other than 2xx
+      }
+    }).post(url, parametersResource, {headers: this.config.headers, httpAgent})
+  }
+
+  validateBatch (resources: fhir.Resource[]): Promise<any> {
     const httpAgent = new http.Agent({keepAlive: true})
     const transactionResource: fhir.Bundle = {
       resourceType: 'Bundle',
@@ -158,6 +193,15 @@ export class FhirService {
       })
     }
     return axios.post(this.config.baseUrl, transactionResource, {headers: this.config.headers, httpAgent})
+  }
+
+  /**
+   * Validates resources within a batch request
+   * @param resources
+   */
+  validate (resources: fhir.Resource[]): Promise<any> {
+    if (resources.length === 1) return this.validateSingle(resources.pop())
+    else return this.validateBatch(resources)
   }
 
   /**
